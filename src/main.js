@@ -515,6 +515,22 @@ async function main() {
     return {t, p: t.clone().addScaledVector(dir, D * fill)};
   }
   const blend = (a, b, w) => ({t: a.t.clone().lerp(b.t, w), p: a.p.clone().lerp(b.p, w)});
+  /** The camera rule, measured: the subject's (or the solo part's) projected bounds over the usable area. */
+  function fitNow() {
+    camera.updateMatrixWorld();
+    const sp = solo.part && solo.T.v > 0.5 ? solo.part.obj : null;
+    let pts;
+    if (sp) (pts = []), sp.updateMatrixWorld(true), sp.traverse((m) => m.isMesh && hullOf(m).forEach((p) => pts.push(p.clone().applyMatrix4(m.matrixWorld))));
+    else pts = subjectPts(intro.on ? (intro.t < 2.6 ? atv.group : carb) : autoSubject());
+    const U = usable();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const p of pts) {
+      const s = S.project(p);
+      x0 = Math.min(x0, s.x); x1 = Math.max(x1, s.x); y0 = Math.min(y0, s.y); y1 = Math.max(y1, s.y);
+    }
+    const r2 = (v) => Math.round(v * 100) / 100;
+    return {fill: r2(Math.max((x1 - x0) / (U.r - U.l), (y1 - y0) / (U.b - U.t))), dx: r2(((x0 + x1) / 2 - (U.l + U.r) / 2) / (U.r - U.l)), dy: r2(((y0 + y1) / 2 - (U.t + U.b) / 2) / (U.b - U.t)), inside: x0 >= U.l - 1 && x1 <= U.r + 1 && y0 >= U.t - 1 && y1 <= U.b + 1};
+  }
 
   // --- auto camera: the framing rule along the hero (or the group's) direction, swayed +/-20 deg while idle
   const SWAY = THREE.MathUtils.degToRad(20);
@@ -593,6 +609,7 @@ async function main() {
     const b = new THREE.Box3().setFromPoints(pts);
     b.getCenter(solo.c);
     solo.r = Math.max(0.2, ...pts.map((v) => v.distanceTo(solo.c)));
+    solo.pts = pts.map((v) => v.sub(solo.c));
     aim(solo.T, 1, performance.now());
     rows.forEach((r) => r.classList.toggle('on', r.dataset.id === (id.startsWith('1-') ? '1' : id)));
     showDetail(id);
@@ -796,7 +813,7 @@ async function main() {
 
   // --- the solo part's transform: from its pose (w 0) to the centre of the usable area in front of the camera (w 1)
   const mW = new THREE.Matrix4(), mP = new THREE.Matrix4(), mT = new THREE.Matrix4();
-  const qW = new THREE.Quaternion(), sW = new THREE.Vector3(), pW = new THREE.Vector3(), pS = new THREE.Vector3(), cW = new THREE.Vector3();
+  const qW = new THREE.Quaternion(), sW = new THREE.Vector3(), pW = new THREE.Vector3(), pS = new THREE.Vector3(), cW = new THREE.Vector3(), pP = new THREE.Vector3();
   function placeSolo(w) {
     const p = solo.part;
     const o = p.obj;
@@ -813,8 +830,18 @@ async function main() {
     const D = 0.55 * camera.position.distanceTo(controls.target);
     pS.copy(camera.position).addScaledVector(dir, D);
     const hh = D * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const fit = 0.3 * Math.min(hh * ((U.b - U.t) / S.size.h), hh * camera.aspect * ((U.r - U.l) / S.size.w));
-    const s = THREE.MathUtils.clamp(fit / solo.r, 0.3, 30);
+    // the camera rule: the part as it faces the camera now fills 78% of the usable area; capped so that a spin
+    // keeps it (its bounding sphere) within the usable area's longer side
+    const uw = 2 * hh * camera.aspect * ((U.r - U.l) / S.size.w), uh = 2 * hh * ((U.b - U.t) / S.size.h);
+    axX.setFromMatrixColumn(camera.matrixWorld, 0);
+    axY.setFromMatrixColumn(camera.matrixWorld, 1);
+    let ex0 = Infinity, ex1 = -Infinity, ey0 = Infinity, ey1 = -Infinity;
+    for (const v of solo.pts) {
+      const r = pP.copy(v).multiply(sW).applyQuaternion(qW);
+      const a = r.dot(axX), b = r.dot(axY);
+      ex0 = Math.min(ex0, a); ex1 = Math.max(ex1, a); ey0 = Math.min(ey0, b); ey1 = Math.max(ey1, b);
+    }
+    const s = THREE.MathUtils.clamp(Math.min(0.78 * Math.min(uw / Math.max(ex1 - ex0, 1e-3), uh / Math.max(ey1 - ey0, 1e-3)), Math.max(uw, uh) / (2 * solo.r * sW.x)), 0.3, 80);
     const k = ease(w);
     const sc = 1 + (s - 1) * k;
     const q = qW.clone().slerp(solo.spin.clone().multiply(qW), k);
@@ -1056,7 +1083,7 @@ async function main() {
   // the intro plays on every visit; ?intro=<s> holds it at that second (shots), ?nointro skips it
   if (q.has('intro') || !['nointro', 'mode', 'sel', 'explode'].some((k) => q.has(k))) startIntro();
   requestAnimationFrame(tick);
-  window.VENTURI = {asms, parts, st, focusOn, select, deselect, setMode, guide, intro, startIntro, camera, S, controls, frame, usable, solo, get hovered() { return hovered; }};
+  window.VENTURI = {asms, parts, st, focusOn, select, deselect, setMode, guide, intro, startIntro, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
