@@ -147,6 +147,7 @@ export function createStage(canvas) {
     uC: {value: new THREE.Vector2(0, 0)}, // the carburetor's centre over the floor
     uStrength: {value: 0.12},
     uR: {value: new THREE.Vector2(45, 240)},
+    uS: {value: 1}, // footprint scale: 1 the carburetor, ~12 the ATV (main.js)
   };
   const floorR = new Reflector(floorGeo, {
       textureWidth: 1024,
@@ -157,7 +158,7 @@ export function createStage(canvas) {
         uniforms: {color: {value: null}, tDiffuse: {value: null}, textureMatrix: {value: null}, ...floorU},
         vertexShader: `uniform mat4 textureMatrix; varying vec4 vRefl; varying vec3 vW;
           void main(){ vRefl = textureMatrix * vec4(position, 1.0); vW = (modelMatrix * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-        fragmentShader: `uniform sampler2D tDiffuse; uniform vec3 uBase; uniform vec3 uPool; uniform vec2 uC; uniform float uStrength; uniform vec2 uR;
+        fragmentShader: `uniform sampler2D tDiffuse; uniform vec3 uBase; uniform vec3 uPool; uniform vec2 uC; uniform float uStrength; uniform vec2 uR; uniform float uS;
           varying vec4 vRefl; varying vec3 vW;
           void main(){
             vec2 uv = vRefl.xy / vRefl.w; vec2 px = 1.0 / vec2(textureSize(tDiffuse, 0));
@@ -170,13 +171,13 @@ export function createStage(canvas) {
             }
             r /= 13.0;
             // the reflection fades out within 40 cm of the gun's footprint
-            float gd = length(vec2(max(abs(vW.x) - 7.0, 0.0), max(abs(vW.z) - 4.0, 0.0)));
+            float gd = length(vec2(max(abs(vW.x) - 7.0 * uS, 0.0), max(abs(vW.z) - 4.0 * uS, 0.0))) / uS;
             float rm = (1.0 - smoothstep(0.0, 18.0, gd)) * step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0); // no clamped-edge smear
             vec2 d = vW.xz - uC;
             float fade = 1.0 - smoothstep(uR.x, uR.y, length(d * vec2(0.75, 1.0)));
-            vec2 pq = d / vec2(16.0, 11.0);
+            vec2 pq = d / (vec2(16.0, 11.0) * uS);
             float pool = exp(-dot(pq, pq) * 1.6);
-            float contact = 1.0 - smoothstep(0.0, 1.0, length(d / vec2(7.5, 5.5)));
+            float contact = 1.0 - smoothstep(0.0, 1.0, length(d / (vec2(7.5, 5.5) * uS)));
             vec3 col = (uBase + uPool * pool) * (1.0 - 0.8 * contact);
             // a 12% mirror: the reflection is blended at uStrength in display (gamma) space, as the eye reads it;
             // added in linear light, 12% of the dark gun moved the floor by at most 4 levels
@@ -190,8 +191,14 @@ export function createStage(canvas) {
   floorR.material.transparent = true;
   // adaptive quality can stop the reflection render; the floor itself (base, pool, contact shadow) stays
   const reflect = floorR.onBeforeRender;
+  // noReflect: objects left out of the mirror (main.js: the ATV prop, to keep its triangles to one pass)
+  const noReflect = [];
   floorR.onBeforeRender = function (...a) {
-    if (!S.cut.reflection) reflect.apply(this, a);
+    if (S.cut.reflection) return;
+    const vis = noReflect.map((o) => o.visible);
+    noReflect.forEach((o) => (o.visible = false));
+    reflect.apply(this, a);
+    noReflect.forEach((o, i) => (o.visible = vis[i]));
   };
   floorR.renderOrder = -2;
   floorR.rotation.x = -Math.PI / 2;
@@ -369,7 +376,7 @@ export function createStage(canvas) {
     }
     return null;
   };
-  const S = {THREE, renderer, scene, camera, composer, outline, size, resize, project, select, setTier, degrade, crossfade, key, cool, fill, under, noAO, floor: floorR, cut: {}, tier: 'high'};
+  const S = {THREE, renderer, scene, camera, composer, outline, size, resize, project, select, setTier, degrade, crossfade, key, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
   S.render = () => composer.render();
   return S;
 }

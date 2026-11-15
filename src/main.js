@@ -23,6 +23,7 @@ import {buildJets} from './carb/jets.js';
 import {buildMixture} from './carb/mixture.js';
 import {buildBody} from './carb/body.js';
 import {createGuide, MODES, REMOVED_AT, FITTED_AT} from './guide.js';
+import {buildAtv, GROUND} from './atv.js';
 
 const MARKS = {parsed: performance.now()};
 const q = new URLSearchParams(location.search);
@@ -81,7 +82,13 @@ async function main() {
   if (missing.length) console.error('parts not built:', missing.join(', '));
   const meshes = [];
   asms.forEach((a) => a.group.traverse((o) => o.isMesh && meshes.push(o)));
-  scene.children.filter((o) => o !== carb && o.isMesh).forEach((o) => compile(o));
+  // the ATV prop round the carburetor (not clickable; out of the AO and mirror passes: one pass of triangles)
+  const atv = buildAtv();
+  scene.add(atv.group);
+  compile(atv.group);
+  S.noAO.push(atv.group);
+  S.noReflect.push(atv.group);
+  scene.children.filter((o) => o !== carb && o !== atv.group && o.isMesh).forEach((o) => compile(o));
   const quad = new THREE.PlaneGeometry(1, 1).deleteAttribute('normal');
   S.composer.passes.forEach((p, i, all) => {
     const g = new THREE.Group();
@@ -141,8 +148,9 @@ async function main() {
 
   const dock = el('div', 'iw-dock', null, ui);
   // the mode bar: free exploring, or one of the guided modes (each button shows its steps done)
-  const MODE_KEYS = ['explore', 'teardown', 'rebuild'];
-  const modeBar = el('div', 'vt-modes', MODE_KEYS.map((k) => `<button class="iw-btn" data-m="${k}">${k === 'explore' ? 'Explore' : `<span class="l">${MODES[k].label}</span><span class="s">${MODES[k].short}</span><i></i>`}</button>`).join(''), dock);
+  const MODE_KEYS = ['explore', 'atv', 'teardown', 'rebuild'];
+  const modeBar = el('div', 'vt-modes', MODE_KEYS.map((k) => `<button class="iw-btn" data-m="${k}">${k === 'explore' ? 'Explore' : `<span class="l">${MODES[k].label}</span><span class="s">${MODES[k].short}</span><i></i>`}</button>`).join('') + '<button class="iw-btn vt-replay" aria-label="Replay the intro">↺ Intro</button>', dock);
+  const skipBtn = el('button', 'iw-btn vt-skip', 'Skip intro', ui);
   const ctl = el('div', 'iw-ctl', '<label>Explode</label>', dock);
   const range = el('input', 'iw-range', null, ctl);
   Object.assign(range, {type: 'range', min: 0, max: 1, step: 0.001, value: 0});
@@ -201,7 +209,9 @@ async function main() {
   modeBar.onclick = (e) => {
     const b = e.target.closest('button');
     if (b?.dataset.m) setMode(b.dataset.m === 'explore' ? null : b.dataset.m);
+    else if (b?.classList.contains('vt-replay')) startIntro();
   };
+  skipBtn.onclick = () => endIntro(performance.now(), 0.8);
   // the selected part's card
   const detail = el('div', 'vt-detail', null, ui);
   const docked = () => innerWidth >= 1000; // the panel sits beside the view; narrower, it opens over it
@@ -264,8 +274,9 @@ async function main() {
       let w = 0;
       if (guide.mode === 'teardown') w = cur.has(p.id) || (REMOVED_AT[p.id] ?? (offA(p.id) ? 0 : Infinity)) <= n ? 1 : 0;
       else if (guide.mode === 'rebuild') w = cur.has(p.id) ? 0 : (FITTED_AT[p.id] ?? (offA(p.id) ? Infinity : 0)) <= n ? 0 : 1;
+      else if (guide.mode === 'atv') w = (offA(p.id) ? Number(info(p.id).step.slice(1)) : Infinity) <= n ? 1 : 0; // section A's hoses and cable cover
       gDim[i] = w && !cur.has(p.id) ? 1 : 0;
-      gRim[i] = cur.has(p.id) ? 1 : 0;
+      gRim[i] = cur.has(p.id) || (guide.mode === 'atv' && n === 8) ? 1 : 0;
       if (!guide.mode) return;
       if (cur.has(p.id)) {
         if (enter) hold(wT[i], 1 - w);
@@ -288,8 +299,118 @@ async function main() {
       if (m && docked()) showTab('steps');
     }
     guideTargets(now, enter && !!m && mixT.v === 0);
+    atvTargets(now);
     lastInput = now;
     flyTo(1.1);
+  }
+
+  // --- the ATV prop: each mesh's way off (off 0 home, 1 away), its opacity and a brass glow (the step's piece)
+  const ATV_DIR = new THREE.Vector3(1, 0.36, -0.95); // the photo's front three-quarter, from the front left
+  const GHOST = 0.38; // OFF THE ATV: the quad at 38% so the carburetor reads in place
+  // outward from the carburetor, but never toward the intro's camera (what flies that way is turned aside and back)
+  const toCam = ATV_DIR.clone().normalize();
+  const outward = (c) => {
+    const w = c.clone().normalize().multiplyScalar(240).add(new THREE.Vector3(0, 30, 0));
+    const k = w.dot(toCam);
+    return k > 0 ? w.addScaledVector(toCam, -1.6 * k) : w;
+  };
+  const A = atv.items.map((it, i) => ({
+    ...it,
+    way: it.lift ? new THREE.Vector3(...it.lift) : outward(it.centre),
+    t0: it.t0 ?? 2.7 + (((i * 7) % 11) / 11) * 0.6,
+    off: tween(1, 1.3),
+    op: tween(0, 0.9),
+    glow: tween(0, 0.6),
+  }));
+  const atvAT = tween(0, 1.4); // the ATV's presence: the floor's depth and the contact shadow's size
+  const carbOutT = tween(0, 1.8); // step A8: the carburetor out of the frame
+  const BRASS = new THREE.Color(0xc9a24b);
+  function placeAtv() {
+    for (const a of A) {
+      a.mesh.position.copy(a.way).multiplyScalar(a.off.v);
+      a.mesh.material.opacity = a.op.v;
+      a.mesh.visible = a.op.v > 0.004;
+      a.mesh.material.emissive.copy(BRASS).multiplyScalar(0.3 * a.glow.v);
+    }
+  }
+  /** The owner's way out: twist rearward off the engine, lower it, bottom toward the shifter side, out that side. */
+  function placeCarb(v) {
+    const s = (x0, x1) => ease(clamp01((v - x0) / (x1 - x0)));
+    carb.position.set(-3 * s(0, 0.3), -9 * s(0.2, 0.6), -42 * s(0.5, 1));
+    carb.rotation.set(0.5 * s(0.3, 0.8), 0, 0);
+  }
+  function atvTargets(now) {
+    const on = guide.mode === 'atv';
+    const piece = guide.step()?.piece;
+    for (const a of A) {
+      aim(a.off, on && a.kind !== 'plastic' ? 0 : 1, now);
+      aim(a.op, !on || a.kind === 'plastic' ? 0 : a.kind === 'piece' ? (a.piece === piece ? 1 : 0.6) : GHOST, now);
+      aim(a.glow, on && a.piece === piece ? 1 : 0, now);
+    }
+    aim(atvAT, on ? 1 : 0, now);
+    aim(carbOutT, on && guide.n >= 8 ? 1 : 0, now);
+  }
+
+  // --- the 7 s intro: the ATV swaying in the photo's view; seat, tank cover and side covers lift away; the rest
+  // flies outward and fades while the camera pushes in; the carburetor stays and turns to its hero angle
+  const INTRO = 7;
+  const intro = {on: false, t0: 0, t: 0, hold: q.has('intro') ? Number(q.get('intro')) || 0 : null, cams: null};
+  function introPose(t) {
+    for (const a of A) {
+      const pl = a.kind === 'plastic';
+      const u = ease(clamp01((t - a.t0) / (pl ? 1.1 : 1.7)));
+      hold(a.off, u);
+      hold(a.op, 1 - THREE.MathUtils.smoothstep(u, pl ? 0.45 : 0.1, pl ? 1 : 0.6));
+      hold(a.glow, 0);
+    }
+    hold(atvAT, 1 - ease(clamp01((t - 3.0) / 2.6)));
+  }
+  function introCams() {
+    A.forEach((a) => a.mesh.position.set(0, 0, 0));
+    return {atv: frame(atv.group, ATV_DIR, 1, []), hero: frame(carb, HERO_DIR, 1, ground(carbFloor))};
+  }
+  /** Camera at intro time t: target, distance (log) and direction (yaw, pitch) eased from the ATV's view to the hero's. */
+  function introCam(t) {
+    const {atv: a, hero: h} = intro.cams;
+    const da = a.p.clone().sub(a.t), dh = h.p.clone().sub(h.t);
+    const La = da.length(), Lh = dh.length();
+    const u = ease(clamp01((t - 2.6) / 4.0));
+    const ud = ease(clamp01((t - 2.6) / 3.6));
+    let ya = Math.atan2(da.z, da.x), yh = Math.atan2(dh.z, dh.x);
+    if (yh - ya > Math.PI) yh -= 2 * Math.PI;
+    if (ya - yh > Math.PI) yh += 2 * Math.PI;
+    const yaw = ya + (yh - ya) * u + 0.09 * Math.sin(t * 0.9) * (1 - u);
+    const pa = Math.asin(da.y / La), ph = Math.asin(dh.y / Lh);
+    const pitch = pa + (ph - pa) * u;
+    const L = Math.exp(Math.log(La) + (Math.log(Lh) - Math.log(La)) * ud);
+    const tg = a.t.clone().lerp(h.t, u);
+    const dir = new THREE.Vector3(Math.cos(pitch) * Math.cos(yaw), Math.sin(pitch), Math.cos(pitch) * Math.sin(yaw));
+    return {t: tg, p: tg.clone().addScaledVector(dir, L)};
+  }
+  function startIntro() {
+    if (guide.mode) setMode(null);
+    if (solo.part) deselect();
+    if (focus >= 0) focusOn(-1);
+    st.target = 0;
+    hold(exT, 0);
+    hold(mixT, 0);
+    st.explode = 0;
+    range.value = 0;
+    hold(carbOutT, 0);
+    floorKey = NaN;
+    Object.assign(intro, {on: true, t0: performance.now(), t: 0, cams: null});
+    ui.classList.add('vt-intro');
+  }
+  function endIntro(now, dur = 0.6) {
+    if (!intro.on) return;
+    intro.on = false;
+    ui.classList.remove('vt-intro');
+    atvTargets(now); // whatever is still on the ATV fades from where it is
+    view.user = false;
+    view.base = null;
+    lastInput = now;
+    autoKey = '';
+    followFrom(dur);
   }
 
   // --- framing (Ironwood's rule): the subject's projected bounds fill FILL of the usable area, centred.
@@ -338,6 +459,7 @@ async function main() {
   /** World points bounding obj (an object or a list), skipping the solo part. */
   function subjectPts(obj) {
     carb.updateMatrixWorld(true);
+    atv.group.updateMatrixWorld(true);
     const out = [];
     for (const o of [obj].flat()) {
       if (!o) continue;
@@ -403,16 +525,34 @@ async function main() {
     const d = GROUPS[i].dir;
     return Math.abs(d[2]) > 0.5 ? new THREE.Vector3(-0.45 * Math.sign(d[2]), 0.45, Math.sign(d[2])) : HERO_DIR;
   };
-  const ground = () => [-3, 3].flatMap((x) => [-2.5, 2.5].map((z) => new THREE.Vector3(x, S.floor.position.y, z)));
+  const ground = (y = S.floor.position.y) => [-3, 3].flatMap((x) => [-2.5, 2.5].map((z) => new THREE.Vector3(x, y, z)));
   // guided: the current step's parts with the body they come off, seen from the side they come off
   const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
   const guideDir = () => {
+    if (guide.mode === 'atv') {
+      // from the side the step's parts are on (the shifter side, -Z, when it is the whole carburetor or the ATV)
+      const ps = curParts().filter((p) => p.id !== '1');
+      let side = -1;
+      if (ps.length) {
+        const pts = subjectPts(ps.map((p) => p.obj));
+        const z = pts.reduce((s, v) => s + v.z, 0) / pts.length - carb.position.z;
+        if (Math.abs(z) > 1) side = Math.sign(z);
+      }
+      return new THREE.Vector3(-0.3, 0.62, side);
+    }
     const p = curParts()[0];
     if (!p) return HERO_DIR;
     const gi = asms.indexOf(p.asm);
     return GROUPS[gi].dir[1] < -0.5 ? new THREE.Vector3(-0.55, 0.16, 1) : groupDir(gi);
   };
-  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
+  // OFF THE ATV: the carburetor, the step's parts or ATV piece, and 40 cm of the quad round them for context
+  const atvSubject = () => {
+    const c = carb.position;
+    const box = [-1, 1].flatMap((x) => [-1, 1].flatMap((y) => [-1, 1].map((z) => new THREE.Vector3(c.x + x * 22, c.y + y * 16, c.z + z * 20))));
+    const piece = guide.step()?.piece;
+    return [carb, ...curParts().map((p) => p.obj), A.find((a) => piece && a.piece === piece)?.mesh, ...box].filter(Boolean);
+  };
+  const autoSubject = () => (guide.mode === 'atv' ? atvSubject() : guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
   const followFrom = (dur = 0.9) => (view.follow = {from: {t: controls.target.clone(), p: camera.position.clone()}, t0: performance.now(), dur: dur * 1000});
@@ -493,7 +633,8 @@ async function main() {
       return setMode(guide.mode, guide.n + (e.key === 'ArrowRight' ? 1 : -1));
     }
     if (e.key !== 'Escape') return;
-    if (solo.part) deselect();
+    if (intro.on && intro.hold == null) endIntro(performance.now(), 0.8);
+    else if (solo.part) deselect();
     else if (focus >= 0) focusOn(-1);
   });
 
@@ -514,6 +655,7 @@ async function main() {
   });
   canvas.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && ((pointer = null), (pickDirty = true)));
   function pick() {
+    if (intro.on || guide.mode === 'atv') return null; // the carburetor sits inside the quad: not picked there
     ray.setFromCamera(ndc, camera);
     for (const h of ray.intersectObjects(meshes, false)) {
       const root = h.object.userData.partRoot;
@@ -636,14 +778,20 @@ async function main() {
   }
 
   // --- the floor follows the lowest part down as the carburetor comes apart
+  // (with the ATV present it sinks to the ATV's ground and its contact shadow and mirror grow to the quad's size)
   let floorKey = NaN;
+  let carbFloor = FLOOR_Y;
+  let poseKey = NaN; // changes only when a carburetor part moves (the shadow pass follows it, not the ATV)
   function placeFloor() {
-    const k = st.explode + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13;
+    poseKey = st.explode + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + carbOutT.v * 19;
+    const k = poseKey + atvAT.v * 17;
     if (floorKey === k) return;
     floorKey = k;
     let lo = Infinity;
     for (const p of subjectPts(carb)) lo = Math.min(lo, p.y);
-    S.floor.position.y = Math.min(FLOOR_Y, lo - 0.5);
+    carbFloor = Math.min(FLOOR_Y, lo - 0.5);
+    S.floor.position.y = carbFloor + (GROUND - carbFloor) * atvAT.v;
+    S.floor.material.uniforms.uS.value = 1 + 11 * atvAT.v;
   }
 
   // --- the solo part's transform: from its pose (w 0) to the centre of the usable area in front of the camera (w 1)
@@ -731,7 +879,7 @@ async function main() {
   };
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
-  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v)];
+  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), atvAT.v, carbOutT.v, intro.on ? intro.t : -1, ...A.flatMap((a) => [a.off.v, a.op.v, a.glow.v])];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -747,9 +895,28 @@ async function main() {
     range.style.setProperty('--p', `${(st.explode * 100).toFixed(1)}%`);
     stepT(mixT, now);
     wT.forEach((T) => stepT(T, now));
+    // the intro drives the ATV directly (held tweens); afterwards the tweens run to each mode's targets
+    if (intro.on) {
+      const t = intro.hold ?? (now - intro.t0) / 1000;
+      if (t >= INTRO && intro.hold == null) endIntro(now, 0.3);
+      else introPose((intro.t = Math.min(t, INTRO)));
+    }
+    for (const a of A) stepT(a.off, now), stepT(a.op, now), stepT(a.glow, now);
+    stepT(atvAT, now);
+    placeCarb(stepT(carbOutT, now));
     poseAll(st.explode);
     parts.forEach((p) => p.obj.scale.set(1, 1, 1));
     placeFloor();
+    let introCm = null;
+    if (intro.on) {
+      intro.cams ??= introCams();
+      introCm = introCam(intro.t);
+    }
+    placeAtv();
+    // with the quad round it the carburetor is 45 cm off the floor and its mirror image is lost in the fade:
+    // left out of the mirror pass (one pass fewer of its triangles while the ATV is shown)
+    S.noReflect.length = 1;
+    if (atvAT.v > 0.3) S.noReflect.push(carb);
 
     // solo: the selected part flies forward; once home again it is released
     stepT(solo.T, now);
@@ -772,7 +939,7 @@ async function main() {
 
     // camera: the visitor's (orbiting) or the framing rule (auto); held still while a part is out
     const idle = !still && !sel && now - lastInput > 5000;
-    controls.enabled = !sel;
+    controls.enabled = !sel && !intro.on;
     const exMoving = Math.abs(st.explode - lastExF) > 1e-6;
     lastExF = st.explode;
     if (view.user && idle) flyTo(1.6);
@@ -781,7 +948,11 @@ async function main() {
       view.base = camera.position.clone().sub(controls.target).normalize();
       followFrom(0.5);
     }
-    if (view.user) controls.update(dt);
+    if (introCm) {
+      controls.target.copy(introCm.t);
+      camera.position.copy(introCm.p);
+      camera.lookAt(introCm.t);
+    } else if (view.user) controls.update(dt);
     else if (!sel || exMoving) {
       aim(view.env, idle && !view.base ? 1 : 0, now);
       stepT(view.env, now);
@@ -789,10 +960,11 @@ async function main() {
       const key = [st.explode, focus, view.phase, view.env.v, S.size.w, S.size.h, view.base ? view.base.toArray() : 0, detail.classList.contains('show'), guide.mode, guide.n].join();
       if (key !== autoKey || !autoCam) {
         // guided: framed where the parts are going, not where they are on the way
-        if (guide.mode) poseAll(st.explode, true);
+        if (guide.mode) poseAll(st.explode, true), placeCarb(carbOutT.to);
         autoCam = frame(autoSubject(), autoDir(), 1, autoKeep());
         if (guide.mode) {
           poseAll(st.explode);
+          placeCarb(carbOutT.v);
           if (solo.part) placeSolo(solo.T.v);
         }
       }
@@ -822,9 +994,9 @@ async function main() {
     // settles (never every frame while a part flies or spins: that pass alone would pass the 350k triangle budget)
     const soloKey = `${solo.part ? solo.part.id : ''}|${solo.T.to}`;
     const settled = solo.T.v === solo.T.to;
-    if (Math.abs(floorKey - lastE) > 1e-5 || Number.isNaN(lastE) || (settled && soloKey !== lastSolo)) {
+    if (Math.abs(poseKey - lastE) > 1e-5 || Number.isNaN(lastE) || (settled && soloKey !== lastSolo)) {
       S.renderer.shadowMap.needsUpdate = true;
-      lastE = floorKey;
+      lastE = poseKey;
       if (settled) lastSolo = soloKey;
     }
     const sg = sigOf();
@@ -881,8 +1053,10 @@ async function main() {
   load.remove();
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
+  // the intro plays on every visit; ?intro=<s> holds it at that second (shots), ?nointro skips it
+  if (q.has('intro') || !['nointro', 'mode', 'sel', 'explode'].some((k) => q.has(k))) startIntro();
   requestAnimationFrame(tick);
-  window.VENTURI = {asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, get hovered() { return hovered; }};
+  window.VENTURI = {asms, parts, st, focusOn, select, deselect, setMode, guide, intro, startIntro, camera, S, controls, frame, usable, solo, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
