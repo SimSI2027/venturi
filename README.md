@@ -2,6 +2,8 @@
 
 **Live:** https://simsi2027.github.io/venturi/
 
+[![VENTURI 39: the carburetor part-exploded, with the parts panel](docs/hero.png)](https://simsi2027.github.io/venturi/)
+
 An interactive three.js guide to a Keihin flat-slide carburetor with accelerator pump (the one on a 2004 sport
 ATV, I.D. mark 5TG1 00), built entirely in code. Every one of the 79 parts-diagram references is a clickable part:
 find it, see where it sits, and follow the order it comes off and goes back.
@@ -12,7 +14,12 @@ find it, see where it sits, and follow the order it comes off and goes back.
 - **EXPLODE** slider: the 13 groups come apart in the service manual's order, then each group's parts.
 - **Group pills (01-13)**: fly to a group; the rest dim.
 - **Hover** a part for its name; **click** it to bring it forward and **drag** to spin it. Esc or click away puts it back.
-- **Parts** panel: search all 79 references by number or name; **Specs** lists the specifications.
+- **Parts** panel: search all 79 references by number or name; **Specs** lists the specifications; **Steps** lists the
+  current guided mode; **Notes** keeps your own numbers (pilot screw turns, jets found) in this browser.
+- **Off the ATV / Tear down / Rebuild**: guided steps with **Back / Next** (or the arrow keys), the camera on the
+  current part, a one-line note, brass callouts on the rebuild and a checkbox per step, saved in this browser.
+- **Intro**: 7 s from the whole ATV down to the carburetor; **Skip intro** or Esc, **↺ Intro** replays it.
+- **?** (button or key) shows these controls on the page.
 - **High / Med / Low** sets the render quality; `?perf=1` shows a performance overlay.
 
 ## Notice
