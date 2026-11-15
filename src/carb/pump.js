@@ -24,7 +24,7 @@ export function buildPump(index) {
   const sx = -3.75, sy = -2.6, sz = -1.9;
   const adj = orient(merge([screwY(1.4, 0.13, 0.13, 0.01), cylY(0.3, 0, 0.35)]), [-1, 0, 0]);
   A.add(part([sx, sy, sz], mk(adj, steel)), '8', {ex: [-4.6, 3.6, 0], order: 0.6});
-  A.add(part([sx + 0.05, sy, sz], mk(orient(tubeY(0.3, 0.14, 0, 0.06), [1, 0, 0]), steel)), '6', {ex: [-3.6, 3.6, 0], order: 0.65});
-  A.add(part([sx + 0.16, sy, sz], mk(orient(tubeY(0.26, 0.14, 0, 0.06), [1, 0, 0]), steel)), '7', {ex: [-3.0, 3.6, 0], order: 0.7});
+  A.add(part([sx + 0.05, sy, sz], mk(orient(tubeY(0.3, 0.14, 0, 0.08), [1, 0, 0]), steel)), '6', {ex: [-3.6, 3.6, 0], order: 0.65});
+  A.add(part([sx + 0.16, sy, sz], mk(orient(tubeY(0.26, 0.14, 0, 0.08), [1, 0, 0]), steel)), '7', {ex: [-3.0, 3.6, 0], order: 0.7});
   return A;
 }

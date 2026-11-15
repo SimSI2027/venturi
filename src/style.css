@@ -344,3 +344,5 @@ html, body { background: var(--iw-bg); }
   .vt-prog { margin-top: 6px; }
   .vt-nav { margin: 6px -12px -10px; padding: 6px 12px 10px; bottom: -10px; }
 }
+/* run 3: one easing for every UI transition; the "?" controls card */
+.iw, .iw * { transition-timing-function: cubic-bezier(.65, 0, .35, 1); }
