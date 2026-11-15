@@ -101,8 +101,17 @@ async function main() {
   const ui = el('div', 'iw', null, app);
   const head = el('div', 'iw-head', '<span class="iw-brand">VENTURI <b>39</b></span><span class="iw-dot">·</span><span class="iw-sub">Find it, turn it, put it back.</span>', ui);
   const qSeg = el('span', 'iw-q', '<button data-t="high">High</button><button data-t="med">Med</button><button data-t="low">Low</button>', head);
+  // the "?" controls card
+  const helpBtn = el('button', 'iw-help', '?', head);
+  helpBtn.setAttribute('aria-label', 'Controls');
+  helpBtn.setAttribute('aria-expanded', 'false');
+  const HELP = [['Drag', 'orbit'], ['Wheel / pinch', 'zoom'], ['Hover a part', 'its name and group'], ['Click a part', 'bring it forward, drag to spin it'], ['Esc / click away', 'put it back, leave a group, skip the intro'], ['Explode', 'groups, then their parts, come apart'], ['01 to 13', 'fly to a group, dim the rest'], ['Off the ATV · Tear down · Rebuild', 'guided steps: Back / Next or ← →'], ['Parts', 'search, specs, steps and your notes'], ['High · Med · Low', 'render quality'], ['?', 'this card']];
+  const helpCard = el('div', 'iw-helpcard', HELP.map(([k, v]) => `<div><b>${k}</b><span>${v}</span></div>`).join(''), ui);
+  const setHelp = (on) => (helpCard.classList.toggle('on', on), helpBtn.setAttribute('aria-expanded', String(on)));
+  helpBtn.onclick = () => setHelp(!helpCard.classList.contains('on'));
+  addEventListener('pointerdown', (e) => helpCard.classList.contains('on') && !e.target.closest('.iw-helpcard, .iw-help') && setHelp(false));
   el('div', 'iw-rule', null, ui);
-  const hint = el('div', 'iw-hint', null, ui);
+  const hint =el('div', 'iw-hint', null, ui);
   const dropped = [];
   const setHint = () => (hint.textContent = `13 groups · ${PARTS.length} references · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.map((k) => ' · ' + k).join('')}`);
   el('div', 'vt-foot', NOTICE, ui);
@@ -645,7 +654,10 @@ async function main() {
     guide.card.classList.add('away');
   }
   addEventListener('keydown', (e) => {
-    if (guide.mode && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.target.closest?.('input, textarea')) {
+    if (e.target.closest?.('input, textarea')) return;
+    if (e.key === '?') return setHelp(!helpCard.classList.contains('on'));
+    if (e.key === 'Escape' && helpCard.classList.contains('on')) return setHelp(false);
+    if (guide.mode &&(e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.target.closest?.('input, textarea')) {
       e.preventDefault();
       return setMode(guide.mode, guide.n + (e.key === 'ArrowRight' ? 1 : -1));
     }

@@ -346,3 +346,14 @@ html, body { background: var(--iw-bg); }
 }
 /* run 3: one easing for every UI transition; the "?" controls card */
 .iw, .iw * { transition-timing-function: cubic-bezier(.65, 0, .35, 1); }
+.iw-helpcard { display: grid; grid-template-columns: auto auto; column-gap: 18px; background: rgba(14, 15, 18, 0.97); }
+.iw-helpcard div { display: contents; }
+.iw-helpcard div b { color: var(--iw-brass); font-weight: 600; font-size: 14px; letter-spacing: 0.1em; font-variant-caps: all-small-caps; line-height: 1.75; }
+.iw-helpcard div span { color: var(--iw-fg); line-height: 1.75; }
+.vt-detail { max-height: calc(100% - 112px - 150px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
+@media (max-width: 720px) {
+  .iw-helpcard { left: 12px; right: 12px; top: 64px; padding: 10px 12px; column-gap: 12px; }
+  .iw-helpcard div { white-space: normal; }
+  .vt-detail { max-height: 40vh; }
+  .iw-helpcard div b, .iw-helpcard div span { font-size: 14px; line-height: 1.4; padding: 3px 0; }
+}
