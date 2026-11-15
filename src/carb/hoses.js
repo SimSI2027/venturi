@@ -1,0 +1,35 @@
+// 1 hoses: drain pipe (71) and drain hose (72) with its clamp (75); two air vent hoses (57, 58) with clip (39);
+// the cable-cover hose (68) with clip (69); fuel hose (73) with clips (74, 76). Each comes away from its fitting.
+import {Asm} from '../lib/asm.js';
+import {THREE, merge, cylY, tubeY, orient, hose, rbox, mk, part} from './kit.js';
+
+/** A spring hose clip: a band round the hose (axis dir) with two tabs. */
+function clip(r, dir, p) {
+  const band = new THREE.TorusGeometry(r + 0.05, 0.05, 6, 28).rotateX(Math.PI / 2);
+  const tabs = merge([rbox(0.12, 0.12, 0.5, 0.04).translate(r + 0.05, 0, 0.12), rbox(0.12, 0.12, 0.5, 0.04).translate(r + 0.05, 0, -0.12)]);
+  return orient(merge([band, tabs]), dir, p);
+}
+
+export function buildHoses(index) {
+  const A = new Asm('hoses', 'Hoses', {offset: [0, -1.0, 0], index});
+  const {hose: hm, vinyl, steel, zinc, plastic} = A.M;
+  // air vent hoses from the two -Z nipples, down past the bowl
+  const v1 = hose([[-1.8, -2.25, -3.5], [-1.8, -2.3, -4.1], [-1.9, -3.4, -4.4], [-2.1, -7.0, -4.3], [-2.2, -11.0, -4.0]], 0.27);
+  const v2 = hose([[1.0, -2.25, -3.5], [1.0, -2.3, -4.0], [1.1, -3.4, -4.3], [1.4, -7.0, -4.4], [1.6, -11.0, -4.2]], 0.27);
+  A.add(part([0, 0, 0], mk(v1, hm)), '57', {ex: [-1.0, -1.5, -8.0], order: 0.1});
+  A.add(part([0, 0, 0], mk(v2, hm)), '58', {ex: [1.0, -1.5, -10.0], order: 0.15});
+  A.add(part([0, 0, 0], mk(clip(0.27, [0, 0, -1], [-1.8, -2.25, -3.75]), zinc)), '39', {ex: [-1.0, -0.6, -9.6], order: 0.05});
+  // the cable cover's hose, short, down from the cover's foot
+  A.add(part([0, 0, 0], mk(hose([[2.8, 0.2, -4.4], [2.9, -0.6, -4.6], [3.1, -2.6, -4.8], [3.3, -5.0, -4.6]], 0.2), hm)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
+  A.add(part([0, 0, 0], mk(clip(0.2, [0.1, -1, -0.2], [2.85, -0.3, -4.5]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
+  // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
+  A.add(part([1.6, -7.5, 1.0], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [6.0, -9.0, 4.0], order: 0.4});
+  A.add(part([0, 0, 0], mk(hose([[1.6, -8.2, 1.0], [1.6, -9.4, 1.05], [1.5, -11.0, 1.2]], 0.25), vinyl)), '72', {ex: [6.0, -12.0, 4.0], order: 0.1});
+  A.add(part([1.55, -9.9, 1.1], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
+  // fuel hose from the inlet nipple on the bowl, out and up toward the tank
+  const fuel = hose([[2.3, -3.9, 3.9], [2.3, -3.9, 4.6], [2.6, -3.2, 5.6], [3.8, -1.0, 6.2], [5.0, 1.0, 6.4]], 0.42, 0.22);
+  A.add(part([0, 0, 0], mk(fuel, hm)), '73', {ex: [3.5, -4.0, 6.5], order: 0.3});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0, 0, 1], [2.3, -3.9, 4.15]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0.6, 1, 0.1], [4.7, 0.5, 6.35]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25});
+  return A;
+}
