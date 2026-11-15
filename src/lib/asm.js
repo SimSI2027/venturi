@@ -97,12 +97,27 @@ export class Asm {
    * parts fan out (e 0.45-1, staggered by order).
    */
   pose(e) {
-    const a = ease(clamp01((e - this.index * 0.018) / 0.36));
-    this.group.position.copy(this.offset).multiplyScalar(a);
+    this.poseEach(() => [this.groupAmt(e), null], e);
+  }
+  /** The explode's group phase (0..1) at e. */
+  groupAmt(e) {
+    return ease(clamp01((e - this.index * 0.018) / 0.36));
+  }
+  /** The explode's part phase (0..1) for one part at e. */
+  static partAmt(part, e) {
+    return ease(clamp01((e - 0.45 - part.order * 0.18) / 0.34));
+  }
+  /**
+   * Pose each part on its own (the guided modes): fn(part) -> [g, b], g the share of the group's offset it has
+   * travelled, b the share of its own fan-out (null: the explode's part phase at e).
+   */
+  poseEach(fn, e = 0) {
+    this.group.position.set(0, 0, 0);
     const q = new THREE.Quaternion();
     for (const part of this.parts) {
-      const b = ease(clamp01((e - 0.45 - part.order * 0.18) / 0.34));
-      part.obj.position.copy(part.ex).multiplyScalar(b).add(part.rest);
+      const [g, bb] = fn(part);
+      const b = bb ?? Asm.partAmt(part, e);
+      part.obj.position.copy(part.ex).multiplyScalar(b).add(part.rest).addScaledVector(this.offset, g);
       part.obj.quaternion.copy(part.restQ);
       if (part.rot) {
         q.identity().slerp(part.rot, b);

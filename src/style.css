@@ -267,3 +267,72 @@ html, body { background: var(--iw-bg); }
   .vt-detail dl { font-size: 13px; }
   .vt-detail .vt-hint { display: none; }
 }
+/* guided modes: the mode bar, the step card, the Steps list, the Notes field */
+.vt-tabs button { padding: 4px 9px 8px; letter-spacing: 0.14em; }
+.vt-modes { display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.vt-modes::-webkit-scrollbar { display: none; }
+.vt-modes .iw-btn { flex: none; font-size: 15px; padding: 5px 14px; background: var(--iw-panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.vt-modes .iw-btn i { font-style: normal; margin-left: 7px; font-size: 13px; color: var(--iw-dim); font-variant-numeric: tabular-nums; }
+.vt-modes .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
+.vt-modes .s { display: none; }
+.vt-modes .vt-replay { font-size: 14px; padding: 5px 12px; color: var(--iw-dim); }
+.iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pills { display: none; }
+.vt-step { position: absolute; left: 28px; top: 112px; width: 300px; padding: 14px 16px 12px; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
+  font-variant-caps: normal; letter-spacing: 0.03em; opacity: 0; pointer-events: none; transform: translateY(-4px); z-index: 4;
+  transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
+  max-height: calc(100% - 112px - 120px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
+.vt-step.show { opacity: 1; pointer-events: auto; transform: none; }
+.vt-step.show.away { opacity: 0; pointer-events: none; }
+.vt-sh { display: flex; align-items: baseline; gap: 8px; }
+.vt-sh span { flex: 1; font-size: 15px; color: var(--iw-brass); letter-spacing: 0.18em; font-variant-caps: all-small-caps; font-weight: 600; }
+.vt-sh b { font-size: 30px; font-weight: 600; color: var(--iw-brass); line-height: 1; font-variant-numeric: tabular-nums; }
+.vt-sh i { font-style: normal; font-size: 15px; color: var(--iw-dim); }
+.vt-st { margin: 6px 0 8px; font-size: 21px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.15; }
+.vt-sp { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.vt-sp button { font: inherit; font-size: 13px; letter-spacing: 0.03em; color: var(--iw-fg); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--iw-line);
+  border-radius: 6px; padding: 2px 7px; cursor: pointer; text-align: left; }
+.vt-sp button:hover { border-color: #c9a24b; }
+.vt-note { font-size: 15px; line-height: 1.3; color: var(--iw-dim); margin-bottom: 8px; }
+.vt-call { position: relative; margin: 0 0 8px; padding: 7px 10px 7px 30px; font-size: 15px; line-height: 1.3; color: #f0e2bd;
+  background: rgba(201, 162, 75, 0.12); border: 1px solid var(--iw-brass-dim); border-radius: 4px; }
+.vt-call::before { content: '!'; position: absolute; left: 9px; top: 7px; width: 14px; height: 14px; border-radius: 50%; background: #c9a24b; color: #111;
+  font-size: 11px; font-weight: 700; line-height: 14px; text-align: center; }
+.vt-prog { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 2px; margin-top: 10px; }
+.vt-prog i { height: 4px; background: var(--iw-mute); opacity: 0.6; }
+.vt-prog i.d { background: #c9a24b; opacity: 1; }
+.vt-prog i.c { outline: 1px solid var(--iw-fg); outline-offset: 1px; }
+.vt-pl { margin-top: 5px; font-size: 13px; color: var(--iw-dim); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.vt-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.vt-nav .iw-btn { font-size: 15px; padding: 5px 16px; }
+.vt-nav .iw-btn:disabled { opacity: 0.35; cursor: default; border-color: var(--iw-line); }
+.vt-nav label { display: flex; align-items: center; gap: 6px; font-size: 15px; letter-spacing: 0.08em; cursor: pointer; }
+.vt-step input[type=checkbox], .vt-steps input[type=checkbox] { accent-color: #c9a24b; width: 16px; height: 16px; margin: 0; cursor: pointer; }
+.vt-steps, .vt-notes { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; font-variant-caps: normal; }
+.vt-steps[hidden], .vt-notes[hidden] { display: none; }
+.vt-lh { padding: 10px 14px 6px; font-size: 14px; color: var(--iw-brass); letter-spacing: 0.14em; font-variant-caps: all-small-caps; }
+.vt-srow { display: grid; grid-template-columns: 16px 2em 1fr auto; gap: 8px; align-items: center; padding: 6px 14px; font-size: 15px; letter-spacing: 0.03em;
+  border-top: 1px solid rgba(233, 228, 218, 0.05); cursor: pointer; }
+.vt-srow:hover { background: rgba(255, 255, 255, 0.03); }
+.vt-srow b { color: var(--iw-dim); font-weight: 600; font-variant-numeric: tabular-nums; }
+.vt-srow.on { background: rgba(201, 162, 75, 0.12); }
+.vt-srow.on b { color: var(--iw-brass); }
+.vt-srow.done span { color: var(--iw-dim); }
+.vt-srow i { font-style: normal; width: 15px; height: 15px; border-radius: 50%; background: #c9a24b; color: #111; font-size: 11px; font-weight: 700; line-height: 15px; text-align: center; }
+.vt-notes p { margin: 10px 14px 8px; font-size: 14px; line-height: 1.35; color: var(--iw-dim); }
+.vt-ta { display: block; box-sizing: border-box; width: calc(100% - 20px); height: calc(100% - 90px); min-height: 180px; margin: 0 10px 10px; padding: 9px 10px;
+  font: inherit; font-size: 16px; line-height: 1.4; letter-spacing: 0.03em; color: var(--iw-fg); background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--iw-line); border-radius: 8px; outline: none; resize: none; }
+.vt-ta:focus { border-color: var(--iw-brass-dim); }
+@media (max-width: 720px) {
+  .vt-modes { justify-content: flex-start; }
+  .vt-modes .iw-btn { font-size: 14px; padding: 5px 11px; }
+  .vt-modes .l { display: none; }
+  .vt-modes .s { display: inline; }
+  .vt-modes .iw-btn i { display: none; }
+  .vt-step { left: 12px; right: 12px; width: auto; top: auto; bottom: 84px; max-height: 42vh; padding: 10px 12px; }
+  .vt-sh b { font-size: 24px; }
+  .vt-st { font-size: 18px; margin: 4px 0 6px; }
+  .vt-note, .vt-call { font-size: 14px; }
+  .vt-prog { margin-top: 6px; }
+  .vt-nav { margin-top: 6px; }
+}

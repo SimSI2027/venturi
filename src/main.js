@@ -22,6 +22,7 @@ import {buildFloat} from './carb/float.js';
 import {buildJets} from './carb/jets.js';
 import {buildMixture} from './carb/mixture.js';
 import {buildBody} from './carb/body.js';
+import {createGuide, MODES, REMOVED_AT, FITTED_AT} from './guide.js';
 
 const MARKS = {parsed: performance.now()};
 const q = new URLSearchParams(location.search);
@@ -139,6 +140,9 @@ async function main() {
   const card = el('div', 'iw-card', '<div class="nm"></div><div class="as"></div>', ui);
 
   const dock = el('div', 'iw-dock', null, ui);
+  // the mode bar: free exploring, or one of the guided modes (each button shows its steps done)
+  const MODE_KEYS = ['explore', 'teardown', 'rebuild'];
+  const modeBar = el('div', 'vt-modes', MODE_KEYS.map((k) => `<button class="iw-btn" data-m="${k}">${k === 'explore' ? 'Explore' : `<span class="l">${MODES[k].label}</span><span class="s">${MODES[k].short}</span><i></i>`}</button>`).join(''), dock);
   const ctl = el('div', 'iw-ctl', '<label>Explode</label>', dock);
   const range = el('input', 'iw-range', null, ctl);
   Object.assign(range, {type: 'range', min: 0, max: 1, step: 0.001, value: 0});
@@ -153,7 +157,7 @@ async function main() {
 
   // parts panel: search + 79 rows; SPECS: specs.json as a table
   const panel = el('div', 'vt-panel', null, ui);
-  const pTabs = el('div', 'vt-tabs', '<button data-k="parts" class="on">Parts</button><button data-k="specs">Specs</button><button class="vt-x" aria-label="Close">×</button>', panel);
+  const pTabs = el('div', 'vt-tabs', '<button data-k="parts" class="on">Parts</button><button data-k="specs">Specs</button><button data-k="steps">Steps</button><button data-k="notes">Notes</button><button class="vt-x" aria-label="Close">×</button>', panel);
   const pBody = el('div', 'vt-pbody', null, panel);
   const search = el('input', 'vt-search', null, pBody);
   Object.assign(search, {type: 'search', placeholder: 'Search number or name'});
@@ -180,9 +184,23 @@ async function main() {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.classList.contains('vt-x')) return setPanel(false);
-    [...pTabs.children].forEach((c) => c.classList.toggle('on', c === b));
-    list.hidden = search.hidden = b.dataset.k !== 'parts';
-    specs.hidden = b.dataset.k !== 'specs';
+    showTab(b.dataset.k);
+  };
+  function showTab(k) {
+    [...pTabs.children].forEach((c) => c.classList.toggle('on', c.dataset.k === k));
+    list.hidden = search.hidden = k !== 'parts';
+    specs.hidden = k !== 'specs';
+    guide.views.steps.hidden = k !== 'steps';
+    guide.views.notes.hidden = k !== 'notes';
+  }
+  // the guided modes: the step card, the Steps list and the Notes field
+  const guide = createGuide({el, ui, body: pBody, go: (m, n) => setMode(m, n), onPart: (id) => select(id)});
+  const showProgress = () => MODE_KEYS.forEach((k, i) => k !== 'explore' && (modeBar.children[i].querySelector('i').textContent = guide.progress(k)));
+  guide.onProgress = showProgress;
+  showProgress();
+  modeBar.onclick = (e) => {
+    const b = e.target.closest('button');
+    if (b?.dataset.m) setMode(b.dataset.m === 'explore' ? null : b.dataset.m);
   };
   // the selected part's card
   const detail = el('div', 'vt-detail', null, ui);
@@ -218,7 +236,61 @@ async function main() {
   const rimT = parts.map(() => tween(0, 0.5));
   const dim = parts.map(() => 0);
   const hvT = tween(0, 0.22);
-  const poseAll = (e) => asms.forEach((a) => a.pose(e));
+  // the guided modes pose each part on its own: w 0 home, 1 off along the way it really comes off. mixT blends
+  // the explode's pose (0) into the guided pose (1). gDim / gRim: the guide's look for each part.
+  parts.forEach((p, i) => (p.k = i));
+  const wT = parts.map(() => tween(0, 1.1));
+  const mixT = tween(0, 0.9);
+  const gDim = parts.map(() => 0);
+  const gRim = parts.map(() => 0);
+  const offA = (id) => typeof info(id).step === 'string'; // comes off in section A, on the ATV
+  function poseAll(e, useTo = false) {
+    const m = useTo ? mixT.to : mixT.v;
+    for (const a of asms) {
+      const g = a.groupAmt(e);
+      a.poseEach((p) => {
+        const w = useTo ? wT[p.k].to : wT[p.k].v;
+        const b = Asm.partAmt(p, e);
+        return [g + (w - g) * m, b + (w - b) * m];
+      });
+    }
+  }
+  /** Each part's target for the current step; the step's own parts move 0.35 s after the camera sets off. */
+  function guideTargets(now, enter = false) {
+    const s = guide.step();
+    const cur = new Set(s ? s.parts : []);
+    const n = guide.n;
+    parts.forEach((p, i) => {
+      let w = 0;
+      if (guide.mode === 'teardown') w = cur.has(p.id) || (REMOVED_AT[p.id] ?? (offA(p.id) ? 0 : Infinity)) <= n ? 1 : 0;
+      else if (guide.mode === 'rebuild') w = cur.has(p.id) ? 0 : (FITTED_AT[p.id] ?? (offA(p.id) ? Infinity : 0)) <= n ? 0 : 1;
+      gDim[i] = w && !cur.has(p.id) ? 1 : 0;
+      gRim[i] = cur.has(p.id) ? 1 : 0;
+      if (!guide.mode) return;
+      if (cur.has(p.id)) {
+        if (enter) hold(wT[i], 1 - w);
+        aim(wT[i], w, now + 350);
+      } else if (enter) hold(wT[i], w);
+      else aim(wT[i], w, now);
+    });
+  }
+  /** Go to a guided mode (null: explore) at step n (default: the last step seen there). */
+  function setMode(m, n) {
+    const enter = m !== guide.mode;
+    if (solo.part) deselect();
+    if (m && focus >= 0) focusOn(-1);
+    guide.set(m, n ?? (enter ? guide.last[m] : guide.n));
+    modeBar.querySelectorAll('button[data-m]').forEach((b) => b.classList.toggle('on', (b.dataset.m === 'explore' ? null : b.dataset.m) === m));
+    dock.classList.toggle('guided', !!m);
+    const now = performance.now();
+    if (enter) {
+      aim(mixT, m ? 1 : 0, now);
+      if (m && docked()) showTab('steps');
+    }
+    guideTargets(now, enter && !!m && mixT.v === 0);
+    lastInput = now;
+    flyTo(1.1);
+  }
 
   // --- framing (Ironwood's rule): the subject's projected bounds fill FILL of the usable area, centred.
   const FILL = 0.8;
@@ -228,8 +300,9 @@ async function main() {
     const H = S.size.h;
     const r = {l: 0, r: W, t: Math.max(head.getBoundingClientRect().bottom, hint.offsetParent ? hint.getBoundingClientRect().bottom : 0) + 6, b: dock.getBoundingClientRect().top - 6};
     if (docked()) r.r = panel.getBoundingClientRect().left - 8;
-    if (detail.classList.contains('show')) {
-      const d = detail.getBoundingClientRect();
+    const side = detail.classList.contains('show') ? detail : guide.card.classList.contains('show') ? guide.card : null;
+    if (side) {
+      const d = side.getBoundingClientRect();
       if (innerWidth >= 720) r.l = Math.max(r.l, d.right + 8);
       else r.b = Math.min(r.b, d.top - 6);
     }
@@ -331,9 +404,17 @@ async function main() {
     return Math.abs(d[2]) > 0.5 ? new THREE.Vector3(-0.45 * Math.sign(d[2]), 0.45, Math.sign(d[2])) : HERO_DIR;
   };
   const ground = () => [-3, 3].flatMap((x) => [-2.5, 2.5].map((z) => new THREE.Vector3(x, S.floor.position.y, z)));
-  const autoSubject = () => (focus >= 0 ? asms[focus].group : carb);
-  const autoKeep = () => (focus >= 0 ? [] : ground());
-  const autoDir = () => swayDir(view.base || (focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
+  // guided: the current step's parts with the body they come off, seen from the side they come off
+  const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
+  const guideDir = () => {
+    const p = curParts()[0];
+    if (!p) return HERO_DIR;
+    const gi = asms.indexOf(p.asm);
+    return GROUPS[gi].dir[1] < -0.5 ? new THREE.Vector3(-0.55, 0.16, 1) : groupDir(gi);
+  };
+  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
+  const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
+  const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
   const followFrom = (dur = 0.9) => (view.follow = {from: {t: controls.target.clone(), p: camera.position.clone()}, t0: performance.now(), dur: dur * 1000});
   function flyTo(dur = 1.2) {
     view.user = false;
@@ -382,6 +463,7 @@ async function main() {
     if (!solo.part) return;
     aim(solo.T, 0, performance.now());
     detail.classList.remove('show');
+    guide.card.classList.remove('away');
     rows.forEach((r) => r.classList.remove('on'));
   }
   const label = (id) => {
@@ -403,8 +485,13 @@ async function main() {
       (sp ? `<table>${sp}</table>` : '') +
       '<div class="vt-hint">Drag to turn it · Esc or click away to put it back</div>';
     detail.classList.add('show');
+    guide.card.classList.add('away');
   }
   addEventListener('keydown', (e) => {
+    if (guide.mode && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.target.closest?.('input, textarea')) {
+      e.preventDefault();
+      return setMode(guide.mode, guide.n + (e.key === 'ArrowRight' ? 1 : -1));
+    }
     if (e.key !== 'Escape') return;
     if (solo.part) deselect();
     else if (focus >= 0) focusOn(-1);
@@ -551,8 +638,9 @@ async function main() {
   // --- the floor follows the lowest part down as the carburetor comes apart
   let floorKey = NaN;
   function placeFloor() {
-    if (floorKey === st.explode) return;
-    floorKey = st.explode;
+    const k = st.explode + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13;
+    if (floorKey === k) return;
+    floorKey = k;
     let lo = Infinity;
     for (const p of subjectPts(carb)) lo = Math.min(lo, p.y);
     S.floor.position.y = Math.min(FLOOR_Y, lo - 0.5);
@@ -643,7 +731,7 @@ async function main() {
   };
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
-  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v)];
+  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v)];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -657,6 +745,8 @@ async function main() {
     st.explode = stepT(exT, now);
     out.value = st.explode.toFixed(2);
     range.style.setProperty('--p', `${(st.explode * 100).toFixed(1)}%`);
+    stepT(mixT, now);
+    wT.forEach((T) => stepT(T, now));
     poseAll(st.explode);
     parts.forEach((p) => p.obj.scale.set(1, 1, 1));
     placeFloor();
@@ -669,8 +759,8 @@ async function main() {
     // dimming: a selection dims every other part; a pill dims every other group
     const sel = solo.part && solo.T.to > 0 ? solo.part : null;
     parts.forEach((p, i) => {
-      aim(dimT[i], sel ? (p === sel ? 0 : 1) : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
-      aim(rimT[i], (sel && p === sel) || (!sel && focus >= 0 && p.asm === asms[focus]) ? 1 : 0, now);
+      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? gDim[i] : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
+      aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
       Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], r < 0.004 ? 0 : r);
@@ -696,8 +786,16 @@ async function main() {
       aim(view.env, idle && !view.base ? 1 : 0, now);
       stepT(view.env, now);
       view.phase = view.env.v > 0 ? view.phase + (dt * 2 * Math.PI) / SWAY_P : 0;
-      const key = [st.explode, focus, view.phase, view.env.v, S.size.w, S.size.h, view.base ? view.base.toArray() : 0, detail.classList.contains('show')].join();
-      if (key !== autoKey || !autoCam) autoCam = frame(autoSubject(), autoDir(), 1, autoKeep());
+      const key = [st.explode, focus, view.phase, view.env.v, S.size.w, S.size.h, view.base ? view.base.toArray() : 0, detail.classList.contains('show'), guide.mode, guide.n].join();
+      if (key !== autoKey || !autoCam) {
+        // guided: framed where the parts are going, not where they are on the way
+        if (guide.mode) poseAll(st.explode, true);
+        autoCam = frame(autoSubject(), autoDir(), 1, autoKeep());
+        if (guide.mode) {
+          poseAll(st.explode);
+          if (solo.part) placeSolo(solo.T.v);
+        }
+      }
       autoKey = key;
       let cm = autoCam;
       if (view.follow) {
@@ -724,9 +822,9 @@ async function main() {
     // settles (never every frame while a part flies or spins: that pass alone would pass the 350k triangle budget)
     const soloKey = `${solo.part ? solo.part.id : ''}|${solo.T.to}`;
     const settled = solo.T.v === solo.T.to;
-    if (Math.abs(st.explode - lastE) > 1e-5 || Number.isNaN(lastE) || (settled && soloKey !== lastSolo)) {
+    if (Math.abs(floorKey - lastE) > 1e-5 || Number.isNaN(lastE) || (settled && soloKey !== lastSolo)) {
       S.renderer.shadowMap.needsUpdate = true;
-      lastE = st.explode;
+      lastE = floorKey;
       if (settled) lastSolo = soloKey;
     }
     const sg = sigOf();
@@ -781,9 +879,10 @@ async function main() {
   await Promise.all(jobs);
   MARKS.shaders = performance.now();
   load.remove();
+  if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {asms, parts, st, focusOn, select, deselect, camera, S, controls, frame, usable, solo, get hovered() { return hovered; }};
+  window.VENTURI = {asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
