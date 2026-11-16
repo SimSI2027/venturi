@@ -17,7 +17,7 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const FR = (0.29 * L) / 2, FW = 0.1 * L, RR = (0.28 * L) / 2, RW = 0.14 * L;
 const FX = 60, RX = FX - 0.7 * L; // wheelbase 0.70 L
 const FY = GROUND + FR, RY = GROUND + RR;
-const FZ = 0.31 * L - FW / 2, RZ = 0.32 * L - RW / 2; // rear track gives the 0.64 L width
+const FZ = 0.31 * L - 0.53 * FW, RZ = 0.32 * L - 0.53 * RW; // the rear knobs' outer edges give the 0.64 L width
 const SEAT_Y = GROUND + 0.44 * L; // seat height (middle of the seat)
 const BAR_Y = GROUND + 0.59 * L; // top of the handlebar grips
 const LOW_Y = GROUND + 0.06 * L; // lowest point of the frame
@@ -321,7 +321,47 @@ export function buildAtv() {
     ...S.map((s) => shell(sided(heel, s), 10, 6, 0.6)),
   ]), M.alu, 'body', {name: 'footpegs and heel guards'});
 
-  // @engine
+  // --- black single-cylinder engine, upright under the tank, its intake facing the carburetor (0.07 L) behind it;
+  // the radiator core in front
+  const fins = [0, 1, 2, 3, 4].map((i) => at(rbox(15, 0.7, 14, 0.3), 19 - i * 0.35, -10 + i * 2.8, 0, 0, 0, -0.12));
+  add(merge([
+    rbox(30, 20, 20, 4, 2).translate(15, -22, 0),
+    ...[[12, -21, 1, 8], [17, -23, -1, 7]].map(([x, y, s, r]) => at(cylY(r, 0, 3.5, 0.8, 32), x, y, s * 9.5, (s * Math.PI) / 2, 0, 0)),
+    at(rbox(13, 16, 12, 2), 19, -4, 0, 0, 0, -0.12),
+    ...fins,
+    rbox(16, 9, 14, 2.5, 2).translate(20.5, 8.5, 0),
+    rbox(13, 3, 11, 1.2).translate(21, 14, 0),
+    at(cylY(3.4, 0, 2.5, 0.3, 24), 11, 0, 0, 0, 0, Math.PI / 2),
+    at(rbox(4, 22, 28, 1), 44, 4, 0, 0, 0, -0.2),
+  ]), M.engine, 'body', {name: 'engine'});
+  // one exhaust pipe from the front of the cylinder head, round the right side, back to a silver muffler under the
+  // right rear fender
+  const pipe = [[27, 7, 1], [33, 6, 4], [35, 0, 10], [30, -6, 16], [18, -9, 19.5], [0, -8, 21.5], [-18, -4, 22.5], [-34, -1, 23]];
+  add(tube(pipe, 2, 12), M.steel, 'body', {name: 'exhaust pipe'});
+  const mDir = V(-40, 5, 1);
+  const mLen = mDir.length();
+  add(merge([
+    orient(cylY(6.2, 0, mLen, 1, 28), mDir.toArray(), [-34, -1, 23]),
+    orient(cylY(2, mLen, mLen + 3, 0.3, 16), mDir.toArray(), [-34, -1, 23]),
+  ]), M.silver, 'body', {name: 'muffler'});
+  add(rbox(22, 14, 18, 3, 2).translate(-45, 11, 0), M.plastic, 'body', {name: 'air box'});
+  // handlebar on its column, with the crossbar and its pad; grips (tops at 0.59 L), thumb-throttle housing, levers
+  const by = BAR_Y - 1.7;
+  add(merge([
+    orient(cylY(1.8, 0, 22, 0.3, 16), [-0.3, 1, 0], [47.5, 27.5, 0]),
+    rbox(5, 3, 8, 1).translate(41, 50, 0),
+    tube([[39, by, -38], [40, by - 1, -27], [41, 52, -12], [41, 51, 0], [41, 52, 12], [40, by - 1, 27], [39, by, 38]], 1.1, 10),
+    tube([[40.5, by - 1.5, -13], [40.5, by - 1.5, 13]], 0.9, 8),
+  ]), M.alu, 'body', {name: 'handlebar'});
+  add(merge([
+    ...S.map((s) => at(cylY(1.7, -4, 4, 0.4, 16), 39.2, by, s * 34.5, Math.PI / 2, 0, 0)),
+    at(cylY(2, -7, 7, 0.5, 16), 40.5, by - 1.5, 0, Math.PI / 2, 0, 0),
+    rbox(4.5, 4, 4.5, 1).translate(40, by - 0.3, 27.5),
+    rbox(3.6, 0.8, 2.6, 0.3).translate(42.6, by - 1.8, 27.2),
+    rbox(4, 3.6, 4, 1).translate(40, by - 0.3, -27.5),
+    ...S.map((s) => rbox(1.4, 0.9, 13, 0.3).translate(43.5, by + 0.4, s * 32)),
+  ]), M.plastic, 'body', {name: 'grips and throttle housing'});
+  add(tube([[40, by - 1, 28], [36, 46, 24], [30, 25, 13], [17, 18, -3], [7, 11, -6], [2.6, 7.5, -4.6], [2.0, 5.6, -4.05]], 0.45, 8), M.plastic, 'piece', {name: 'throttle cable', piece: 'cable'});
 
   for (const it of items) {
     it.mesh.castShadow = it.mesh.receiveShadow = false; // the floor shader draws the contact shadow
