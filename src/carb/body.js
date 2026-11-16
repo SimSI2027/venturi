@@ -26,18 +26,19 @@ export function buildBody(index) {
   const {cast, machined, bore, steel, brass} = A.M;
   const g = [];
   // main block round the bore and the slide tower above it (tower wider for the rollers' rails)
-  g.push(blockX(-2.9, 2.9, -2.9, 2.6, -3.2, 2.6, BORE_R));
+  g.push(blockX(-2.9, 2.9, -2.85, 2.6, -3.2, 2.6, BORE_R));
   g.push(blockX(-3.25, 3.25, -2.2, 4.45, -2.0, 1.0, BORE_R + 0.05, 0.6));
   // bosses: throttle shaft both sides, pilot air face, starter plunger, hot start, pilot screw, sensor seat
-  g.push(orient(cylY(1.05, 0, 0.5), [0, 0, 1], [0.8, 2.55, 3.1]));
+  // (the +Z shaft boss and the pilot air face stop short so the sensor O-ring 62 and diaphragm 78 show on them)
+  g.push(orient(cylY(1.05, 0, 0.15), [0, 0, 1], [0.8, 2.55, 3.1]));
   g.push(orient(cylY(1.05, 0, 0.5), [0, 0, -1], [0.8, 2.55, -3.1]));
-  g.push(orient(cylY(1.45, 0, 0.3), [0, 0, 1], [1.6, -1.4, 2.85]));
+  g.push(orient(cylY(1.45, 0, 0.2), [0, 0, 1], [1.6, -1.4, 2.85]));
   g.push(orient(cylY(0.72, 0, 0.55), [0, 0, 1], [-2.4, -1.2, 2.85]));
   g.push(cylY(0.62, 2.4, 3.9).translate(2.1, 0, 1.6));
-  g.push(cylY(0.5, -3.35, -2.4).translate(3.35, 0, 0));
+  g.push(cylY(0.5, -3.25, -2.4).translate(3.35, 0, 0)); // pilot screw boss: its O-ring (51) shows under the face
   g.push(rbox(1.2, 1.6, 1.2, 0.25).translate(3.1, -2.2, 0));
-  // float chamber mating flange (machined face below)
-  g.push(rbox(6.6, 0.35, 6.1, 0.12).translate(-0.2, -2.78, 0));
+  // float chamber mating flange: its face at y -2.85 sits on the bowl gasket (25, y -2.95..-2.85)
+  g.push(rbox(6.6, 0.35, 6.1, 0.12).translate(-0.2, -2.675, 0));
   // spigot ridge and the projection that keys into the joint slot
   g.push(rbox(0.6, 0.5, 0.6, 0.12).translate(3.6, 2.55, 0));
   const casting = mk(merge(g), cast);

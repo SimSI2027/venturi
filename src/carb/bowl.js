@@ -21,7 +21,7 @@ export function buildBowl(index) {
   const g = merge([
     walls, floor,
     ear(x0 + 0.35, -z + 0.35), ear(x1 - 0.35, -z + 0.35), ear(x0 + 0.35, z - 0.35), ear(x1 - 0.35, z - 0.35),
-    cylY(1.45, -8.2, y0 + 0.1).translate(-2.0, 0, 0),
+    cylY(1.45, -8.0, y0 + 0.1).translate(-2.0, 0, 0), // pump housing: its face sits on the diaphragm (pump.js)
     cylY(0.95, y0 - 0.15, y0 + 0.3).translate(-0.2, 0, 0),
     cylY(0.45, y0 - 0.25, y0 + 0.3).translate(1.6, 0, 1.0),
     orient(cylY(0.5, 0, 0.35), [0, 0, 1], [2.3, -3.9, z - 0.1]),
@@ -36,6 +36,7 @@ export function buildBowl(index) {
   A.add(part([0, y1 - 0.6, 0], ...[[x0 + 0.35, -z + 0.35], [x1 - 0.35, -z + 0.35], [x0 + 0.35, z - 0.35], [x1 - 0.35, z - 0.35]].map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
   A.add(part([0.8, -6.8, -z - 0.3], mk(orient(merge([cylY(0.32, -0.2, 0), screwY(0.6, 0.18, 0.18, 0.01)]), [0, 0, 1]), steel)), '26', {ex: [0, 0, -2.4], order: 0.1, axis: [0, 0, -1]});
   A.add(part([-0.2, y0 - 0.2, 0], mk(merge([hexY(0.8, -0.35, 0), screwY(0.4, 0.62, 0.62, 0.01).rotateX(Math.PI)]), machined)), '38', {ex: [0, -3.4, 0], order: 0.1});
-  A.add(part([-0.2, y0 - 0.17, 0], mk(oring(0.66, 0.06), rubber)), '37', {ex: [0, -2.4, 0], order: 0.15});
+  // 37 O-ring under the plug's hex flange, wider than the hex so its black edge shows
+  A.add(part([-0.2, y0 - 0.17, 0], mk(oring(0.82, 0.06), rubber)), '37', {ex: [0, -2.4, 0], order: 0.15});
   return A;
 }

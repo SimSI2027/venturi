@@ -14,13 +14,14 @@ export function buildSensor(index) {
   const coupler = rbox(1.1, 1.5, 0.9, 0.15).translate(4.9, -2.6, 1.7);
   A.add(part([0.8, 2.55, 3.35], mk(head, plastic), mk(lead, wire), mk(coupler, grey)), '47', {ex: [0, 1.8, 3.0], order: 0});
   A.add(part([-0.3, 3.4, 4.12], mk(orient(screwY(0.9, 0.24, 0.13, 0.18), [0, 0, -1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});
-  A.add(part([0.8, 2.55, 3.3], mk(oring(0.6, 0.06).rotateX(Math.PI / 2), rubber)), '62', {ex: [0, 1.8, 1.6], order: 0.1});
-  // 59 cover 1, 61 gasket, 60 cover 2, 55 screws: a cover plate below the sensor
-  A.add(part([-1.5, 0.7, 3.25], mk(plateXY(2.4, 2.1, 0.3, 0.4), plastic)), '59', {ex: [-1.6, -0.6, 2.2], order: 0.35});
-  A.add(part([-1.5, 0.7, 3.06], mk(plateXY(2.2, 1.9, 0.09, 0.35, [[0, 0, 0.6]]), rubber)), '61', {ex: [-1.6, -0.6, 1.0], order: 0.45});
+  // 62 O-ring: at the rim of the sensor's seat, between the body's shaft boss and the sensor head
+  A.add(part([0.8, 2.55, 3.3], mk(oring(1.0, 0.06).rotateX(Math.PI / 2), rubber)), '62', {ex: [0, 1.8, 1.6], order: 0.1});
+  // 59 cover 1, 61 gasket, 60 cover 2, 55 screws: a cover plate below the sensor, the gasket on the body face
+  A.add(part([-1.5, 0.7, 3.15], mk(plateXY(2.4, 2.1, 0.3, 0.4), plastic)), '59', {ex: [-1.6, -0.6, 2.2], order: 0.35});
+  A.add(part([-1.5, 0.7, 2.95], mk(plateXY(2.3, 2.0, 0.1, 0.38, [[0, 0, 0.6]]), rubber)), '61', {ex: [-1.6, -0.6, 1.0], order: 0.45});
   A.add(part([-1.5, 2.15, 3.2], mk(plateXY(1.6, 0.7, 0.2, 0.2), plastic)), '60', {ex: [-2.2, 1.0, 2.6], order: 0.3});
   const scr = orient(screwY(0.8, 0.2, 0.11, 0.14), [0, 0, 1]);
-  A.add(part([-1.5, 0.7, 3.4], mk(scr, zinc, -0.85, 0.7, 0), mk(scr.clone(), zinc, 0.85, -0.7, 0)), '55', {ex: [-1.6, -0.6, 4.0], order: 0.2});
+  A.add(part([-1.5, 0.7, 3.3], mk(scr, zinc, -0.85, 0.7, 0), mk(scr.clone(), zinc, 0.85, -0.7, 0)), '55', {ex: [-1.6, -0.6, 4.0], order: 0.2});
   // 46 carburetor switch with the throttle stop screw assembly: switch body, wire stub, long stop screw and knob
   const sw = merge([rbox(1.5, 1.3, 1.0, 0.25), orient(cylY(0.3, 0, 0.5), [1, 0, 0], [0.7, 0.2, 0])]);
   const stop = merge([orient(screwY(2.8, 0.14, 0.14, 0.01), [0.25, 1, 0]), orient(cylY(0.42, -0.4, 0), [0.25, 1, 0])]);
