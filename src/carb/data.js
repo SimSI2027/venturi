@@ -101,10 +101,10 @@ export const PIECES = {
   '1-mainjet': {piece: 'main jet', role: 'main jet (the manual lists #158; this fiche has no reference of its own for it, its #100 jet is reference 20). Check the number stamped on your jet.', group: 'jets', fits: '17', step: 22, specs: ['main_jet']},
 };
 
-export const CONFLICT_20 = 'Fiche: JET, MAIN (#100). Manual: main jet #158, pilot air jet #100. Shown here as the pilot air jet (#100, in the bell mouth); the #158 main jet has no reference of its own on this fiche. Check the number stamped on your jet.';
+export const CONFLICT_20 = 'Fiche: JET, MAIN (#100). Manual: main jet #158, pilot air jet #100. Shown here as the pilot air jet (#100, in the air-box spigot); the #158 main jet has no reference of its own on this fiche. Check the number stamped on your jet.';
 
 // --- the 13 groups, in the manual's disassembly order. dir: the way the group really comes off, carb space
-// (+X toward the engine, -X the bell mouth toward the air box, +Y up, +Z the throttle sensor side).
+// (+X the spigot toward the engine, -X the spigot toward the air box, +Y up, +Z the throttle sensor side).
 export const GROUPS = [
   {key: 'hoses', label: 'Hoses', dir: [0, -1, 0]},
   {key: 'sensor', label: 'Sensor', dir: [0, 0.3, 1]},
