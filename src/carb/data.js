@@ -171,7 +171,7 @@ export const STEPS_B = [
 // Section C: the notes the page shows at the matching step. at: {mode: 'teardown'|'rebuild'|'atv', step}
 // (rebuild steps are numbered in rebuild order: rebuild n = tear-down step 28 - n).
 export const NOTES_C = [
-  {key: 'pilot-turns', at: [{mode: 'teardown', step: 1}, {mode: 'rebuild', step: 1}], text: 'Before disassembly: count and write down the pilot screw turns from seated.'},
+  {key: 'pilot-turns', at: [{mode: 'teardown', step: 1}], text: 'Before disassembly: count and write down the pilot screw turns from seated.'},
   {key: 'clean', at: [{mode: 'rebuild', step: 1}], text: 'Clean in petroleum-based solvent only, no caustic cleaner; blow out all passages and jets with compressed air.'},
   {key: 'clip', at: [{mode: 'rebuild', step: 16}], text: 'Jet needle clip: groove 4.'},
   {key: 'float', at: [{mode: 'rebuild', step: 8}], text: 'Float height 8.0 mm, carburetor upside down, gasket removed, float arm resting on the needle valve without compressing it; adjust by bending the tang.'},
