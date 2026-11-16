@@ -194,6 +194,9 @@ export function buildBody(index) {
   cupS.holes.push(rpoly(inset(SHIELD, 0.35), 0.21, new THREE.Path()));
   // run 11: bevel 0.1 (was 0.3): on the 0.35 wall a 0.3 bevel from both the outline and the hole crossed, and the
   // cup triangulated as a solid face over the throttle wheel at the cover's plane (since run 9)
+  // run 12 (item 6): the 2 cover bolt bosses in the housing, where the cover's bolts (70, linkage.js) go in: the upper one
+  // at the engine side, the lower one in the lobe toward the air box; hollow, from the floor out to the cover's gasket face
+  for (const [bx, by] of [c3(495, 160), c3(345, 445)]) g.push(orient(tubeY(0.5, 0.2, 0, -CUPZ - TZ - 0.1), [0, 0, -1], [bx, by, -TZ]));
   g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 12, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
@@ -256,9 +259,11 @@ export function buildBody(index) {
   // run 11 (item 8, mine_4 with the cover off): 1 round wheel 40 across (68 px at 3.12 px/mm, 8% off for the wheel
   // standing nearer that camera), 6 thick, 2 cable grooves round its rim and 2 cable slots, each with its barrel
   // pocket; an arm off the hub, down toward the engine, its pin holding the return spring (Keihin 14) under the wheel
-  const WR = mm(20), WT = mm(6), WZ = -3.8; // radius, thickness, the wheel's inner face
-  const prof = [[0, 0], [0, WR - 0.05], [0.04, WR], [0.1, WR], [0.12, WR - 0.12], [0.22, WR - 0.12], [0.24, WR], [0.32, WR], [0.34, WR - 0.12], [0.44, WR - 0.12], [0.46, WR], [WT - 0.04, WR], [WT, WR - 0.05], [WT, 0]];
-  const wheel = merge([latheY(prof, 64), cylY(0.48, WT, WT + 0.05), cylY(0.48, -0.12, 0)]);
+  const WR = mm(20), WT = mm(4.2), WZ = -3.8; // radius, thickness, the wheel's inner face (run 12: 4.2 thick with the bushing 1.4 proud, as before 6)
+  // run 12 (item 6, cmp_4 and mine_4): pale cream (#d9d2b0), 1 stepped rim (full radius for the first 0.2, then 0.15 down),
+  // a raised centre bushing with the shaft's end in it
+  const prof = [[0, 0], [0, WR - 0.05], [0.04, WR], [0.2, WR], [0.2, WR - 0.15], [WT - 0.04, WR - 0.15], [WT, WR - 0.2], [WT, 0]];
+  const wheel = merge([latheY(prof, 64), cylY(0.85, WT - 0.02, WT + 0.13, 0.04), cylY(0.42, WT + 0.12, WT + 0.17, 0.02), cylY(0.48, -0.12, 0)]);
   const SLOTS = [0.38, -0.84]; // the 2 cable slots (rad, from +X): mine_4 shows one at the air-box side, a little up
   const slots = merge(SLOTS.flatMap((a) => [
     rbox(0.5, WT + 0.02, 0.2, 0.04).translate(WR - 0.2, WT / 2, 0).rotateY(-a),
@@ -268,7 +273,10 @@ export function buildBody(index) {
   const aL = Math.hypot(ARM[0] - SHX, ARM[1] - SHY), aA = Math.atan2(ARM[1] - SHY, ARM[0] - SHX);
   const arm = merge([rbox(aL, 0.42, 0.12, 0.05).translate(aL / 2, 0, 0), cylY(0.4, -0.06, 0.06).rotateX(Math.PI / 2)]).rotateZ(aA).translate(0, 0, WZ + 0.07);
   const apin = orient(cylY(0.09, 0, 0.32), [0, 0, -1], [ARM[0] - SHX, ARM[1] - SHY, WZ + 0.07]);
-  const pulley = mk(orient(wheel, [0, 0, -1], [0, 0, WZ]), brass);
+  const cream = A.M.plastic.clone();
+  cream.color.set(0xd9d2b0); // pale cream, as the owner's photos show it (run 11's brass was too saturated)
+  cream.roughness = 0.55;
+  const pulley = mk(orient(wheel, [0, 0, -1], [0, 0, WZ]), cream);
   A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(merge([arm, apin]), steel)), 'K12');
   // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
   const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
