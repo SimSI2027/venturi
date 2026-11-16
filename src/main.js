@@ -344,7 +344,7 @@ async function main() {
   }
 
   // --- the ATV prop: each mesh's way off (off 0 home, 1 away), its opacity and a brass glow (the step's piece)
-  const ATV_DIR = new THREE.Vector3(1, 0.36, -0.95); // the photo's front three-quarter, from the front left
+  const ATV_DIR = new THREE.Vector3(1, 0.5, -0.95); // the photo's front three-quarter, from the front left, 20 deg up
   const GHOST = 0.38; // OFF THE ATV: the quad at 38% so the carburetor reads in place
   // outward from the carburetor, but never toward the intro's camera (what flies that way is turned aside and back)
   const toCam = ATV_DIR.clone().normalize();
