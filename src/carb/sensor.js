@@ -68,7 +68,9 @@ export function buildSensor(index) {
   const in46 = (p) => [p[0] - KX, p[1] - KY, p[2] - KZ];
   const sLead = hose([[3.95, 6.3, 4.6], [3.9, 7.5, 4.9], [2.4, 8.5, 5.0], [-0.5, 9.0, 4.9], [-3.5, 9.0, 4.8], [-6.0, 9.0, 4.9], [-8.4, 9.3, 4.7]].map(in46), 0.12, 0.001);
   const sConn = coupX(2.0).translate(...in46([-9.5, 9.4, 4.6]));
-  A.add(part([KX, KY, KZ], mk(sw, plastic), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
+  // run 13 (item 8, line 6): 2 small screw heads on the switch body's air-box face
+  const swScr = merge([0.9, 1.7].map((y) => orient(screwY(0.3, 0.12, 0.06, 0.07), [1, 0, 0], [0.32, y + 0.1, 0.28])));
+  A.add(part([KX, KY, KZ], mk(sw, plastic), mk(swScr, zinc), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
   // run 11 (item 3): pieces of 46 from the Keihin diagram: on the stop screw's shank between the housing and the
   // knob the washer (91) and the spring (92); the switch's screw into plate 63 (177)
   const SOPT = {ex: [2.6, -0.6, 0.6], axis: [1, 0, 0]};

@@ -182,11 +182,11 @@ export function buildBody(index) {
   const CX = (TX0 + TX1) / 2;
   for (const sx of [-1, 1]) g.push(cylY(0.5, 4.9, TT, 0.1).translate(CX + sx * 2.35, 0, 0));
   for (const z of [-1.4, -2.5]) g.push(rbox(0.5, 3.6, 0.36, 0.12).translate(TX0 - 0.1, 4.6, z));
-  for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.45, 0.2, 0, 0.35), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up
+  for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.55, 0.25, 0, 0.55), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up; run 13 (item 8, line 3): 0.55 radius, 0.55 out
   for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
   // run 9 (carb_8): the top cover's bolt lug on the tower's air-box face, a tapered block under the cover's tab
   // (run 9 landmarks: under the top cover's lowered air-box bolt, top.js; run 10: 0.39 higher with it)
-  g.push(rbox(0.75, 1.3, 1.5, 0.3).translate(CX + 2.15, TT - 1.56, 0), rbox(0.5, 0.8, 1.1, 0.2).translate(CX + 2.45, TT - 1.31, 0));
+  g.push(rbox(0.9, 1.5, 1.9, 0.3).translate(CX + 2.2, TT - 1.66, 0), rbox(0.6, 0.9, 1.3, 0.2).translate(CX + 2.55, TT - 1.36, 0)); // run 13 (item 8, line 4): a bigger lug
   // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
   // the cover (65) closes it
   // run 9 (carb_8): the wheel housing reads curved from the air-box end: its outer rim rounded off (bevel 0.3)
@@ -242,6 +242,8 @@ export function buildBody(index) {
   const SP = -ENG_FACE, RE = mm(24), RA = mm(25), BD = mm(1), FL = mm(3), AF = BODY_AF, AD = ADAPT;
   const spigots = mk(merge([
     latheX([[AF - 0.05, BORE_R + 0.05], [AF - 0.05, RA + FL - 0.03], [AF, RA + FL], [AF + mm(2.5), RA + FL], [AF + mm(2.5) + 0.03, RA + FL - 0.05], [AF + mm(2.5) + 0.05, RA], [AD - 0.3, RA], [AD - 0.25, RA + BD], [AD - 0.08, RA + BD], [AD - 0.03, RA], [AD, RA - 0.04], [AD, BORE_R + 0.05], [AF - 0.05, BORE_R + 0.05]]),
+    // run 13 (item 8, lines 21 44 54 71): a 3 mm flange step at the engine spigot's root, as the adapter has
+    latheX([[-2.5, RE - 0.1], [-2.5 - mm(2.5), RE - 0.1], [-2.5 - mm(2.5), RE + FL - 0.05], [-2.5 - mm(2.5) + 0.03, RE + FL], [-2.5, RE + FL]]),
     latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),
   ]), cast);
   // run 12 (item 7, mine_1): about 10 radial windows round the adapter ring's end face (dark slots, 3.4 x 1.6 mm, set in the

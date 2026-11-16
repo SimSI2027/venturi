@@ -4,6 +4,7 @@
 import {Asm} from '../lib/asm.js';
 import {merge, cylY, tubeY, hexY, latheY, orient, oring, springY, mk, part} from './kit.js';
 import {STARTER} from './body.js';
+import {knurlX} from '../lib/geo.js';
 
 export function buildStarters(index) {
   const A = new Asm('starters', 'Starters', {offset: [-1.5, 1.0, 3.0], index, axis: [0, 0, 1]});
@@ -23,7 +24,7 @@ export function buildStarters(index) {
   A.add(part([CX, CY, CF + 0.66], mk(oring(0.23, 0.06).rotateX(Math.PI / 2), rubber)), '35', {ex: [0, 0, 1.1], order: 0.5});
   // hot start: plunger and springs inside the vertical boss, the black knurled cap screwed on top (boss and cap 0.20 H)
   const {x: HX, z: HZ, top: HT} = STARTER;
-  A.add(part([HX, HT - 0.05, HZ], mk(merge([cylY(0.74, 0, 0.5, 0.06, 16), cylY(0.55, 0.45, 0.6), tubeY(0.18, 0.08, 0.6, 0.8)]), plastic)), '54', {ex: [0, 6.2, 0], order: 0, axis: [0, 1, 0]});
+  A.add(part([HX, HT - 0.05, HZ], mk(merge([knurlX(0, 0.5, 0.74, 28, 0.045, 0.06).rotateZ(Math.PI / 2), cylY(0.55, 0.45, 0.6), tubeY(0.18, 0.08, 0.6, 0.8)]), plastic)), '54', {ex: [0, 6.2, 0], order: 0, axis: [0, 1, 0]});
   A.add(part([HX, HT - 0.9, HZ], mk(springY(0.9, 0.3, 0.05, 6), steel)), '64', {ex: [0, 5.0, 0], order: 0.15, axis: [0, 1, 0]});
   A.add(part([HX, HT - 0.8, HZ], mk(springY(0.7, 0.16, 0.035, 6), steel)), '56', {ex: [0, 4.0, 0], order: 0.25, axis: [0, 1, 0]});
   A.add(part([HX, HT - 1.4, HZ], mk(merge([latheY([[-0.2, 0], [-0.2, 0.18], [0, 0.26], [0.4, 0.26], [0.4, 0.12], [1.4, 0.12], [1.4, 0]])]), brass), mk(cylY(0.2, -0.32, -0.18), rubber)), '53', {ex: [0, 2.7, 0], order: 0.35, axis: [0, 1, 0]});

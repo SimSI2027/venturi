@@ -25,6 +25,9 @@ export function buildTop(index) {
     slabY([[-2.0, -2.2], [2.0, -2.2], [2.0, 2.2], [-2.0, 2.2]], 0.62, 0.42, null, 0.85),
     slabY([[-3.15, -0.62], [-1.85, -0.62], [-1.85, 0.62], [-3.15, 0.62]], 0.46, 0.34, null, 0.6),
     slabY([[1.85, -0.62], [3.2, -0.62], [3.2, 0.62], [1.85, 0.62]], 0.46, 0.34, null, 0.6),
+    // run 13 (item 8, line 49): a smaller third tier on the casting and 2 ribs along the bore, so it is not a plain block
+    slabY([[-1.3, -1.5], [1.3, -1.5], [1.3, 1.5], [-1.3, 1.5]], 0.86, 0.14, null, 0.5),
+    rbox(3.6, 0.2, 0.22, 0.06).translate(0, 0.9, -1.85), rbox(3.6, 0.2, 0.22, 0.06).translate(0, 0.9, 1.85),
     cylY(0.3, 0.4, 0.75).translate(1.25, 0, 1.5),
     cylY(0.45, 0, 0.55).translate(E[0][0], 0, 0),
     // run 9 landmarks (carb_8): the air-box bolt sits on a lug 1.25 down the tower's face, under the cover's tab
