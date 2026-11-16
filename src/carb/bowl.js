@@ -45,7 +45,7 @@ const DEEP = [[-2.78, -2.7], [-1.09, -2.75], [0.43, -2.7], [0.78, -2.4, 0.35], [
 
 export function buildBowl(index) {
   const A = new Asm('bowl', 'Bowl', {offset: [0, -11.0, 0], index});
-  const {cast, machined, rubber, steel, zinc} = A.M;
+  const {cast, machined, rubber, steel, zinc, brass} = A.M;
   const BOX = inset(RIM, 0.1);
   const [PX, PZ] = PUMP, [DX, DZ] = DRAIN, [QX, QZ] = PLUG, [SX, SZ] = DSCR;
   // the plug boss: round under the hex plug; the cast passage curls round it from the pump side past the air-box
@@ -87,7 +87,7 @@ export function buildBowl(index) {
   A.add(part([0, 0, 0], mk(merge([g, iboss]), cast), mk(merge([face, nipple]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   // run 11 (item 3): Keihin pieces of reference 1 with their own meshes: the fuel joint (83) with its 3 O-rings (85)
   // in the boss, the pump rod (72) with its U-ring (52) on the guide's top
-  A.add(part([0, 0, 0], mk(inlet, steel)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(inlet, brass)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});
   A.add(part([1.0, IY, z0], mk(merge([0.3, 0.45, 0.6].map((dz) => oring(0.38, 0.045).rotateX(Math.PI / 2).translate(0, 0, dz))), rubber)), 'K85', {ex: [0, 0, 2.6], order: 0.25, axis: [0, 0, 1]});
   A.add(part([0, 0, 0], mk(rod, steel)), 'K72', {ex: [0, 0.6, 0], order: 0.35, axis: [0, 1, 0]});
   A.add(part([1.57, BY.lip - 0.4, -4.09], mk(tubeY(0.17, mm(1.0), 0, 0.12, 0.02), rubber)), 'K52', {ex: [0, 1.4, 0], order: 0.4, axis: [0, 1, 0]});
