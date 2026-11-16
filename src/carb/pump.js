@@ -4,13 +4,16 @@
 // reaches out past the bowl's cable-side edge; the adjusting screw (8, fits 45) goes up through its far ear with its
 // washers (6, 7). The pump rod now rides with the bowl and its lever with the body. Built in carb space.
 import {Asm} from '../lib/asm.js';
-import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
+import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, rpoly, rbox, extrudeXY, mk, part, mm} from './kit.js';
 import {PUMP, PYW} from './bowl.js';
+import {inset} from './body.js';
 
 const [PX, PZ] = PUMP, PY = PYW - 0.2; // the cover's top: gasket and diaphragm fill the 0.2 up to the housing's face
-// the guard plate's outline (x, z), traced from carb_12: round the cover's engine-side half, out past the cable side
-const PLATE45 = [[-1.3, -2.45], [-2.4, -2.75], [-3.1, -3.3, 0.4], [-3.3, -4.3, 0.45], [-2.9, -5.1, 0.4], [-1.8, -5.45, 0.35], [-0.6, -5.38, 0.4], [0.1, -4.7, 0.3], [0.3, -3.6, 0.3], [-0.2, -2.7, 0.3]].map(([x, z, r]) => [x + 1.67, z - 0.3, r]); // (landmarks: with the pump, 0.9 toward the air box)
-const ADJ = [1.72, -4.9]; // the adjusting screw (8) in the plate's ear at its air-box corner (carb_12; run 10: with the pump)
+// run 10 (item 6): the guard plate's outline (x, z): round under the whole pump cover (r 2.15), then a fan out to the
+// cable side whose end reaches 85 mm (7.97) from the bowl's centre (-0.46, -0.26), toward carb_12's outer tip
+const arcP = (cx, cz, r, a0, a1, n) => Array.from({length: n}, (_, i) => { const a = a0 + ((a1 - a0) * i) / (n - 1); return [cx + Math.cos(a) * r, cz + Math.sin(a) * r, 0.25]; });
+const SHIELD45 = [...arcP(PX, PZ, 2.15, -0.25 * Math.PI, 1.25 * Math.PI, 14), [-1.7, -6.6, 0.5], [-2.6, -7.85, 0.45], [-1.8, -8.15, 0.6], [-0.81, -8.25, 0.8], [0.2, -8.15, 0.6], [1.0, -7.9, 0.45], [1.85, -6.4, 0.5]];
+const ADJ = [1.16, -5.88]; // the adjusting screw (8) up through the fan near its air-box edge (item 5: carb_12's place from the screws)
 
 export function buildPump(index) {
   const A = new Asm('pump', 'Pump', {offset: [0, -9.0, -3.0], index, axis: [0, -1, 0]});
@@ -31,15 +34,21 @@ export function buildPump(index) {
   A.add(part([PX, PY + 0.1, PZ], mk(merge([tubeY(1.72, 0.2, 0, 0.1), cylY(0.32, -0.2, 0.15)]), rubber)), '28', {ex: [0, -0.9, 0], order: 0.45});
   // 31 O-ring: run 9, seated on the bowl lobe's face beside the diaphragm, round the pump's outlet passage
   A.add(part([PX + 1.3, PYW - 0.06, PZ + 0.6], mk(oring(0.22, 0.06), rubber)), '31', {ex: [0.8, -0.3, 0.8], order: 0.5});
-  // 45 the stamped guard plate: flat, a raised pressed panel inside its edge and a pressed rib, a hole the cover's
-  // dome shows through, under the cover's ears (the 3 cover screws go through it)
-  const ps = rpoly(PLATE45.slice().reverse(), 0.3);
-  ps.holes.push(circ(PX, PZ, 1.55));
-  const flat = extrudeXY(ps, PT, 0.03, 10, {free: true});
-  const inner = rpoly([[-2.75, -4.2, 0.3], [-2.45, -5.05, 0.3], [-1.6, -5.3, 0.3], [-0.75, -5.2, 0.3], [-1.2, -4.85, 0.2], [-2.05, -4.55, 0.2]].map(([x, z, r]) => [x + 1.52, z - 0.3, r]).reverse(), 0.2);
-  const pressed = extrudeXY(inner, mm(1.0), 0.03, 8, {free: true}).translate(0, 0, PT / 2 + mm(0.4));
-  const plate = merge([flat, pressed]).rotateX(Math.PI / 2); // shape y -> z, pressed side down
-  A.add(part([0, PY - 0.4 - PT / 2, 0], mk(plate, steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});
+  // 45 the guard plate (run 10, item 6): 1 solid stamped steel shield, every piece a closed solid, 0 holes: the flat
+  // plate under the cover's ears (the 3 cover screws through it), a dish pressed down under the cover's dome, a rim
+  // bent down round its whole edge, and 5 pressed ribs fanning out along the fan end
+  const flat = extrudeXY(rpoly(SHIELD45, 0.3), PT, 0.03, 10, {free: true}).rotateX(Math.PI / 2);
+  const ring = rpoly(SHIELD45, 0.3);
+  ring.holes.push(rpoly(inset(SHIELD45, 0.13), 0.2, new THREE.Path()));
+  const rim = extrudeXY(ring, 0.22, 0.03, 10, {free: true}).rotateX(Math.PI / 2).translate(0, -PT / 2 - 0.09, 0);
+  // (the cover's dome reaches 0.09 under the plate's origin, its centre nub 0.39: the dish holds both, 0.48 deep)
+  const dish = latheY([[-0.48, 0], [-0.48, 0.55], [-0.42, 0.8], [-0.18, 1.3], [-0.1, 1.42], [-0.05, 1.42], [-0.05, 0]]).translate(PX, 0, PZ);
+  const R0 = [-0.6, -5.75];
+  const ribs = merge([-2.05, -1.3, -0.55, 0.2, 0.9].map((ex) => {
+    const dx = ex - R0[0], dz = -7.75 - R0[1], L = Math.hypot(dx, dz);
+    return rbox(L, 0.09, 0.2, 0.04).rotateY(Math.atan2(-dz, dx)).translate((R0[0] + ex) / 2, -PT / 2 - 0.03, (R0[1] - 7.75) / 2);
+  }));
+  A.add(part([0, PY - 0.4 - PT / 2, 0], mk(merge([flat, rim, dish, ribs]), steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});
   // 8 adjusting screw up through the plate's ear into the lobe, a knurled head under it, washers 6 and 7 between
   const yb = PY - 0.4 - PT; // the plate's underside
   const adj = merge([screwY(1.0, 0.13, 0.13, 0.01).rotateX(Math.PI), cylY(0.3, -0.32, 0)]);
