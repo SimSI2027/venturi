@@ -265,7 +265,61 @@ export function buildAtv() {
   };
   add(shell(seat, 36, 14, 2), M.seat, 'plastic', {name: 'seat', lift: [-18, 55, 0], t0: 1.2});
 
-  // @frame
+  // --- bare-aluminium frame, tubes 0.02 L across; its lower rails are the lowest point, 0.06 L off the ground
+  const lowC = LOW_Y + 0.01 * L;
+  const frame = [];
+  for (const s of S) {
+    frame.push(
+      tube([[46, 28, s * 6], [36, 22, s * 11], [14, 18, s * 12], [-10, 18, s * 12], [-30, 17, s * 11], [-56, 20, s * 10], [-74, 24, s * 9]]),
+      tube([[47, 26, s * 5], [50, 6, s * 10], [48, -16, s * 12], [40, -30, s * 12], [20, lowC, s * 12], [-20, lowC, s * 12], [-30, -27, s * 12]]),
+      tube([[-30, -27, s * 12], [-32, -4, s * 12], [-30, 17, s * 11]]),
+      tube([[-32, -4, s * 12], [-52, 8, s * 10.5], [-56, 20, s * 10]]),
+    );
+  }
+  frame.push(
+    orient(cylY(2.6, -7, 7, 0.4, 20), [-0.3, 1, 0], [47, 27, 0]),
+    ...[[-30, 17, 11], [-20, lowC, 12], [48, -16, 12], [-56, 20, 10], [20, lowC, 12]].map(([x, y, z]) => tube([[x, y, -z], [x, y, z]])),
+  );
+  add(merge(frame), M.alu, 'body', {name: 'frame'});
+  // the low front bumper hoop, 0.20 L wide
+  const bw = 0.1 * L;
+  add(merge([
+    tube([[46, -29, -12], [68, -27, -15], [80, -25, -bw], [84.5, -16, -bw], [85, -9, -12], [85.5, -7.5, 0], [85, -9, 12], [84.5, -16, bw], [80, -25, bw], [68, -27, 15], [46, -29, 12]]),
+    tube([[83.5, -20, -bw], [83.5, -20, bw]], 1.3),
+  ]), M.alu, 'body', {name: 'bumper'});
+  // double A-arms each side, a knuckle and hub inside the wheel
+  for (const s of S) {
+    add(merge([
+      tube([[52, -8, s * 11], [57, -10, s * 36]], 1.3, 8), tube([[38, -8, s * 12], [57, -10, s * 36]], 1.3, 8),
+      tube([[54, -27, s * 12], [58, -28, s * 37]], 1.3, 8), tube([[36, -27, s * 12], [58, -28, s * 37]], 1.3, 8),
+      cylY(2.0, -30, -8, 0.3, 16).translate(58, 0, s * 38),
+      at(cylY(3, -2.5, 2.5, 0.4, 20), FX, FY, s * 39.5, Math.PI / 2, 0, 0),
+    ]), M.alu, 'body', {name: 'A-arms'});
+  }
+  // two front shocks leaning in 30 deg (pale springs), one rear monoshock on the swingarm
+  const shock = (bot, top, R, name) => {
+    const d = V(...top).sub(V(...bot));
+    const len = d.length();
+    add(orient(merge([cylY(0.9, 0, len, 0.2, 12), cylY(1.9, len * 0.55, len * 0.97, 0.3, 16), cylY(1.4, 0, 1.5, 0.3, 12)]), d.toArray(), bot), M.shock, 'body', {name});
+    add(orient(coil(len * 0.62, R, 0.42, 7), d.toArray(), V(...bot).addScaledVector(d, 0.07).toArray()), M.spring, 'body', {name: name + ' spring'});
+  };
+  const lean = Math.tan(THREE.MathUtils.degToRad(30));
+  for (const s of S) shock([57, -26, s * 30], [50, 7.5, s * (30 - 33.5 * lean)], 2.5, 'front shock');
+  shock([-38, -19, 0], [-27, 12, 0], 2.9, 'rear shock');
+  // swingarm to the solid rear axle
+  add(merge([
+    ...S.map((s) => tube([[-28, -22, s * 10], [-45, -21.5, s * 12], [RX, RY, s * 12]], 2.4)),
+    tube([[-38, -21, -12], [-38, -21, 12]], 1.8),
+    at(cylY(2.6, -12, 12, 0.4, 20), -28, -22, 0, Math.PI / 2, 0, 0),
+    at(cylY(4.2, -13, 13, 0.5, 24), RX, RY, 0, Math.PI / 2, 0, 0),
+  ]), M.alu, 'body', {name: 'swingarm'});
+  add(at(cylY(1.9, -(RZ - RW * 0.3), RZ - RW * 0.3, 0.3, 20), RX, RY, 0, Math.PI / 2, 0, 0), M.steel, 'body', {name: 'rear axle'});
+  // two footpegs with heel guards behind them
+  const heel = (u, v) => [lerp(-11, -30, u), lerp(spl([-14, -9, -5], u), -31, v), 16 + Math.sin(Math.PI * v)];
+  add(merge([
+    ...S.map((s) => rbox(5, 2, 12, 0.6).translate(-6, -29.5, s * 20)),
+    ...S.map((s) => shell(sided(heel, s), 10, 6, 0.6)),
+  ]), M.alu, 'body', {name: 'footpegs and heel guards'});
 
   // @engine
 
