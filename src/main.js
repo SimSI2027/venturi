@@ -500,13 +500,17 @@ async function main() {
   });
 
   // --- the selected part, brought forward and spun on its own. T: 0 home, 1 in front of the camera.
-  const solo = {part: null, T: tween(0, 0.7), spin: new THREE.Quaternion(), c: new THREE.Vector3(), r: 1, drag: null};
+  // drag turns it 360 deg in SPIN_PX on both axes; the wheel zooms it (zoom, eased to zoomV); selT fades the rest to 10%
+  const SPIN = (2 * Math.PI) / 500;
+  const solo = {part: null, T: tween(0, 0.7), spin: new THREE.Quaternion(), c: new THREE.Vector3(), r: 1, drag: null, zoom: 1, zoomV: 1};
+  const selT = tween(0, 0.45);
   function select(id) {
     const p = partOf[id];
     if (!p) return;
     if (solo.part && solo.part !== p) hold(solo.T, 0);
     solo.part = p;
     solo.spin.identity();
+    solo.zoom = solo.zoomV = 1;
     // the part's centre and radius in its own space, from its meshes' hulls
     p.obj.updateMatrixWorld(true);
     const inv = p.obj.matrixWorld.clone().invert();
@@ -551,6 +555,7 @@ async function main() {
     guide.card.classList.add('away');
   }
   addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && solo.part && solo.T.to > 0) return e.target.blur?.(), deselect(); // also from the search box
     if (e.target.closest?.('input, textarea')) return;
     if (e.key === '?') return setHelp(!helpCard.classList.contains('on'));
     if (e.key === 'Escape' && helpCard.classList.contains('on')) return setHelp(false);
@@ -602,7 +607,8 @@ async function main() {
   canvas.addEventListener('pointerdown', (e) => {
     down = {x: e.clientX, y: e.clientY, t: performance.now()};
     setNdc(e);
-    if (solo.part && solo.T.to > 0 && pick() === solo.part.obj) {
+    if (solo.part && solo.T.to > 0) {
+      // dragging anywhere on the view turns the part out in front; a tap off it sends it home (pointerup)
       solo.drag = {id: e.pointerId, x: e.clientX, y: e.clientY};
       try {
         canvas.setPointerCapture(e.pointerId);
@@ -617,16 +623,21 @@ async function main() {
     solo.drag.y = e.clientY;
     axY.set(0, 1, 0);
     axX.setFromMatrixColumn(camera.matrixWorld, 0);
-    solo.spin.premultiply(qd.setFromAxisAngle(axY, dx * 0.012)).premultiply(qd.setFromAxisAngle(axX, dy * 0.012));
+    solo.spin.premultiply(qd.setFromAxisAngle(axY, dx * SPIN)).premultiply(qd.setFromAxisAngle(axX, dy * SPIN));
     lastInput = performance.now();
   });
+  canvas.addEventListener('wheel', (e) => {
+    if (!(solo.part && solo.T.to > 0)) return;
+    e.preventDefault();
+    solo.zoom = THREE.MathUtils.clamp(solo.zoom * Math.exp(-e.deltaY * 0.0015), 0.35, 5);
+    lastInput = performance.now();
+  }, {passive: false});
   canvas.addEventListener('pointerup', (e) => {
-    const was = solo.drag;
     solo.drag = null;
     if (!down) return;
     const tap = Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6 && performance.now() - down.t < 500;
     down = null;
-    if (!tap || was) return;
+    if (!tap) return;
     setNdc(e);
     const h = pick();
     if (solo.part && solo.T.to > 0) {
@@ -754,7 +765,7 @@ async function main() {
       const a = r.dot(axX), b = r.dot(axY);
       ex0 = Math.min(ex0, a); ex1 = Math.max(ex1, a); ey0 = Math.min(ey0, b); ey1 = Math.max(ey1, b);
     }
-    const s = THREE.MathUtils.clamp(Math.min(0.78 * Math.min(uw / Math.max(ex1 - ex0, 1e-3), uh / Math.max(ey1 - ey0, 1e-3)), Math.max(uw, uh) / (2 * solo.r * sW.x)), 0.3, 80);
+    const s = solo.zoomV * THREE.MathUtils.clamp(Math.min(0.78 * Math.min(uw / Math.max(ex1 - ex0, 1e-3), uh / Math.max(ey1 - ey0, 1e-3)), Math.max(uw, uh) / (2 * solo.r * sW.x)), 0.3, 80);
     const k = ease(w);
     const sc = 1 + (s - 1) * k;
     const q = qW.clone().slerp(solo.spin.clone().multiply(qW), k);
@@ -819,7 +830,7 @@ async function main() {
   };
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
-  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), lastOl];
+  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), lastOl];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -840,18 +851,21 @@ async function main() {
     placeFloor();
     // solo: the selected part flies forward; once home again it is released
     stepT(solo.T, now);
+    solo.zoomV = Math.abs(solo.zoom - solo.zoomV) < 1e-4 ? solo.zoom : solo.zoomV + (solo.zoom - solo.zoomV) * 0.3;
     if (solo.part && solo.T.v <= 0 && solo.T.to === 0) solo.part = null;
     if (solo.part) placeSolo(solo.T.v);
 
     // dimming: a selection dims every other part; a pill dims every other group
     const sel = solo.part && solo.T.to > 0 ? solo.part : null;
+    aim(selT, sel ? 1 : 0, now);
+    const floor = 0.5 - 0.4 * stepT(selT, now); // the rest of the carburetor fades to 10% opacity
     parts.forEach((p, i) => {
       aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
       aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
       const hd = stepT(hT[i], now);
-      Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], r < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd);
+      Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], r < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd, floor);
     });
     const fl = 1 + 0.3 * THREE.MathUtils.smoothstep(st.explode, 0.5, 0.8);
     S.cool.intensity = 0.25 * S.key.intensity * fl; // the cool fill keeps 25% of the key

@@ -145,12 +145,12 @@ export class Asm {
   }
 
   /** One part's look. d: dim 0..1 (1 = 30% brightness, half opacity). rim: lift 0..1 (+15%). hide: 0..1 fade out (1 = not drawn). */
-  static setLook(part, d, rim = 0, hide = 0) {
+  static setLook(part, d, rim = 0, hide = 0, floor = 0.5) {
     part.U.dim.value = 1 - 0.7 * d;
     part.U.rim.value = rim;
     part.obj.visible = hide < 0.99;
     for (const m of part.mats) {
-      const a = (1 - 0.5 * d) * (1 - hide);
+      const a = (1 - (1 - floor) * d) * (1 - hide);
       const t = a < 0.999;
       if (m.transparent !== t) {
         m.transparent = t;
