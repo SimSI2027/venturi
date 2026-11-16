@@ -18,9 +18,9 @@ export function buildStarters(index) {
     orient(latheY([[0, 0], [0, 0.36], [0.16, 0.4], [0.24, 0.7], [0.4, 0.8], [0.55, 0.72], [0.62, 0.46], [0.64, 0]]), Z),
   ]);
   A.add(part([CX, CY, CF + 0.75], mk(pl, plastic), mk(orient(cylY(0.17, -2.65, -0.05), Z), steel)), '32', {ex: [0, 0, 5.0], order: 0.2});
-  A.add(part([CX, CY, CF - 1.0], mk(orient(springY(0.9, 0.3, 0.05, 6), Z), steel)), '33', {ex: [0, 0, 3.4], order: 0.3});
+  A.add(part([CX, CY, CF - 1.0], mk(orient(springY(0.9, 0.24, 0.05, 6), Z), steel)), '33', {ex: [0, 0, 3.4], order: 0.3});
   A.add(part([CX, CY, CF - 0.05], mk(orient(merge([tubeY(0.4, 0.2, 0, 0.25), tubeY(0.3, 0.2, 0.25, 0.45)]), Z), rubber)), '34', {ex: [0, 0, 2.2], order: 0.4});
-  A.add(part([CX, CY, CF + 0.06], mk(oring(0.62, 0.06).rotateX(Math.PI / 2), rubber)), '35', {ex: [0, 0, 1.1], order: 0.5});
+  A.add(part([CX, CY, CF + 0.66], mk(oring(0.23, 0.06).rotateX(Math.PI / 2), rubber)), '35', {ex: [0, 0, 1.1], order: 0.5});
   // hot start: plunger and springs inside the vertical boss, the black knurled cap screwed on top (boss and cap 0.20 H)
   const {x: HX, z: HZ, top: HT} = STARTER;
   A.add(part([HX, HT - 0.05, HZ], mk(merge([cylY(0.74, 0, 0.5, 0.06, 16), cylY(0.55, 0.45, 0.6), tubeY(0.18, 0.08, 0.6, 0.8)]), plastic)), '54', {ex: [0, 6.2, 0], order: 0, axis: [0, 1, 0]});

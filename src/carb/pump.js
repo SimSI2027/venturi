@@ -29,8 +29,8 @@ export function buildPump(index) {
   A.add(part([PX, PY, PZ], mk(tubeY(1.72, 1.3, 0, 0.1), rubber)), '29', {ex: [0, -2.5, 0], order: 0.3});
   A.add(part([PX, PY - 0.5, PZ], mk(springY(0.75, 0.55, 0.06, 4), steel)), '30', {ex: [0, -1.7, 0], order: 0.35});
   A.add(part([PX, PY + 0.1, PZ], mk(merge([tubeY(1.72, 0.2, 0, 0.1), cylY(0.32, -0.2, 0.15)]), rubber)), '28', {ex: [0, -0.9, 0], order: 0.45});
-  // 31 O-ring: round the rod boss under the cover
-  A.add(part([PX, PY - 0.6, PZ], mk(oring(0.4, 0.06), rubber)), '31', {ex: [0.8, -0.3, 0.8], order: 0.5});
+  // 31 O-ring: run 9, seated on the bowl lobe's face beside the diaphragm, round the pump's outlet passage
+  A.add(part([PX + 1.3, PYW - 0.06, PZ + 0.6], mk(oring(0.22, 0.06), rubber)), '31', {ex: [0.8, -0.3, 0.8], order: 0.5});
   // 45 the stamped guard plate: flat, a raised pressed panel inside its edge and a pressed rib, a hole the cover's
   // dome shows through, under the cover's ears (the 3 cover screws go through it)
   const ps = rpoly(PLATE45.slice().reverse(), 0.3);
