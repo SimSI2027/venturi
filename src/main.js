@@ -731,7 +731,15 @@ async function main() {
     if (guideLab) {
       bodyC ??= new THREE.Box3().setFromObject(partOf['1'].obj).getCenter(new THREE.Vector3());
       const away = (B.x0 + B.x1) / 2 >= S.project(bodyC).x ? 'r' : 'l';
-      order = [away, 't', 'b'];
+      // above or below: on the side away from the part's seat, so the card never covers the seat
+      const p = partOf[hovered.userData.part];
+      const sy = p?.seat ? S.project(carb.localToWorld(p.seat.clone())).y : -Infinity;
+      order = [away, sy < (B.y0 + B.y1) / 2 ? 'b' : 't', away === 'r' ? 'l' : 'r'];
+      // above / below must also clear the header and the dock
+      const U = usable();
+      fits.t = fits.t && B.y0 - G - ch >= U.t;
+      fits.b = fits.b && B.y1 + G + ch <= U.b;
+      if (!order.some((k) => fits[k])) fits[order.slice().sort((p, q) => room[q] - room[p])[0]] = true;
     }
     const side = fits[cardPos.side] && order.includes(cardPos.side) ? cardPos.side : order.find((k) => fits[k]) || Object.keys(room).sort((p, q) => room[q] - room[p])[0];
     cardPos.side = side;
