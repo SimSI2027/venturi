@@ -8,10 +8,10 @@
 // STEPS_B by the page's tear-down step 1-29. specs: keys into SPECS (dotted for torque).
 export const PARTS = [
   {ref: 1, name: 'CARBURETOR ASSY 1', role: 'complete carburetor (body is not sold separately)', group: 'body', fits: null, step: null, specs: ['carburetor.manufacturer', 'carburetor.id_mark', 'main_air_jet', 'pilot_outlet', 'bypass_1', 'torque.joint_clamp_screw_carb_side_M5', 'torque.clamp_screw_air_duct_side_M6']},
-  {ref: 2, name: 'GASKET', role: 'top cover gasket', likely: true, group: 'top', fits: '1', step: 7},
-  {ref: 3, name: 'BOLT', role: 'top cover bolt', likely: true, group: 'top', fits: '1-top', step: 7},
+  {ref: 2, name: 'GASKET', role: 'top cover gasket', group: 'top', fits: '1', step: 7},
+  {ref: 3, name: 'BOLT', role: 'top cover bolt', group: 'top', fits: '1-top', step: 7},
   {ref: 4, name: 'SCREW', role: 'cover screw', group: 'pump', fits: '27', step: 15},
-  {ref: 5, name: 'SCREW (98502-04012)', role: 'float chamber / cover screw', likely: true, group: 'bowl', fits: '1-bowl', step: 17},
+  {ref: 5, name: 'SCREW (98502-04012)', role: 'float chamber / cover screw', group: 'bowl', fits: '1-bowl', step: 17},
   {ref: 6, name: 'WASHER, PLATE', role: 'plate washer', group: 'pump', fits: '8', step: 15},
   {ref: 7, name: 'WASHER', role: 'washer', group: 'pump', fits: '8', step: 15},
   {ref: 8, name: 'SCREW, ADJUST', role: 'adjusting screw', group: 'pump', fits: '45', step: 15, specs: ['throttle_valve_height_for_pump_timing']},
@@ -72,12 +72,12 @@ export const PARTS = [
   {ref: 62, name: 'O-RING', role: 'O-ring', group: 'sensor', fits: '47', step: 3},
   {ref: 63, name: 'PLATE', role: 'plate', group: 'sensor', fits: '46', step: 5},
   {ref: 64, name: 'SPRING, PLUNGER', role: 'plunger spring', group: 'starters', fits: '53', step: 6},
-  {ref: 65, name: 'COVER 1', role: 'throttle cable cover', likely: true, group: 'linkage', fits: '1', step: 'A4', specs: ['torque.throttle_cable_cover_bolt_M5']},
+  {ref: 65, name: 'COVER 1', role: 'throttle cable cover', group: 'linkage', fits: '1', step: 'A4', specs: ['torque.throttle_cable_cover_bolt_M5']},
   {ref: 66, name: 'GASKET', role: 'throttle cable cover gasket', likely: true, group: 'linkage', fits: '65', step: 'A4'},
   {ref: 67, name: 'SEAL', role: 'seal', group: 'linkage', fits: '65', step: 'A4'},
   {ref: 68, name: 'HOSE', role: 'hose', group: 'hoses', fits: '65', step: 2},
   {ref: 69, name: 'CLIP', role: 'hose clip', group: 'hoses', fits: '68', step: 2},
-  {ref: 70, name: 'BOLT (qty 2)', role: 'throttle cable cover bolt', likely: true, group: 'linkage', fits: '65', step: 'A4', specs: ['torque.throttle_cable_cover_bolt_M5']},
+  {ref: 70, name: 'BOLT (qty 2)', role: 'throttle cable cover bolt', group: 'linkage', fits: '65', step: 'A4', specs: ['torque.throttle_cable_cover_bolt_M5']},
   {ref: 71, name: 'PIPE', role: 'drain pipe', group: 'hoses', fits: '1-bowl', step: 1},
   {ref: 72, name: 'TUBE, FLEXIBLE VINYL', role: 'drain hose', group: 'hoses', fits: '71', step: 1},
   {ref: 73, name: 'PIPE, FUEL 1', role: 'fuel hose', group: 'hoses', fits: '1-bowl', step: 'A3'},
@@ -109,26 +109,35 @@ export const PIECES = {
   K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: null},
   K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: null},
   K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: null},
-  K36: {k: 36, of: '23', piece: 'valve seat', role: 'float needle valve seat', group: 'float', fits: '1', step: 21, specs: ['valve_seat']},
-  K37: {k: 37, of: '23', piece: 'O-ring', role: 'valve seat O-ring', group: 'float', fits: 'K36', step: 21},
-  K38: {k: 38, of: '23', piece: 'screw', role: 'valve seat retaining screw', group: 'float', fits: '1', step: 21},
-  K44: {k: 44, of: '23', piece: 'fuel screen', role: 'fuel screen on the valve seat', group: 'float', fits: 'K36', step: 21},
-  K52: {k: 52, of: '1', piece: 'U-ring', role: 'pump rod seal in the float chamber', group: 'bowl', fits: '1-bowl', step: 17},
-  K66: {k: 66, of: '1', piece: 'coil spring 1', role: 'torsion spring on the pump link pin, behind link lever 40', group: 'linkage', fits: '40', step: 8},
-  K67: {k: 67, of: '1', piece: 'coil spring 2', role: 'torsion spring on the pump link pin, behind link lever 41', group: 'linkage', fits: '41', step: 8},
-  K69: {k: 69, of: '1', piece: 'washer', role: 'pump link pin washer', group: 'linkage', fits: '1', step: 8},
-  K70: {k: 70, of: '1', piece: 'E-clip', role: 'pump link pin E-clip', group: 'linkage', fits: '1', step: 8},
-  K72: {k: 72, of: '1', piece: 'rod', role: 'accelerator pump rod: link lever 41 pushes the pump diaphragm through it', group: 'bowl', fits: '41', step: 17},
-  K83: {k: 83, of: '1', piece: 'fuel joint', role: 'fuel inlet joint: the fuel hose goes on it', group: 'bowl', fits: '1-bowl', step: 17},
-  K85: {k: 85, of: '1', piece: 'O-rings (3)', role: 'fuel joint O-rings', group: 'bowl', fits: 'K83', step: 17},
-  K91: {k: 91, of: '46', piece: 'washer', role: 'idle speed screw washer', group: 'sensor', fits: '46', step: 5},
-  K92: {k: 92, of: '46', piece: 'coil spring', role: 'idle speed screw spring', group: 'sensor', fits: '46', step: 5},
-  K103: {k: 103, of: '1', piece: 'main air jet', role: 'main air jet, in the air-box spigot beside the pilot air jet', group: 'jets', fits: '1', step: 27, specs: ['main_air_jet']},
-  K177: {k: 177, of: '46', piece: 'stop screw', role: 'carburetor switch screw', group: 'sensor', fits: '63', step: 5},
-  K244: {k: 244, of: '53', piece: 'collar', role: 'hot start plunger collar', group: 'starters', fits: '53', step: 6},
+  K36: {k: 36, of: '23', piece: 'valve seat', role: 'float needle valve seat', group: 'float', fits: '1', step: 22, specs: ['valve_seat']},
+  K37: {k: 37, of: '23', piece: 'O-ring', role: 'valve seat O-ring', group: 'float', fits: 'K36', step: 22},
+  K38: {k: 38, of: '23', piece: 'screw', role: 'valve seat retaining screw', group: 'float', fits: '1', step: 22},
+  K44: {k: 44, of: '23', piece: 'fuel screen', role: 'fuel screen on the valve seat', group: 'float', fits: 'K36', step: 22},
+  K52: {k: 52, of: '1', piece: 'U-ring', role: 'pump rod seal in the float chamber', group: 'bowl', fits: '1-bowl', step: 18},
+  K66: {k: 66, of: '1', piece: 'coil spring 1', role: 'torsion spring on the pump link pin, behind link lever 40', group: 'linkage', fits: '40', step: 9},
+  K67: {k: 67, of: '1', piece: 'coil spring 2', role: 'torsion spring on the pump link pin, behind link lever 41', group: 'linkage', fits: '41', step: 9},
+  K69: {k: 69, of: '1', piece: 'washer', role: 'pump link pin washer', group: 'linkage', fits: '1', step: 9},
+  K70: {k: 70, of: '1', piece: 'E-clip', role: 'pump link pin E-clip', group: 'linkage', fits: '1', step: 9},
+  K72: {k: 72, of: '1', piece: 'rod', role: 'accelerator pump rod: link lever 41 pushes the pump diaphragm through it', group: 'bowl', fits: '41', step: 18},
+  K83: {k: 83, of: '1', piece: 'fuel joint', role: 'fuel inlet joint: the fuel hose goes on it', group: 'bowl', fits: '1-bowl', step: 18},
+  K85: {k: 85, of: '1', piece: 'O-rings (3)', role: 'fuel joint O-rings', group: 'bowl', fits: 'K83', step: 18},
+  K91: {k: 91, of: '46', piece: 'washer', role: 'idle speed screw washer', group: 'sensor', fits: '46', step: 6},
+  K92: {k: 92, of: '46', piece: 'coil spring', role: 'idle speed screw spring', group: 'sensor', fits: '46', step: 6},
+  K103: {k: 103, of: '1', piece: 'main air jet', role: 'main air jet, in the air-box spigot beside the pilot air jet', group: 'jets', fits: '1', step: 28, specs: ['main_air_jet']},
+  K177: {k: 177, of: '46', piece: 'stop screw', role: 'carburetor switch screw', group: 'sensor', fits: '63', step: 6},
+  // run 13 (item 4): the throttle sensor's hardware, Keihin 241 (Torx screw), 199 (washer) and 109 (collar) on its ear; K140, a body screw
+  K109: {k: 109, of: '47', piece: 'collar', role: 'throttle sensor collar, between its ear and the cover plate', group: 'sensor', fits: '47', step: 4},
+  K199: {k: 199, of: '47', piece: 'washer', role: 'throttle sensor screw washer', group: 'sensor', fits: '47', step: 4},
+  K241: {k: 241, of: '47', piece: 'Torx screw', role: 'throttle sensor Torx screw through its ear', group: 'sensor', fits: '47', step: 4},
+  K140: {k: 140, of: '1', piece: 'screw', role: 'small body screw above the carburetor switch stop screw', group: 'sensor', fits: '1', step: null},
 };
 /** The Keihin pieces, in Keihin order. */
 export const KPIECES = Object.keys(PIECES).filter((id) => PIECES[id].k);
+
+// run 13 (item 3, scratch/parts_map.txt): the Keihin FCR-MX diagram numbers that sit on each fiche reference, and the
+// quantities the fiche table gives (refs 61-79; the table's refs 1-60 and its qty are in no source this page may read)
+export const KEIHIN = {'2': [6], '3': [7], '4': [8], '5': [7], '6': [249], '9': [19], '10': [20], '11': [21], '12': [22], '13': [24], '14': [25], '15': [243], '16': [244], '17': [26], '18': [28], '19': [29], '20': [30], '21': [39], '22': [40], '23': [42], '24': [43], '25': [45], '26': [46], '27': [47], '28': [51], '30': [53], '31': [54], '32': [55], '36': [100], '37': [122], '38': [123], '39': [152], '40': [64], '41': [65], '43': [251], '44': [250], '45': [209], '46': [90], '47': [96], '48': [23], '49': [32], '50': [33], '51': [34], '52': [35], '53': [245], '57': [148], '58': [206], '62': [180], '65': [264], '68': [207], '70': [265], '75': [205], '78': [211], '79': [213]};
+export const QTY = {61: 1, 62: 1, 64: 1, 65: 1, 66: 1, 67: 1, 68: 1, 69: 1, 70: 2, 71: 1, 73: 1, 74: 1, 75: 1, 76: 1, 77: 1, 78: 1, 79: 1};
 
 export const CONFLICT_20 = 'Fiche: JET, MAIN (#100). Manual: main jet #158, pilot air jet #100. Shown here as the pilot air jet (#100, in the air-box spigot); the #158 main jet has no reference of its own on this fiche. Check the number stamped on your jet.';
 
@@ -285,7 +294,7 @@ export const PART = Object.fromEntries(PARTS.map((p) => [String(p.ref), p]));
 export function info(id) {
   const piece = PIECES[id];
   const p = PART[piece ? piece.of || '1' : id];
-  return {...p, id, k: piece?.k || null, piece: piece?.piece || null, role: piece?.role || p.role, likely: piece ? false : p.likely, group: piece ? piece.group : p.group, fits: piece ? piece.fits : p.fits, step: piece ? piece.step : p.step, specs: piece ? piece.specs || [] : p.specs || []};
+  return {...p, id, kk: piece ? [piece.k] : KEIHIN[id] || [], qty: piece ? null : QTY[id] ?? null, k: piece?.k || null, piece: piece?.piece || null, role: piece?.role || p.role, likely: piece ? false : p.likely, group: piece ? piece.group : p.group, fits: piece ? piece.fits : p.fits, step: piece ? piece.step : p.step, specs: piece ? piece.specs || [] : p.specs || []};
 }
 export const groupIndex = (key) => GROUPS.findIndex((g) => g.key === key);
 /** Its name line: "47 · THROTTLE SENSOR ASSY"; a piece names itself first: "Top cover · part of 1", "Valve seat · part of 23". */

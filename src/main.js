@@ -595,7 +595,7 @@ async function main() {
         ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">${i.k ? `Keihin ${i.k} · ` : ''}part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
         : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
       `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` +
-      `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd></dl>` +
+      `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd>${!i.piece && i.kk.length ? `<dt>Keihin</dt><dd>${esc(i.kk.map((k) => `K${k}`).join(', '))}</dd>` : ''}${i.qty ? `<dt>Qty</dt><dd>${i.qty}</dd>` : ''}</dl>` +
       (sp ? `<table>${sp}</table>` : '') +
       '<div class="vt-hint">Drag to turn it · Esc or click away to put it back</div>';
     detail.classList.add('show');

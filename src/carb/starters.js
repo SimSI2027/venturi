@@ -26,8 +26,6 @@ export function buildStarters(index) {
   A.add(part([HX, HT - 0.05, HZ], mk(merge([cylY(0.74, 0, 0.5, 0.06, 16), cylY(0.55, 0.45, 0.6), tubeY(0.18, 0.08, 0.6, 0.8)]), plastic)), '54', {ex: [0, 6.2, 0], order: 0, axis: [0, 1, 0]});
   A.add(part([HX, HT - 0.9, HZ], mk(springY(0.9, 0.3, 0.05, 6), steel)), '64', {ex: [0, 5.0, 0], order: 0.15, axis: [0, 1, 0]});
   A.add(part([HX, HT - 0.8, HZ], mk(springY(0.7, 0.16, 0.035, 6), steel)), '56', {ex: [0, 4.0, 0], order: 0.25, axis: [0, 1, 0]});
-  // run 11 (item 3): Keihin 244, the collar on the plunger's stem (a piece of 53), between its 2 springs
-  A.add(part([HX, HT - 0.55, HZ], mk(tubeY(0.2, 0.13, 0, 0.12), brass)), 'K244', {ex: [0, 3.4, 0], order: 0.3, axis: [0, 1, 0]});
   A.add(part([HX, HT - 1.4, HZ], mk(merge([latheY([[-0.2, 0], [-0.2, 0.18], [0, 0.26], [0.4, 0.26], [0.4, 0.12], [1.4, 0.12], [1.4, 0]])]), brass), mk(cylY(0.2, -0.32, -0.18), rubber)), '53', {ex: [0, 2.7, 0], order: 0.35, axis: [0, 1, 0]});
   return A;
 }

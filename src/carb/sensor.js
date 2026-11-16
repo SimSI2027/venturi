@@ -36,6 +36,12 @@ export function buildSensor(index) {
   // 47: the TPS and its lead, with the grey coupler (run 12: see the block above; no mirroring)
   A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(C47, grey)), '47', {ex: [0, 1.8, 3.0], order: 0});
   A.add(part([SX, SY, FZ + 1.17], mk(orient(screwY(0.9, 0.24, 0.13, 0.18), [0, 0, 1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});
+  // run 13 (item 4): Keihin 241 Torx screw, 199 washer and 109 collar on the TPS bracket's second hole (bracket coords 2.15, -1.0,
+  // turned by pi - TA); K140, a small body screw above the switch screw
+  const bx = SX + 2.15 * Math.cos(Math.PI - TA) + 1.0 * Math.sin(Math.PI - TA), by = SY + 2.15 * Math.sin(Math.PI - TA) - 1.0 * Math.cos(Math.PI - TA);
+  A.add(part([bx, by, FZ + 0.14], mk(orient(tubeY(0.2, 0.09, 0, 0.14), [0, 0, 1]), steel)), 'K109', {ex: [0, 1.8, 2.2], order: 0.05});
+  A.add(part([bx, by, FZ + 0.4], mk(orient(tubeY(0.3, 0.16, 0, 0.04), [0, 0, 1]), steel)), 'K199', {ex: [0, 1.8, 4.2], order: 0.03});
+  A.add(part([bx, by, FZ + 0.44], mk(orient(screwY(0.5, 0.15, 0.08, 0.09), [0, 0, 1]), zinc)), 'K241', {ex: [0, 1.8, 5.4], order: 0.01});
   // 62 O-ring: on the shaft boss's face, between it and the sensor head
   A.add(part([SX, SY, FZ], mk(oring(0.95, 0.06).rotateX(Math.PI / 2), rubber)), '62', {ex: [0, 1.8, 1.6], order: 0.1});
   // 59 cover 1: the flat aluminium plate over the sensor side (cut at lower left round the pilot air cover), on its
@@ -69,6 +75,7 @@ export function buildSensor(index) {
   A.add(part([KX - 0.34, KY, KZ], mk(orient(tubeY(0.27, 0.15, 0, 0.04), [1, 0, 0]), steel)), 'K91', {...SOPT, order: 0.62});
   A.add(part([KX - 0.3, KY, KZ], mk(orient(springY(0.3, 0.22, 0.035, 4), [1, 0, 0]), steel)), 'K92', {...SOPT, order: 0.61});
   A.add(part([KX + 0.15, KY + 2.0, KZ - 0.3], mk(orient(screwY(0.5, 0.15, 0.08, 0.09), [1, 0, 0]), zinc)), 'K177', {...SOPT, order: 0.65});
+  A.add(part([KX + 0.15, KY + 0.9, KZ - 0.9], mk(orient(screwY(0.45, 0.13, 0.07, 0.08), [1, 0, 0]), zinc)), 'K140', {...SOPT, order: 0.66});
   A.add(part([HOUSE_X + 0.06, KY + 2.3, KZ], mk(plateXY(1.3, 1.5, 0.12, 0.2, [[0.3, 0.4, 0.15]]).rotateY(Math.PI / 2), machined)), '63', {ex: [1.4, -0.6, 0.6], order: 0.7, axis: [1, 0, 0]});
   return A;
 }
