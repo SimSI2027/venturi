@@ -232,6 +232,7 @@ async function main() {
   });
 
   // --- state and tweens (cubic in-out from wherever the value is now)
+  const QUICK = 0.45; // a step change inside a guided mode: the parts and the camera settle in 0.45 s
   const st = {explode: Number(q.get('explode') ?? 0), target: Number(q.get('explode') ?? 0)};
   range.value = st.target;
   let focus = -1;
@@ -241,8 +242,8 @@ async function main() {
   const hold = (T, v) => Object.assign(T, {v, from: v, to: v});
   const exT = tween(st.explode, 0.6);
   let exDrag = false;
-  const dimT = parts.map(() => tween(0, 0.5));
-  const rimT = parts.map(() => tween(0, 0.5));
+  const dimT = parts.map(() => tween(0, QUICK));
+  const rimT = parts.map(() => tween(0, QUICK));
   const dim = parts.map(() => 0);
   const hvT = tween(0, 0.22);
   // the guided modes pose each part on its own: w 0 home, 1 off along the way it really comes off. mixT blends
@@ -273,7 +274,7 @@ async function main() {
    * out, later parts in place. REBUILD: steps before n in place, step n's parts hovering off their seat (home in
    * 0.6 s on Next), later parts hidden. The step's own parts move 0.35 s after the camera sets off.
    */
-  function guideTargets(now, enter = false) {
+  function guideTargets(now, enter = false, quick = false) {
     const s = guide.step();
     const cur = new Set(s ? s.parts : []);
     const n = guide.n;
@@ -296,7 +297,7 @@ async function main() {
       if (!guide.mode) return;
       if (!carbMode) {
         if (enter) hold(wT[i], 0);
-        else aim(wT[i], 0, now, 0.6);
+        else aim(wT[i], 0, now, quick ? QUICK : 0.6);
         return;
       }
       if (h) {
@@ -304,8 +305,8 @@ async function main() {
       } else if (wasHidden) hold(wT[i], w); // fades in where it belongs
       else if (cur.has(p.id)) {
         if (enter) hold(wT[i], 0);
-        aim(wT[i], 1, now + 350, 0.6);
-      } else aim(wT[i], 0, now, 0.6);
+        aim(wT[i], 1, now + (quick ? 0 : 350), quick ? QUICK : 0.6);
+      } else aim(wT[i], 0, now, quick ? QUICK : 0.6);
     });
   }
   /** Go to a guided mode (null: explore) at step n (default: the last step seen there). */
@@ -322,9 +323,9 @@ async function main() {
       if (m && docked()) showTab('steps');
       if (m) range.value = st.target = 0; // the guided carburetor starts assembled
     }
-    guideTargets(now, enter && !!m && mixT.v === 0);
+    guideTargets(now, enter && !!m && mixT.v === 0, !enter);
     lastInput = now;
-    flyTo(1.1);
+    flyTo(enter ? 1.1 : QUICK);
   }
 
   // --- framing (Ironwood's rule): the subject's projected bounds fill FILL of the usable area, centred.
@@ -830,6 +831,8 @@ async function main() {
   };
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
+  // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
+  const settled = () => !view.follow && [mixT, ...wT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
   const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), lastOl];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
@@ -991,7 +994,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {

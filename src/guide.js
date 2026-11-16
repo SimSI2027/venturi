@@ -145,7 +145,13 @@ export function createGuide({el, ui, body, go, onPart}) {
     if (b?.dataset.id) return onPart(b.dataset.id);
     if (b?.dataset.go) return go(G.mode, G.n + Number(b.dataset.go));
   });
-  card.addEventListener('change', (e) => e.target.matches('input') && setDone(G.mode, G.n, e.target.checked));
+  // Done marks the step and moves on to the next one
+  card.addEventListener('change', (e) => {
+    if (!e.target.matches('input')) return;
+    const {mode, n} = G;
+    setDone(mode, n, e.target.checked);
+    if (e.target.checked && n < MODES[mode].steps.length) go(mode, n + 1);
+  });
 
   function render() {
     renderCard();
