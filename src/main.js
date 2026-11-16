@@ -246,11 +246,10 @@ async function main() {
   const dim = parts.map(() => 0);
   const hvT = tween(0, 0.22);
   // the guided modes pose each part on its own: w 0 home, 1 off along the way it really comes off. mixT blends
-  // the explode's pose (0) into the guided pose (1). gDim / gRim: the guide's look for each part.
+  // the explode's pose (0) into the guided pose (1). gRim: the parts the step outlines in brass.
   parts.forEach((p, i) => (p.k = i));
   const wT = parts.map(() => tween(0, 1.1));
   const mixT = tween(0, 0.9);
-  const gDim = parts.map(() => 0);
   const gRim = parts.map(() => 0);
   const offA = (id) => typeof info(id).step === 'string'; // comes off in section A, on the ATV
   // guided "off": half a body-length out along the way the part really comes off (its group's offset + its own)
@@ -290,18 +289,14 @@ async function main() {
         const f = FITTED_AT[p.id] ?? (offA(p.id) ? Infinity : 0);
         w = cur.has(p.id) || f > n ? 1 : 0;
         h = !cur.has(p.id) && f > n ? 1 : 0;
-      } else if (guide.mode === 'atv') w = (offA(p.id) ? Number(info(p.id).step.slice(1)) : Infinity) <= n ? 1 : 0; // section A's hoses and cable cover
-      gDim[i] = guide.mode === 'atv' && w && !cur.has(p.id) ? 1 : 0;
-      gRim[i] = cur.has(p.id) || (guide.mode === 'atv' && n === 8) ? 1 : 0;
+      }
+      gRim[i] = cur.has(p.id) ? 1 : 0; // OFF THE ATV: the carburetor alone, the parts the step names outlined in brass
       const wasHidden = hT[i].v > 0.5;
       aim(hT[i], guide.mode ? h : 0, now);
       if (!guide.mode) return;
       if (!carbMode) {
-        if (cur.has(p.id)) {
-          if (enter) hold(wT[i], 1 - w);
-          aim(wT[i], w, now + 350);
-        } else if (enter) hold(wT[i], w);
-        else aim(wT[i], w, now);
+        if (enter) hold(wT[i], 0);
+        else aim(wT[i], 0, now, 0.6);
         return;
       }
       if (h) {
@@ -325,7 +320,7 @@ async function main() {
     if (enter) {
       aim(mixT, m ? 1 : 0, now);
       if (m && docked()) showTab('steps');
-      if (m === 'teardown' || m === 'rebuild') range.value = st.target = 0; // the guided carburetor starts assembled
+      if (m) range.value = st.target = 0; // the guided carburetor starts assembled
     }
     guideTargets(now, enter && !!m && mixT.v === 0);
     lastInput = now;
@@ -469,7 +464,7 @@ async function main() {
       let side = -1;
       if (ps.length) {
         const pts = subjectPts(ps.map((p) => p.obj));
-        const z = pts.reduce((s, v) => s + v.z, 0) / pts.length - carb.position.z;
+        const z = pts.reduce((s, v) => s + v.z, 0) / pts.length;
         if (Math.abs(z) > 1) side = Math.sign(z);
       }
       return new THREE.Vector3(-0.3, 0.62, side);
@@ -851,7 +846,7 @@ async function main() {
     // dimming: a selection dims every other part; a pill dims every other group
     const sel = solo.part && solo.T.to > 0 ? solo.part : null;
     parts.forEach((p, i) => {
-      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? gDim[i] : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
+      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
       aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
@@ -905,8 +900,8 @@ async function main() {
     const ph = pointer ? (pickDirty ? (lastPick = pick()) : lastPick) : null;
     pickDirty = false; // the raycast reruns after the pointer moves or a frame is drawn
     // guided: the step's parts keep the brass outline and the first one carries the name card
-    const gOut = sel ? [] : guide.mode === 'atv' ? [carb] : guide.mode ? curParts().map((p) => p.obj).filter((o) => o.visible) : [];
-    const gLab = guide.mode === 'atv' ? null : gOut[0] || null;
+    const gOut = sel ? [] : guide.mode ? curParts().map((p) => p.obj).filter((o) => o.visible) : [];
+    const gLab = gOut[0] || null;
     if (!ph && gLab && hovered !== gLab) anchor.copy(gLab.worldToLocal(new THREE.Box3().setFromObject(gLab).getCenter(new THREE.Vector3())));
     setHover(sel ? null : ph || gLab);
     guideLab = !ph && !!gLab && hovered === gLab;

@@ -11,9 +11,8 @@ const partLine = (ids) => ids.map((id) => {
   return `${i.ref} ${i.name}${i.piece ? ` (${i.piece})` : ''}`;
 });
 
-// what each section-A step works on when it is not a carburetor part: the ATV prop's pieces (atv.js keys)
-const ATV_PIECE = {5: 'cable', 6: 'ductClamp', 7: 'jointClamps', 9: 'joint'};
-const PIECE_NAME = {cable: 'Throttle cable (on the ATV)', ductClamp: 'Air intake duct clamp (on the ATV)', jointClamps: 'Carburetor joint clamps (on the ATV)', joint: 'Carburetor joint (on the ATV)'};
+// section A steps that name no carburetor part are done on the ATV: nothing is outlined for them
+const OFF_PART = 'Not on the carburetor: nothing is outlined for this step.';
 
 export const MODES = {
   atv: {
@@ -23,8 +22,7 @@ export const MODES = {
       n: s.n,
       title: s.text,
       parts: s.parts,
-      piece: ATV_PIECE[s.n] || null,
-      note: s.n === 1 ? STEPS_A.before : s.n === 8 ? STEPS_A.owner : ATV_PIECE[s.n] ? PIECE_NAME[ATV_PIECE[s.n]] : null,
+      note: s.n === 1 ? STEPS_A.before : s.n === 8 ? STEPS_A.owner : s.parts.length ? null : OFF_PART,
       calls: callouts('atv', s.n),
     })),
   },
