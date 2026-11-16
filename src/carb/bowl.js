@@ -3,9 +3,10 @@
 // screws (5), drain plug (26), bottom plug (38) with O-ring (37). Comes off downward.
 import {Asm} from '../lib/asm.js';
 import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, gasketXZ, extrudeXY, rpoly, hose, lift, mk, part} from './kit.js';
+import {HT, UY} from './body.js';
 
 // a shallow casting (with the pump cover under it 0.28 H tall), from the photos: wider across (Z) than along the bore
-export const BOWL = {x0: -3.4, x1: 2.5, y0: -8.4, y1: -4.1, z: 3.1, lift: 0.9}; // built at y0..y1, then lifted by lift
+export const BOWL = {x0: -3.4, x1: 2.5, y0: HT.bottom - UY, y1: -4.1, z: 3.1, lift: UY}; // built at y0..y1, then lifted by lift
 export const PUMP = [0.6, -3.6]; // the pump lobe's axis (x, z): under the bowl, sticking out on the cable side
 
 export function buildBowl(index) {

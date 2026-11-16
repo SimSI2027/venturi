@@ -2,6 +2,7 @@
 // starter jet #90 (19), accelerator jet (77) inside the float chamber, coming off downward; and the #100 jet (20),
 // the pilot air jet, in the bell mouth.
 import {Asm} from '../lib/asm.js';
+import {UY} from './body.js';
 import {merge, cylY, tubeY, hexY, latheY, screwY, jetY, orient, lift, mk, part} from './kit.js';
 
 export function buildJets(index) {
@@ -22,5 +23,5 @@ export function buildJets(index) {
   A.add(part([0.7, -5.0, 1.1], mk(merge([jetY(1.4, 0.16), latheY([[-1.9, 0], [-1.9, 0.1], [-1.4, 0.1], [-1.4, 0]])]).rotateX(Math.PI), brass)), '18', {ex: [1.8, 0, 0], order: 0.5});
   A.add(part([-1.7, -4.75, -0.8], mk(jetY(0.75, 0.17).rotateX(Math.PI), brass)), '19', {ex: [-1.4, 0, 0], order: 0.6});
   A.add(part([-2.7, -4.55, 2.4], mk(jetY(0.5, 0.14), brass)), '77', {ex: [-2.2, -0.6, 0.6], order: 0, axis: [0, 1, 0]});
-  return lift(A, 0.9, ['17', '20']);
+  return lift(A, UY, ['17', '20']);
 }

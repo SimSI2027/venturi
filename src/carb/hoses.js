@@ -15,16 +15,16 @@ export function buildHoses(index) {
   const {hose: hm, vinyl, steel, zinc, plastic} = A.M;
   // 2 air vent hoses (from the photos), each about 1.5 H long: from the 2 nipples on the tower's engine face up in a
   // loop over the top cover, crossing, then down in front of the engine spigot to below the bowl
-  const NX = 2.45, NY = 7.8;
-  const v1 = hose([[NX, NY, 1.6], [3.0, 8.3, 1.7], [3.1, 10.5, 1.5], [3.2, 11.4, -0.3], [3.6, 10.6, -2.2], [4.6, 6.6, -1.7], [5.1, 2.5, -0.9], [5.1, -2.0, -0.6], [5.1, -7.0, -0.6], [5.1, -10.9, -0.6]], 0.32, 0.17);
-  const v2 = hose([[NX, NY, -1.6], [3.0, 8.3, -1.5], [3.1, 10.0, -1.2], [3.4, 10.6, -2.3], [4.6, 7.0, -2.3], [5.2, 3.0, -1.4], [5.25, -2.0, -1.25], [5.25, -7.0, -1.25], [5.25, -11.6, -1.25]], 0.32, 0.17);
+  const NX = 2.45, NY = 6.6; // run 8: the top 1.2 lower
+  const v1 = hose([[NX, NY, 1.6], [3.0, 7.1, 1.7], [3.1, 9.3, 1.5], [3.2, 10.2, -0.3], [3.6, 9.4, -2.2], [4.6, 5.6, -1.7], [5.1, 2.0, -0.9], [5.1, -2.0, -0.6], [5.1, -7.0, -0.6], [5.1, -10.9, -0.6]], 0.32, 0.17);
+  const v2 = hose([[NX, NY, -1.6], [3.0, 7.1, -1.5], [3.1, 8.8, -1.2], [3.4, 9.4, -2.3], [4.6, 5.9, -2.3], [5.2, 2.5, -1.4], [5.25, -2.0, -1.25], [5.25, -7.0, -1.25], [5.25, -11.6, -1.25]], 0.32, 0.17);
   A.add(part([0, 0, 0], mk(v1, hm)), '57', {ex: [6.0, 1.0, 0], order: 0.1, axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(v2, hm)), '58', {ex: [8.0, 1.0, 0], order: 0.15, axis: [1, 0, 0]});
-  A.add(part([0, 0, 0], mk(clip(0.32, [1, 0.6, 0], [2.75, 8.0, 1.6]), zinc)), '39', {ex: [5.0, 1.6, 0], order: 0.05, axis: [1, 0, 0]});
+  A.add(part([0, 0, 0], mk(clip(0.32, [1, 0.6, 0], [2.75, 6.8, 1.6]), zinc)), '39', {ex: [5.0, 1.6, 0], order: 0.05, axis: [1, 0, 0]});
   // the cable cover's hose (vinyl, from the photos): from the nipple at the cover's foot down the cable side,
   // out round the pump lobe, to below the bowl
-  A.add(part([0, 0, 0], mk(hose([[0.95, -0.6, -4.33], [0.95, -1.6, -4.45], [1.05, -3.6, -5.2], [1.15, -6.5, -5.4], [1.2, -10.0, -5.3]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
-  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [0.95, -0.95, -4.36]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
+  A.add(part([0, 0, 0], mk(hose([[0.95, -1.8, -4.83], [0.95, -2.8, -4.95], [1.05, -4.3, -5.5], [1.15, -6.5, -5.6], [1.2, -10.0, -5.5]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
+  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [0.95, -2.15, -4.86]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
   A.add(part([1.4, -7.5, 2.0], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [6.0, -9.0, 4.0], order: 0.4});
   A.add(part([0, 0, 0], mk(hose([[1.4, -8.2, 2.0], [1.4, -9.4, 2.05], [1.3, -11.0, 2.2]], 0.25), vinyl)), '72', {ex: [6.0, -12.0, 4.0], order: 0.1});

@@ -1,18 +1,43 @@
 // 13 body: the main casting (part of reference 1), shaped from the 7 photos (run 7): a tall narrow slide tower with
 // the bore through it, 2 short plain round spigots (air box -X, engine +X; no bell mouth), bosses for every part.
-// Carburetor height H ~ 18.9 cm (top cover y 9.4 to pump cover y -9.5); bore-axis length 8.5 = 0.45 H.
+// Run 8: H = 16.55 cm, top cover (y 8.11) to bowl bottom (y -8.44); bore-axis length 8.5 = 0.51 H. The 2 new photos
+// (carb_7 engine side, carb_8 air-box side) put the ENGINE at -X and the AIR BOX at +X (run 7 had them swapped).
 import {Asm} from '../lib/asm.js';
 import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, mk, part} from './kit.js';
 
 export const BORE_R = 1.95;
-export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 8.5}; // the slide tower; the lower block is x +/-2.6
-export const BOT = -3.1; // the body's underside: the float chamber gasket face (photos: 1.15 under the bore)
-const UY = 0.9; // run 7: the underside's bosses, built for BOT -4.0, lifted with it
-export const SHAFT = [-0.2, 6.8]; // throttle shaft (x, y), across the tower along Z
+// run 8 proportions (carb_7, along the bore), H = top cover to bowl bottom = 16.55 (the bore ring, 4.8 across, is
+// 0.29 H): the top cover's top at +8.11 (0.49 H above the bore centre), the bowl joint at -2.48 (0.64 H under the
+// top), the bowl's belly at -8.44; across Z 3 masses side by side, 0.65 H in all: the cable-wheel housing out to -5.1,
+// the slide tower +/-3.3, the sensor housing out to +5.6
+export const HT = {top: 8.11, joint: -2.48, bottom: -8.44};
+export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; the lower block is x +/-2.6
+export const BOT = HT.joint; // the body's underside: the float chamber gasket face
+export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
+export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
+export const CUPZ = -4.5; // the cable-wheel housing's face (the cover's gasket sits on it)
+export const SENS = 4.95; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below
-export const SHIELD = [[4.0, 8.9, 0.9], [-2.9, 9.1, 0.6], [-2.9, 5.6, 0.5], [-1.3, 3.9, 0.6], [-1.0, 0.4, 0.6], [0.45, -0.4, 0.7], [1.9, 0.4, 0.6], [2.4, 3.4, 0.8], [4.1, 7.3, 0.8]];
+export const SHIELD = [[4.0, 7.7, 0.9], [-2.9, 7.9, 0.6], [-2.9, 4.4, 0.5], [-1.3, 2.7, 0.6], [-1.0, -0.8, 0.6], [0.45, -1.6, 0.7], [1.9, -0.8, 0.6], [2.4, 2.2, 0.8], [4.1, 6.1, 0.8]];
 // the sensor side's flat cover plate outline (59), cut at lower left round the pilot air cover
-export const PLATE59 = [[-1.8, 8.1], [3.6, 8.1], [3.6, 1.0], [1.8, 1.0], [1.8, 3.4], [0.6, 4.3], [-1.8, 4.4]];
+export const PLATE59 = [[-1.8, 6.9], [3.6, 6.9], [3.6, -0.2], [1.8, -0.2], [1.8, 2.2], [0.6, 3.1], [-1.8, 3.2]];
+// the body seen along the bore (traced from carb_7: z, y, corner r), right half from the joint up to the top: the
+// lower block round the bore, a ledge at the shoulder, the tower with a rib band and a step in under the top cover;
+// the casting is symmetric about the bore's vertical plane, so the left half is its mirror (28 points in all)
+const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.2], [3.6, 2.45, 0.12], [3.6, 2.95, 0.12], [3.3, 3.2, 0.15],
+  [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.3]];
+const mirror = (h) => h.slice().reverse().map(([z, y, r]) => [-z, y, r]);
+export const OUTLINE = [...HALF, ...mirror(HALF)];
+/** The part of an outline under y = ymax (Sutherland-Hodgman against 1 line); cut corners get a small radius. */
+function clipY(pts, ymax) {
+  const out = [];
+  pts.forEach((p, i) => {
+    const q = pts[(i + 1) % pts.length];
+    if (p[1] <= ymax) out.push(p);
+    if ((p[1] <= ymax) !== (q[1] <= ymax)) out.push([p[0] + ((q[0] - p[0]) * (ymax - p[1])) / (q[1] - p[1]), ymax, 0.05]);
+  });
+  return out;
+}
 /** A counter-clockwise outline moved inward by d (outward if d < 0), corners kept. */
 export function inset(pts, d) {
   const n = pts.length;
@@ -37,9 +62,9 @@ export function slabZ(pts, z, dz, holes = [], r = 0.3) {
   return extrudeXY(s, dz, 0.06, 12, {free: true}).translate(0, 0, z);
 }
 
-/** Shape in (z, y), extruded along X from x0 to x1, with the bore cut through. */
-function blockX(z0, z1, y0, y1, x0, x1, holeR, r = 0.45) {
-  const s = rpoly([[z0, y0], [z1, y0], [z1, y1], [z0, y1]], r);
+/** An outline in (z, y), extruded along X from x0 to x1 with rounded edges, the bore cut through. */
+function outlineX(pts, x0, x1, holeR) {
+  const s = rpoly(pts, 0.3);
   if (holeR) s.holes.push(circ(0, 0, holeR));
   const g = extrudeXY(s, x1 - x0, 0.12, 24, {free: true});
   g.rotateY(Math.PI / 2); // depth -> x, shape x -> -z
@@ -56,25 +81,15 @@ function latheX(pts, seg = 64) {
 // the slide cavity: x SX0..SX1 (the slide is x -0.7..0.3, its plate at -0.88), z +/-SZ (its rollers reach 2.63),
 // open from y SY (below the closed slide's foot) up through the tower top; its 2 side walls are the guide faces
 const SX0 = -0.95, SX1 = 0.55, SZ = 2.75, SY = -0.5;
-/** The body's section across the cavity: a U round the slot and the bore's lower half, extruded along X. */
+/** The body's section across the cavity: the outline with the slot (narrower under the top cover) and the bore's
+ * lower half cut out of it, extruded along X. */
 function cavitySection() {
   const zc = Math.sqrt(BORE_R * BORE_R - SY * SY);
-  const s = new THREE.Shape();
-  const Z = TOWER.z, T = TOWER.top;
-  s.moveTo(-Z + 1.0, BOT);
-  s.lineTo(Z - 1.0, BOT);
-  s.quadraticCurveTo(Z, BOT, Z, BOT + 1.0);
-  s.lineTo(Z, T);
-  s.lineTo(SZ, T);
-  s.lineTo(SZ, SY);
-  s.lineTo(zc, SY);
-  s.absarc(0, 0, BORE_R, Math.atan2(SY, zc), Math.atan2(SY, -zc), true);
-  s.lineTo(-SZ, SY);
-  s.lineTo(-SZ, T);
-  s.lineTo(-Z, T);
-  s.lineTo(-Z, BOT + 1.0);
-  s.quadraticCurveTo(-Z, BOT, -Z + 1.0, BOT);
-  s.closePath();
+  const T = TOWER.top, ZT = 2.3, YT = T - 1.0;
+  const a0 = Math.atan2(SY, zc), a1 = Math.atan2(SY, -zc);
+  const arc = Array.from({length: 11}, (_, i) => a0 + ((a1 - a0) * (i + 1)) / 12).map((a) => [Math.cos(a) * BORE_R, Math.sin(a) * BORE_R, 0]);
+  const slot = [[ZT, T, 0.05], [ZT, YT, 0.05], [SZ, YT - 0.25, 0.05], [SZ, SY, 0.05], [zc, SY, 0]];
+  const s = rpoly([...HALF, ...slot, ...arc, ...mirror(slot), ...mirror(HALF)], 0.3);
   const g = extrudeXY(s, SX1 - SX0, 0.08, 48, {free: true});
   g.rotateY(Math.PI / 2);
   g.translate((SX0 + SX1) / 2, 0, 0);
@@ -89,17 +104,22 @@ export function buildBody(index) {
   // halves either side of the slide cavity (x SX0..SX1), which runs from the bore up through the tower top
   const {x0: TX0, x1: TX1, z: TZ, top: TT} = TOWER;
   const [SHX, SHY] = SHAFT;
-  for (const [x0, x1] of [[-2.6, SX0], [SX1, 2.6]]) g.push(blockX(-TZ, TZ, BOT, 2.4, x0, x1, BORE_R, 1.0));
-  for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(blockX(-TZ, TZ, -1.0, TT, x0, x1, BORE_R + 0.05, 0.5));
+  const LOW = clipY(OUTLINE, 3.1);
+  for (const [x0, x1] of [[-2.6, SX0], [SX1, 2.6]]) g.push(outlineX(LOW, x0, x1, BORE_R));
+  for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(outlineX(OUTLINE, x0, x1, BORE_R + 0.05));
   g.push(cavitySection());
-  // cable side (-Z): a shallow cup in the shield outline round the throttle wheel; the cover (65) closes it
-  g.push(slabZ(SHIELD, -TZ - 0.08, 0.2), slabZ(SHIELD, -3.72, 0.56, [inset(SHIELD, 0.35)]));
-  // sensor side (+Z): the pad the flat cover plate (59) and its gasket (61) sit on
-  g.push(slabZ(PLATE59, TZ + 0.1, 0.24, [[SHX, SHY, 1.1]], 0.4));
+  // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
+  // the cover (65) closes it
+  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), slabZ(SHIELD, (CUPZ - TZ) / 2, -CUPZ - TZ, [inset(SHIELD, 0.35)]));
+  // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
+  // and its gasket (61) sit
+  const SF = SENS + 0.22;
+  g.push(slabZ(PLATE59, (TZ - 0.1 + SF) / 2, SF - TZ + 0.1, [[SHX, SHY, 1.1]], 0.4));
   // bosses: throttle shaft both sides (the +Z one through the plate: the TPS O-ring 62 sits on it), pilot air face
-  g.push(orient(cylY(1.0, 0, 0.62), [0, 0, 1], [SHX, SHY, TZ]));
+  // (out to the housing's face, under the plate's cut corner)
+  g.push(orient(cylY(1.0, 0, SF + 0.4 - TZ), [0, 0, 1], [SHX, SHY, TZ]));
   g.push(orient(cylY(0.6, 0, 0.2), [0, 0, -1], [SHX, SHY, -TZ - 0.1]));
-  g.push(orient(cylY(1.3, 0, 0.2), [0, 0, 1], [0, 2.2, TZ]));
+  g.push(orient(cylY(1.3, 0, SF - TZ), [0, 0, 1], [0, 2.2, TZ]));
   // the 2 starter plunger bores on the air-box side of the tower: cold start out along +Z, hot start a vertical boss
   g.push(orient(tubeY(0.7, 0.25, 0, 3.0), [0, 0, 1], [-2.75, 3.8, 0.5]));
   g.push(tubeY(0.62, 0.3, 3.0, 7.9).translate(-2.75, 0, 1.6));
@@ -111,7 +131,7 @@ export function buildBody(index) {
   // the projection on the engine spigot that keys into the joint slot
   g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
-  const nipG = [-1.6, 1.6].map((z) => orient(tubeY(0.22, 0.12, 0, 0.9), [1, 0, 0], [TX1 - 0.05, 7.8, z]));
+  const nipG = [-1.6, 1.6].map((z) => orient(tubeY(0.22, 0.12, 0, 0.9), [1, 0, 0], [TX1 - 0.05, 6.6, z]));
   // the underside (every fitted jet sits in its own boss): the main jet tower round the needle jet (open below:
   // spacer and main jet hex show), the pilot jet and starter jet bosses, the needle valve seat boss, the 2 float
   // pin posts either side of the float's hinge
@@ -139,10 +159,10 @@ export function buildBody(index) {
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -1.93, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it
-  const shaft = mk(merge([orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), rbox(0.22, 3.6, 0.5, 0.08).translate(0.4, -1.65, -0.9)]), steel, SHX, SHY, 0);
+  const shaft = mk(merge([orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), rbox(0.22, 2.4, 0.5, 0.08).translate(0.4, -1.05, -0.9)]), steel, SHX, SHY, 0);
   const wheel = latheY([[0, 0], [0, 1.55], [0.04, 1.62], [0.08, 1.62], [0.1, 1.42], [0.16, 1.42], [0.18, 1.62], [0.22, 1.62], [0.26, 1.55], [0.26, 0]]);
-  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [1.1, 1.0, 0.0])]), machined, SHX, SHY, -3.72);
-  const rspring = mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel, SHX, SHY, -3.45);
+  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [1.1, 1.0, 0.0])]), machined, SHX, SHY, CUPZ + 0.28);
+  const rspring = mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel, SHX, SHY, CUPZ + 0.55);
   const nips = mk(merge(nipG), brass);
   const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips);
   A.add(body, '1');
