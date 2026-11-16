@@ -28,7 +28,10 @@ export function buildLinkage(index) {
   const ls = rpoly([[5.15, 5.0, 0.2], [3.45, 5.0, 0.2], [3.45, 8.5, 0.4], [3.75, 9.02, 0.3], [4.85, 9.02, 0.3], [5.15, 8.55, 0.35]], 0.3);
   ls.holes.push(circ(4.55, 6.6, 0.42));
   const lug = extrudeXY(ls, 0.95, 0.1, 12, {free: true}).rotateY(Math.PI / 2).translate(-3.12, 0, -(CUPZ - 0.33)); // shape x -> -z
-  A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads, lug]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
+  A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
+  // run 11 (item 3): the bracket is Keihin 10, its own piece of 65, held by Keihin 11 (M5 x 8) from the engine side
+  A.add(part([0, 0, CUPZ - 0.33], mk(lug, cast)), 'K10', {ex: [0, 0, -1.8], order: 0.25});
+  A.add(part([-3.12, 5.6, -4.3], mk(orient(merge([cylY(mm(4), 0, mm(4.5), 0.03), screwY(mm(8), mm(2.5), mm(2.5), 0.01)]), [-1, 0, 0]), steel), mk(orient(hexY(mm(2), mm(3.6), mm(4.6)), [-1, 0, 0]), rubber)), 'K11', {ex: [-1.6, 0, -1.8], order: 0.2, axis: [-1, 0, 0]});
   // 66 gasket under it, its rim a little proud of the cover so the black edge shows
   A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35)], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});
   // 67 seal: the rubber grommet where the cable enters the cover's boss
@@ -57,5 +60,12 @@ export function buildLinkage(index) {
   const SX = LX + T40[0], SY = LY + T40[1] - 0.05, SZ = -3.83;
   A.add(part([SX, SY, SZ], mk(merge([cylY(0.24, -0.3, 0), screwY(1.5, 0.13, 0.13, 0.01).rotateX(Math.PI)]), steel)), '44', {ex: [0, -3.6, -0.6], order: 0.5, axis: [0, -1, 0]});
   A.add(part([SX, SY + 0.11, SZ], mk(springY(0.7, 0.22, 0.04, 5), steel)), '43', {ex: [0, -2.2, -0.6], order: 0.55, axis: [0, -1, 0]});
+  // run 11 (item 3): on the pin (body.js), behind each lever its torsion spring (Keihin 66 behind 40, 67 behind 41),
+  // and at the pin's end the washer (69) and the E-clip (70): pieces of reference 1, off the pin first
+  const leg = (z, a, len) => orient(cylY(0.04, 0, len, 0.01), [Math.cos(a), Math.sin(a), 0], [Math.cos(a) * 0.25, Math.sin(a) * 0.25, z]);
+  A.add(part([LX, LY, 0], mk(merge([orient(springY(0.24, 0.25, 0.045, 3), [0, 0, -1], [0, 0, -3.22]), leg(-3.24, Math.PI * 1.25, 0.4), leg(-3.44, Math.PI * 0.75, 0.45)]), steel)), 'K66', {ex: [0, -0.8, -1.2], order: 0.75});
+  A.add(part([LX, LY, 0], mk(merge([orient(springY(0.3, 0.25, 0.045, 3.5), [0, 0, -1], [0, 0, -3.68]), leg(-3.7, Math.PI * 0.8, 0.45), leg(-3.96, Math.PI * 0.12, 0.5)]), steel)), 'K67', {ex: [0.8, -0.8, -2.0], order: 0.68});
+  A.add(part([LX, LY, -4.48], mk(orient(tubeY(0.26, 0.11, 0, 0.05), [0, 0, -1]), steel)), 'K69', {ex: [0, 0, -3.0], order: 0.62});
+  A.add(part([LX, LY, -4.535], mk(new THREE.TorusGeometry(0.25, 0.035, 6, 20, Math.PI * 1.6).rotateZ(Math.PI * 0.7), steel)), 'K70', {ex: [0, 0, -3.6], order: 0.6});
   return A;
 }

@@ -20,10 +20,12 @@ export function buildJets(index) {
   // bore from the air-box end; it comes off toward +X
   // run 10 landmarks (carb_8): seated in the air-box spigot's floor (inner radius 1.88), 0.8 in from the face, 0.4 toward the sensor side
   A.add(part([3.2, -1.97, 0.4], mk(orient(jetY(0.65, 0.15, 0.22, 0.22), [1, 0, 0]), brass)), '20', {ex: [-2.0, 4.0, 0], order: 0.7, axis: [1, 0, 0]});
+  // run 11 (item 3): Keihin 103, the main air jet (a piece of reference 1), beside 20 in the spigot floor, cable side
+  A.add(part([3.2, -1.97, -0.4], mk(orient(jetY(0.55, 0.13, 0.2, 0.2), [1, 0, 0]), brass)), 'K103', {ex: [-2.0, 3.0, -1.0], order: 0.75, axis: [1, 0, 0]});
   // 18 pilot jet #42 (long and slim) and 19 starter jet #90: screwed up into their bosses under the body, hex at
   // the boss foot (body.js); 77 accelerator jet: hex up, in its boss in the bowl's corner (bowl.js)
   A.add(part([0.7, -5.0, 1.1], mk(merge([jetY(1.4, 0.16), latheY([[-1.9, 0], [-1.9, 0.1], [-1.4, 0.1], [-1.4, 0]])]).rotateX(Math.PI), brass)), '18', {ex: [1.8, 0, 0], order: 0.5});
   A.add(part([-1.7, -4.75, -0.8], mk(jetY(0.75, 0.17).rotateX(Math.PI), brass)), '19', {ex: [-1.4, 0, 0], order: 0.6});
   A.add(part([-2.7, -4.55, 2.4], mk(jetY(0.5, 0.14), brass)), '77', {ex: [-2.2, -0.6, 0.6], order: 0, axis: [0, 1, 0]});
-  return lift(A, UY, ['17', '20']);
+  return lift(A, UY, ['17', '20', 'K103']);
 }

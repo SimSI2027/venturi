@@ -1,23 +1,25 @@
 // The two guided modes (TEAR DOWN, REBUILD): their numbered steps from data.js, the saved checkboxes, the step
 // card (Back / Next, the one-line note, the brass callouts, the progress line), the Steps list and the owner's
 // Notes field. Everything saved goes to local storage only.
-import {STEPS_B, N_B, ADDED_STEP, NOTES_C, nameOf} from './carb/data.js';
+import {STEPS_B, N_B, ADDED_STEP, NOTES_C, PIECES, KPIECES, nameOf} from './carb/data.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const nn = (n) => String(n).padStart(2, '0');
 const callouts = (mode, n) => NOTES_C.filter((c) => c.at.some((a) => a.mode === mode && a.step === n)).map((c) => c.text);
 const partLine = (ids) => ids.map(nameOf);
+// run 11: the Keihin pieces are in no step's own list; each moves with the step of the part it rides on
+const moves = (n) => KPIECES.filter((id) => PIECES[id].step === n);
 
 export const MODES = {
   teardown: {
     label: 'Tear down',
     short: 'Tear down',
-    steps: STEPS_B.map((s) => ({n: s.n, title: `Remove: ${s.text}`, parts: s.parts, added: !!s.added, note: s.note || null, calls: callouts('teardown', s.n)})),
+    steps: STEPS_B.map((s) => ({n: s.n, title: `Remove: ${s.text}`, parts: s.parts, moves: moves(s.n), added: !!s.added, note: s.note || null, calls: callouts('teardown', s.n)})),
   },
   rebuild: {
     label: 'Rebuild',
     short: 'Rebuild',
-    steps: STEPS_B.slice().reverse().map((s, i) => ({n: i + 1, title: `Fit: ${s.text}`, parts: s.parts, td: s.n, added: !!s.added, note: s.note || null, calls: callouts('rebuild', i + 1)})),
+    steps: STEPS_B.slice().reverse().map((s, i) => ({n: i + 1, title: `Fit: ${s.text}`, parts: s.parts, moves: moves(s.n), td: s.n, added: !!s.added, note: s.note || null, calls: callouts('rebuild', i + 1)})),
   },
 };
 
@@ -28,6 +30,7 @@ for (const s of STEPS_B) for (const id of s.parts) {
   REMOVED_AT[id] = s.n;
   FITTED_AT[id] = N_B + 1 - s.n;
 }
+for (const id of KPIECES) if (PIECES[id].step) (REMOVED_AT[id] = PIECES[id].step), (FITTED_AT[id] = N_B + 1 - PIECES[id].step);
 
 // v2: the steps were renumbered in run 6 (2 added steps), so the run-5 ticks would land on the wrong steps
 const KEY = {done: 'venturi.done.v2', notes: 'venturi.notes.v1', step: 'venturi.step.v2'};

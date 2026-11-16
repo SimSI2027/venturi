@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm} from './lib/asm.js';
-import {PARTS, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, nameOf, specValue, groupIndex} from './carb/data.js';
+import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, nameOf, specValue, groupIndex} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -175,12 +175,20 @@ async function main() {
   Object.assign(search, {type: 'search', placeholder: 'Search number or name'});
   search.setAttribute('aria-label', 'Search parts');
   const list = el('div', 'vt-list', null, pBody);
-  const rows = PARTS.map((p) => {
+  // run 11: each reference's Keihin pieces (no fiche number of their own) as indented rows under it, "K12" first
+  const rows = PARTS.flatMap((p) => {
     const r = el('button', 'vt-row', `<b>${p.ref}</b><span>${esc(p.name)}</span><i>${nn(groupIndex(p.group))}</i>`, list);
     r.dataset.id = String(p.ref);
     r.dataset.q = `${p.ref} ${p.name} ${p.role}`.toLowerCase();
     r.onclick = () => select(String(p.ref));
-    return r;
+    const subs = KPIECES.filter((k) => PIECES[k].of === String(p.ref)).map((k) => {
+      const s = el('button', 'vt-row sub', `<b>${k}</b><span>${esc(nameOf(k))}</span><i>${nn(groupIndex(PIECES[k].group))}</i>`, list);
+      s.dataset.id = k;
+      s.dataset.q = `${k} ${nameOf(k)} ${PIECES[k].role}`.toLowerCase();
+      s.onclick = () => select(k);
+      return s;
+    });
+    return [r, ...subs];
   });
   const specs = el('div', 'vt-specs', null, pBody);
   specs.innerHTML = `<table>${Object.keys(SPEC_LABELS).map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('')}</table><p class="vt-src">${esc('Source: YFZ450 service manual, chapter 2 specifications and chapter 6')}</p><p class="vt-src">${esc('Model scale: ' + SCALE_NOTE + '.')}</p>`;
@@ -311,7 +319,7 @@ async function main() {
    */
   function guideTargets(now, enter = false, quick = false) {
     const s = guide.step();
-    const cur = new Set(s ? s.parts : []);
+    const cur = new Set(s ? [...s.parts, ...s.moves] : []); // run 11: with the Keihin pieces riding on them
     const n = guide.n;
     parts.forEach((p, i) => {
       let w = 0;
@@ -560,7 +568,7 @@ async function main() {
     solo.r = Math.max(0.2, ...pts.map((v) => v.distanceTo(solo.c)));
     solo.pts = pts.map((v) => v.sub(solo.c));
     aim(solo.T, 1, performance.now());
-    rows.forEach((r) => r.classList.toggle('on', r.dataset.id === (id.startsWith('1-') ? '1' : id)));
+    rows.forEach((r) => r.classList.toggle('on', r.dataset.id === (id.startsWith('1-') ? '1' : id))); // a K piece has its own row
     showDetail(id);
     if (!docked()) setPanel(false);
     lastInput = performance.now();
@@ -578,13 +586,13 @@ async function main() {
     const gi = groupIndex(i.group);
     const role = i.ref === 20 ? CONFLICT_20 : i.likely ? `likely: ${i.role}` : i.role;
     const sB = STEPS_B[i.step - 1];
-    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added ? ' (added step, not in the manual’s list)' : ''}` : 'Stays: everything else comes off it';
+    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added ? ' (added step, not in the manual’s list)' : ''}` : id === '1' ? 'Stays: everything else comes off it' : 'Stays on the body: not in the manual’s steps';
     const fits = i.fits ? label(i.fits) : 'the carburetor joint (engine) and the air intake duct';
     const sp = i.specs.map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('');
     detail.innerHTML =
       // a piece of reference 1 names itself first, then the fiche number and name it belongs to
       (i.piece
-        ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
+        ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">${i.k ? `Keihin ${i.k} · ` : ''}part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
         : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
       `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` +
       `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd></dl>` +

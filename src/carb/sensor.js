@@ -1,7 +1,7 @@
 // 2 sensor, on the +Z side (from the photo): throttle position sensor (47) with screw (36) and O-ring (62) on the shaft end;
 // covers 59/60 with gasket 61 and screws 55; carburetor switch with the throttle stop screw assembly (46) on plate 63.
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, plateXY, hose, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
+import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, springY, plateXY, hose, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
 import {SHAFT, SENS, PLATE59, HOUSE_X, slabZ} from './body.js';
 
 export function buildSensor(index) {
@@ -48,6 +48,12 @@ export function buildSensor(index) {
   const sLead = hose([[-0.2, 1.75, 0.3], [-0.45, 0.6, 0.55], [-0.9, -2.2, 0.75], [-1.6, -5.2, 0.8], [-2.2, -6.3, 0.75]], 0.12, 0.001);
   const sConn = merge([rbox(0.8, 1.3, 0.7, 0.12), rbox(0.95, 0.35, 0.85, 0.1).translate(0, 0.5, 0)]).translate(-2.3, -6.9, 0.75);
   A.add(part([KX, KY, KZ], mk(sw, plastic), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
+  // run 11 (item 3): pieces of 46 from the Keihin diagram: on the stop screw's shank between the housing and the
+  // knob the washer (91) and the spring (92); the switch's screw into plate 63 (177)
+  const SOPT = {ex: [2.6, -0.6, 0.6], axis: [1, 0, 0]};
+  A.add(part([KX - 0.34, KY, KZ], mk(orient(tubeY(0.27, 0.15, 0, 0.04), [1, 0, 0]), steel)), 'K91', {...SOPT, order: 0.62});
+  A.add(part([KX - 0.3, KY, KZ], mk(orient(springY(0.3, 0.22, 0.035, 4), [1, 0, 0]), steel)), 'K92', {...SOPT, order: 0.61});
+  A.add(part([KX + 0.15, KY + 2.0, KZ - 0.3], mk(orient(screwY(0.5, 0.15, 0.08, 0.09), [1, 0, 0]), zinc)), 'K177', {...SOPT, order: 0.65});
   A.add(part([HOUSE_X + 0.06, KY + 2.3, KZ], mk(plateXY(1.3, 1.5, 0.12, 0.2, [[0.3, 0.4, 0.15]]).rotateY(Math.PI / 2), machined)), '63', {ex: [1.4, -0.6, 0.6], order: 0.7, axis: [1, 0, 0]});
   return A;
 }

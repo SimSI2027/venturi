@@ -84,7 +84,13 @@ export function buildBowl(index) {
   const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.5], [1.0, IY + 0.3, IZ - 0.05], [1.0, IY + 0.85, IZ], [1.0, IT, IZ]], 0.36, 0.2), orient(hexY(0.5, 0, 0.3), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.42, 0.2, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]); // overlay round 1 (carb_8): 8 across
   // overlay round 2 (carb_7, carb_8): the cast boss the inlet comes out of, on the upper box's sensor side
   const iboss = rbox(1.4, 1.1, 1.0, 0.3).translate(1.0, IY, z0 + 0.35);
-  A.add(part([0, 0, 0], mk(merge([g, iboss]), cast), mk(merge([inlet, rod]), steel), mk(merge([face, nipple]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  A.add(part([0, 0, 0], mk(merge([g, iboss]), cast), mk(merge([face, nipple]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  // run 11 (item 3): Keihin pieces of reference 1 with their own meshes: the fuel joint (83) with its 3 O-rings (85)
+  // in the boss, the pump rod (72) with its U-ring (52) on the guide's top
+  A.add(part([0, 0, 0], mk(inlet, steel)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});
+  A.add(part([1.0, IY, z0], mk(merge([0.3, 0.45, 0.6].map((dz) => oring(0.38, 0.045).rotateX(Math.PI / 2).translate(0, 0, dz))), rubber)), 'K85', {ex: [0, 0, 2.6], order: 0.25, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(rod, steel)), 'K72', {ex: [0, 0.6, 0], order: 0.35, axis: [0, 1, 0]});
+  A.add(part([1.57, BY.lip - 0.4, -4.09], mk(tubeY(0.17, mm(1.0), 0, 0.12, 0.02), rubber)), 'K52', {ex: [0, 1.4, 0], order: 0.4, axis: [0, 1, 0]});
   A.add(part([0, HT.joint - 0.05, 0], mk(tier(RIM, 0.05, -0.05, 0.03, inset(RIM, 0.3)), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
   // 5 screws: 4 Phillips pan heads, M4 x 12, up through the corner ears of the flange band
   const sc = screwY(mm(12), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)

@@ -224,6 +224,8 @@ html, body { background: var(--iw-bg); }
 .vt-row b { color: var(--iw-brass); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 .vt-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-row i { font-style: normal; color: var(--iw-mute); font-size: 13px; }
+.vt-row.sub { font-size: 13px; color: var(--iw-dim); grid-template-columns: 3.4em 1fr auto; } /* run 11: a Keihin piece under its reference */
+.vt-row.sub b { color: var(--iw-mute); font-weight: 500; }
 .vt-row:hover { background: rgba(201, 162, 75, 0.08); }
 .vt-row.on { background: rgba(201, 162, 75, 0.18); }
 .vt-specs table { width: 100%; border-collapse: collapse; font-variant-caps: normal; font-size: 15px; letter-spacing: 0.03em; }

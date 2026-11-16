@@ -3,7 +3,7 @@
 // Run 8: H = 16.55 cm, top cover (y 8.11) to bowl bottom (y -8.44); bore-axis length 8.5 = 0.51 H. The 2 new photos
 // (carb_7 engine side, carb_8 air-box side) put the ENGINE at -X and the AIR BOX at +X (run 7 had them swapped).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, mk, part, mm} from './kit.js';
+import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, mk, part, mm} from './kit.js';
 
 export const BORE_R = mm(19.5); // run 9: the 39 bore (sketch units, baked into mm by toMM)
 // run 8 proportions (carb_7, along the bore), H = top cover to bowl bottom = 16.55 (the bore ring, 4.8 across, is
@@ -223,7 +223,7 @@ export function buildBody(index) {
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
   const bowlFace = mk(rbox(5.9, 0.02, 6.0, 0.008).translate(-0.45, BOT - 0.005, -0.2), machined);
-  const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
+  // (run 11: the needle valve seat in it is Keihin 36, a piece of 23 in float.js)
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
   const SP = 4.0, RE = mm(24), RA = mm(25), BD = mm(1); // overlay round 1 (carb_3): 90 face to face
@@ -240,10 +240,16 @@ export function buildBody(index) {
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -BORE_R + 0.02, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it
-  const shaft = mk(merge([orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), rbox(0.22, 2.4, 0.5, 0.08).translate(0.4, -1.05, -0.9)]), steel, SHX, SHY, 0);
+  // run 11 (item 3): the shaft (Keihin 12) with its wheel, the link arm (16) with its stop screw (18), the return
+  // spring (14) and a washer (15) are pieces of reference 1 with their own meshes, each clickable
+  const shaft = mk(orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), steel);
   const wheel = latheY([[0, 0], [0, 1.33], [0.04, 1.39], [0.08, 1.39], [0.1, 1.22], [0.16, 1.22], [0.18, 1.39], [0.22, 1.39], [0.26, 1.33], [0.26, 0]]); // run 8: 14% smaller, inside the smaller cover
-  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, SHX, SHY, CUPZ + 0.28);
-  const rspring = mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel, SHX, SHY, CUPZ + 0.55);
+  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, 0, 0, CUPZ + 0.28);
+  A.add(part([SHX, SHY, 0], shaft, pulley), 'K12');
+  A.add(part([SHX, SHY, 0], mk(rbox(0.22, 2.4, 0.5, 0.08).translate(0.4, -1.05, -0.9), steel)), 'K16');
+  A.add(part([SHX + 0.51, SHY - 1.9, -0.9], mk(orient(screwY(0.45, 0.13, 0.08, 0.09), [1, 0, 0]), steel)), 'K18');
+  A.add(part([SHX, SHY, CUPZ + 0.55], mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel)), 'K14');
+  A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15');
   const nips = mk(merge(nipG), brass);
   // run 10 (item 7): the accelerator pump linkage as the Keihin FCR-MX diagram draws it (its 64-67, 72), replacing
   // run 9's T-bar: a cast boss on the body's cable side under the cable cup, a pivot pin out of it with a washer at its
@@ -251,14 +257,9 @@ export function buildBody(index) {
   // (40 and 41, linkage.js); the thin rod rides with the bowl (bowl.js)
   const [LX, LY] = LINK;
   const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
-  const pin = merge([orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), orient(tubeY(0.26, 0.11, 0, 0.05), [0, 0, -1], [LX, LY, -4.48])]);
-  const leg = (z, a, len) => orient(cylY(0.04, 0, len, 0.01), [Math.cos(a), Math.sin(a), 0], [LX + Math.cos(a) * 0.25, LY + Math.sin(a) * 0.25, z]);
-  const tsprings = merge([
-    orient(springY(0.24, 0.25, 0.045, 3), [0, 0, -1], [LX, LY, -3.22]), leg(-3.24, Math.PI * 1.25, 0.4), leg(-3.44, Math.PI * 0.75, 0.45),
-    orient(springY(0.3, 0.25, 0.045, 3.5), [0, 0, -1], [LX, LY, -3.68]), leg(-3.7, Math.PI * 0.8, 0.45), leg(-3.96, Math.PI * 0.12, 0.5),
-  ]);
-  const link = mk(merge([pin, tsprings]), steel);
-  const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips, pboss, link);
+  // run 11: its washer (Keihin 69), E-clip (70) and the 2 torsion springs (66, 67) are linkage.js pieces now
+  const link = mk(orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), steel);
+  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, nozzle, nips, pboss, link);
   A.add(body, '1');
   return A;
 }
