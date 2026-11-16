@@ -16,6 +16,8 @@ export const BOT = HT.joint; // the body's underside: the float chamber gasket f
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
 export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
 export const CUPZ = -4.5; // the cable-wheel housing's face (the cover's gasket sits on it)
+// the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
+export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 3.6};
 export const SENS = 4.95; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below
 export const SHIELD = [[4.0, 7.7, 0.9], [-2.9, 7.9, 0.6], [-2.9, 4.4, 0.5], [-1.3, 2.7, 0.6], [-1.0, -0.8, 0.6], [0.45, -1.6, 0.7], [1.9, -0.8, 0.6], [2.4, 2.2, 0.8], [4.1, 6.1, 0.8]];
@@ -141,9 +143,12 @@ export function buildBody(index) {
   g.push(orient(cylY(1.0, 0, SF + 0.4 - TZ), [0, 0, 1], [SHX, SHY, TZ]));
   g.push(orient(cylY(0.6, 0, 0.2), [0, 0, -1], [SHX, SHY, -TZ - 0.1]));
   g.push(orient(cylY(1.3, 0, SF - TZ), [0, 0, 1], [0, 2.2, TZ]));
-  // the 2 starter plunger bores on the air-box side of the tower: cold start out along +Z, hot start a vertical boss
-  g.push(orient(tubeY(0.7, 0.25, 0, 3.0), [0, 0, 1], [-2.75, 3.8, 0.5]));
-  g.push(tubeY(0.62, 0.3, 3.0, 7.9).translate(-2.75, 0, 1.6));
+  // the starters on the tower's engine face (carb_7): the hot start's vertical boss, 0.20 H tall with its cap
+  // (starters.js), a wide foot, a thread collar at the top, a web back to the tower; out of its foot the cold start's
+  // cast side arm along +Z (0.15 H to the end of the pull knob)
+  g.push(latheY([[STARTER.y0, 0], [STARTER.y0, 0.78], [STARTER.y0 + 0.15, 0.85], [STARTER.y0 + 0.7, 0.85], [STARTER.y0 + 0.85, 0.64], [STARTER.top - 0.3, 0.6], [STARTER.top - 0.25, 0.7], [STARTER.top, 0.7], [STARTER.top, 0]]).translate(STARTER.x, 0, STARTER.z));
+  g.push(rbox(0.7, STARTER.top - STARTER.y0 - 0.4, 0.35, 0.12).translate(STARTER.x + 0.35, (STARTER.top + STARTER.y0) / 2, STARTER.z));
+  g.push(orient(merge([cylY(0.45, STARTER.z, STARTER.face, 0.06), cylY(0.53, STARTER.face - 0.25, STARTER.face, 0.06)]), [0, 0, 1], [STARTER.x, STARTER.armY, 0]));
   // pilot screw: a lug under the engine spigot, outside the bowl, with a bored boss; its O-ring (51) shows under it
   g.push(rbox(1.3, 1.9, 1.6, 0.3).translate(3.0, -3.15 + UY, 0));
   g.push(tubeY(0.5, 0.17, -4.6 + UY, -3.9 + UY).translate(3.0, 0, 0));
