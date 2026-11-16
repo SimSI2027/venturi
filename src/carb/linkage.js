@@ -15,7 +15,7 @@ export function buildLinkage(index) {
   const BOLTS = [c3(495, 160), c3(345, 445)];
   const [BX, BY] = [-2.55, 7.35], [NX, NY] = c3(415, 455);
   // the flat cover, and its wide rounded shoulder: the top part standing 0.2 further out with a soft edge
-  const flat = slabZ(SHIELD, 0, 0.55, [], 0.3);
+  const flat = extrudeXY(rpoly(SHIELD, 0.3), 0.55, 0.2, 12, {free: true}); // run 9: rounded edges, so the housing reads curved end-on
   const shoulder = slabZ(inset(clipY(SHIELD, 99, 4.6), 0.3), -0.3, 0.3, [], 0.5);
   const boss = orient(tubeY(0.42, 0.18, 0, 0.6), [-1, 0, 0], [BX, BY, 0]);
   const pads = merge(BOLTS.map(([x, y]) => orient(cylY(0.55, 0, 0.12), [0, 0, -1], [x, y, -0.27])));
@@ -23,7 +23,7 @@ export function buildLinkage(index) {
   // the cable bracket (carb_7, carb_3): a thick lug behind the cover's top edge at its engine end, from the body out
   // to the cover's face, its top level with the cover's (0 slabs above the body), the hole for the cable adjuster;
   // outline in (-z, y), extruded 0.6 along X
-  const ls = rpoly([[5.1, 5.0, 0.2], [3.45, 5.0, 0.2], [3.45, 7.55, 0.4], [3.75, 8.05, 0.3], [4.85, 8.05, 0.3], [5.1, 7.6, 0.35]], 0.3);
+  const ls = rpoly([[5.0, 5.0, 0.2], [3.45, 5.0, 0.2], [3.45, 7.55, 0.4], [3.75, 8.05, 0.3], [4.75, 8.05, 0.3], [5.0, 7.6, 0.35]], 0.3);
   ls.holes.push(circ(4.35, 6.75, 0.42));
   const lug = extrudeXY(ls, 0.6, 0.1, 12, {free: true}).rotateY(Math.PI / 2).translate(-2.95, 0, -(CUPZ - 0.33)); // shape x -> -z
   A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads, lug]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
@@ -32,9 +32,9 @@ export function buildLinkage(index) {
   // 67 seal: the rubber grommet where the cable enters the cover's boss
   A.add(part([BX - 0.6, BY, CUPZ - 0.33], mk(orient(merge([tubeY(0.36, 0.16, 0, 0.5), tubeY(0.46, 0.16, 0.38, 0.55)]), [-1, 0, 0]), rubber)), '67', {ex: [-1.8, 0, -1.8], order: 0.15, axis: [-1, 0, 0]});
   // 70 bolts (2): socket-head cap screws along +Z into the body, the hex socket dark in the head
-  const sock = merge([cylY(0.38, 0, 0.36), screwY(1.6, 0.2, 0.2, 0.01)]);
+  const sock = merge([cylY(0.38, 0, 0.33), screwY(1.6, 0.2, 0.2, 0.01)]);
   const bolt = orient(sock, [0, 0, -1]);
-  const recess = orient(hexY(0.17, 0.3, 0.365), [0, 0, -1]);
+  const recess = orient(hexY(0.17, 0.27, 0.335), [0, 0, -1]);
   A.add(part([0, 0, CUPZ - 0.73], ...BOLTS.flatMap(([x, y]) => [mk(bolt.clone(), steel, x, y, 0), mk(recess.clone(), rubber, x, y, 0)])), '70', {ex: [0, 0, -3.4], order: 0});
   // 42 throttle shaft screw: holds the lift lever on the shaft, reached from the top
   A.add(part([0.2, 6.05, -1.6], mk(screwY(0.9, 0.24, 0.13, 0.18), steel)), '42', {ex: [0, 5.5, 4.5], order: 0.6, axis: [0, 1, 0]});

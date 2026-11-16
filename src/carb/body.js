@@ -15,10 +15,11 @@ export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; 
 export const BOT = HT.joint; // the body's underside: the float chamber gasket face
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
 export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
-export const CUPZ = -4.5; // the cable-wheel housing's face (the cover's gasket sits on it)
+export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
-export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 4.6}; // (overlay round 1: the knob 1.0 further out)
-export const SENS = 4.95; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65
+export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 3.9}; // (run 9: the arm 0.7 shorter, inside the 120.8 width)
+export const SENS = 4.4; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 9: 0.55 in, for the 120.8 width)
+export const HOUSE_X = 3.6; // run 9: the sensor housing's air-box face (PLATE59's +X edge), where the star knob sits
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
 // run 8 (carb_3): 15% smaller and turned 20 degrees about the throttle shaft, its air-box top corner down, the lobe
 // swung toward the engine. shieldXY places anything fixed to the cover (bolts, cable boss, hose nipple, cup plates).
@@ -163,9 +164,14 @@ export function buildBody(index) {
   for (const z of [-1.4, -2.5]) g.push(rbox(0.5, 3.6, 0.36, 0.12).translate(TX0 - 0.1, 4.6, z));
   for (const z of [-1.9, 1.9]) g.push(orient(tubeY(0.45, 0.2, 0, 0.35), [1, 0, 0], [TX1 - 0.05, 5.2, z]));
   for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
+  // run 9 (carb_8): the top cover's bolt lug on the tower's air-box face, a tapered block under the cover's tab
+  g.push(rbox(0.75, 1.3, 1.5, 0.3).translate(CX + 2.15, TT - 0.65, 0), rbox(0.5, 0.8, 1.1, 0.2).translate(CX + 2.45, TT - 0.4, 0));
   // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
   // the cover (65) closes it
-  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), slabZ(SHIELD, (CUPZ - TZ) / 2, -CUPZ - TZ, [inset(SHIELD, 0.35)]));
+  // run 9 (carb_8): the wheel housing reads curved from the air-box end: its outer rim rounded off (bevel 0.3)
+  const cupS = rpoly(SHIELD, 0.3);
+  cupS.holes.push(rpoly(inset(SHIELD, 0.35), 0.21, new THREE.Path()));
+  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.3, 12, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
   const SF = SENS + 0.22;

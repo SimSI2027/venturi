@@ -1,8 +1,8 @@
 // 2 sensor, on the +Z side (from the photo): throttle position sensor (47) with screw (36) and O-ring (62) on the shaft end;
 // covers 59/60 with gasket 61 and screws 55; carburetor switch with the throttle stop screw assembly (46) on plate 63.
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, plateXY, hose, rpoly, circ, extrudeXY, mk, part} from './kit.js';
-import {SHAFT, SENS, PLATE59, slabZ} from './body.js';
+import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, plateXY, hose, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
+import {SHAFT, SENS, PLATE59, HOUSE_X, slabZ} from './body.js';
 
 export function buildSensor(index) {
   const A = new Asm('sensor', 'Sensor', {offset: [0, 3.0, 7.5], index, axis: [0, 0, 1]});
@@ -32,15 +32,22 @@ export function buildSensor(index) {
   A.add(part([2.6, 3.5, FZ + 0.1], mk(plateXY(1.6, 1.0, 0.2, 0.2), cast)), '60', {ex: [-2.2, 1.0, 2.6], order: 0.3});
   const scr = orient(screwY(0.8, 0.22, 0.11, 0.16), [0, 0, 1]);
   A.add(part([0, 0, FZ], ...[[-1.3, 3.8], [3.25, 4.7], [3.25, 0.2]].map(([x, y]) => mk(scr.clone(), zinc, x, y, 0))), '55', {ex: [-1.6, -0.6, 4.0], order: 0.2});
-  // 46 carburetor switch with the throttle stop screw assembly: switch body on plate 63, its wire to a grey coupler,
-  // the stop screw along the bore to the big black knurled knob (0.1 H across) beside the engine spigot
-  const sw = merge([rbox(1.5, 1.3, 0.8, 0.25), orient(cylY(0.3, 0, 0.5), [0, 1, 0], [-0.3, 0.6, 0])]);
-  const stop = merge([orient(cylY(0.14, 0, 0.9), [1, 0, 0], [0.6, 0, 0]), orient(cylY(0.22, 0, 0.3), [1, 0, 0], [0.7, 0, 0])]);
-  const knob = merge([orient(cylY(0.95, 0, 0.6, 0.08, 14), [1, 0, 0], [1.4, 0, 0]), orient(hexY(0.32, 0.6, 0.85), [1, 0, 0], [1.4, 0, 0])]);
-  // its 2 wires (carb_7) run down the sensor side to the small grey connector beside the fuel inlet, at the bowl
-  const sLead = hose([[-0.3, -0.4, 0.1], [-0.25, -1.8, 0.35], [-0.4, -4.4, 0.1], [-0.7, -5.6, -0.7]], 0.12, 0.001);
-  const sConn = merge([rbox(0.8, 1.3, 0.7, 0.12), rbox(0.95, 0.35, 0.85, 0.1).translate(0, 0.5, 0)]).translate(-0.75, -6.4, -0.9);
-  A.add(part([2.6, 2.2, FZ + 0.52], mk(sw, plastic), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.4, -1.2, 2.6], order: 0.6});
-  A.add(part([2.6, 2.2, FZ + 0.06], mk(plateXY(1.9, 1.6, 0.12, 0.2, [[0.5, 0.4, 0.15]]), machined)), '63', {ex: [2.4, -1.2, 1.2], order: 0.7});
+  // 46 carburetor switch with the throttle stop screw assembly (run 9, carb_8 and carb_3): on the sensor housing's
+  // air-box face, the stop screw comes out along the bore to the black star knob (8 rounded lobes, 20 across) at
+  // knob height 2.2, z 4.0; the switch body sits higher up on that face on plate 63, its 2 wires run down the
+  // sensor side to the small grey connector beside the fuel inlet
+  const KX = HOUSE_X + 0.55, KY = 2.2, KZ = 4.0;
+  const star = new THREE.Shape();
+  for (let i = 0; i <= 96; i++) {
+    const t = (i / 96) * Math.PI * 2, r = mm(7.4) + mm(2.6) * Math.pow(0.5 + 0.5 * Math.cos(8 * t), 0.7);
+    i ? star.lineTo(Math.cos(t) * r, Math.sin(t) * r) : star.moveTo(Math.cos(t) * r, Math.sin(t) * r);
+  }
+  const knob = merge([extrudeXY(star, 0.7, 0.08, 4, {free: true}).rotateY(Math.PI / 2), orient(hexY(0.3, 0, 0.22), [1, 0, 0], [0.33, 0, 0])]);
+  const stop = orient(cylY(0.14, -0.6, -0.3), [1, 0, 0]);
+  const sw = merge([rbox(0.7, 1.2, 1.0, 0.22), orient(cylY(0.28, 0, 0.35), [0, 1, 0], [0, 0.6, 0.2])]).translate(-0.2, 2.35, 0);
+  const sLead = hose([[-0.2, 1.75, 0.3], [-0.45, 0.6, 0.55], [-0.9, -2.2, 0.75], [-1.6, -5.2, 0.8], [-2.2, -6.3, 0.75]], 0.12, 0.001);
+  const sConn = merge([rbox(0.8, 1.3, 0.7, 0.12), rbox(0.95, 0.35, 0.85, 0.1).translate(0, 0.5, 0)]).translate(-2.3, -6.9, 0.75);
+  A.add(part([KX, KY, KZ], mk(sw, plastic), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
+  A.add(part([HOUSE_X + 0.06, KY + 2.3, KZ], mk(plateXY(1.3, 1.5, 0.12, 0.2, [[0.3, 0.4, 0.15]]).rotateY(Math.PI / 2), machined)), '63', {ex: [1.4, -0.6, 0.6], order: 0.7, axis: [1, 0, 0]});
   return A;
 }

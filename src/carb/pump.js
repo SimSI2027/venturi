@@ -9,7 +9,7 @@ import {PUMP, PYW} from './bowl.js';
 
 const [PX, PZ] = PUMP, PY = PYW - 0.2; // the cover's top: gasket and diaphragm fill the 0.2 up to the housing's face
 // the guard plate's outline (x, z), traced from carb_12: round the cover's engine-side half, out past the cable side
-const PLATE45 = [[-1.3, -2.45], [-2.4, -2.75], [-3.1, -3.3, 0.4], [-3.3, -4.3, 0.45], [-2.9, -5.2, 0.4], [-1.8, -5.6, 0.35], [-0.6, -5.5, 0.4], [0.1, -4.7, 0.3], [0.3, -3.6, 0.3], [-0.2, -2.7, 0.3]];
+const PLATE45 = [[-1.3, -2.45], [-2.4, -2.75], [-3.1, -3.3, 0.4], [-3.3, -4.3, 0.45], [-2.9, -5.1, 0.4], [-1.8, -5.45, 0.35], [-0.6, -5.38, 0.4], [0.1, -4.7, 0.3], [0.3, -3.6, 0.3], [-0.2, -2.7, 0.3]];
 const ADJ = [-2.85, -4.4]; // the adjusting screw (8) in the plate's far ear
 
 export function buildPump(index) {
