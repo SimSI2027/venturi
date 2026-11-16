@@ -20,6 +20,8 @@ html, body { background: var(--iw-bg); }
 .iw-brand b { color: var(--iw-brass); font-weight: 600; }
 .iw-dot { color: var(--iw-brass); font-size: 22px; }
 .iw-sub { font-size: 19px; color: var(--iw-dim); font-variant-caps: normal; letter-spacing: 0.05em; }
+.iw-cnt { white-space: nowrap; } /* the reference count: in the header in every state and at every size */
+.iw-cnt b { color: var(--iw-brass); font-weight: 600; font-variant-numeric: tabular-nums; }
 .iw-q { pointer-events: auto; display: inline-flex; align-self: center; border: 1px solid var(--iw-line); border-radius: 999px; overflow: hidden; }
 .iw-q button { font: inherit; font-size: 13px; letter-spacing: 0.16em; font-variant-caps: all-small-caps; color: var(--iw-dim); background: transparent;
   border: 0; padding: 2px 9px 3px; cursor: pointer; }

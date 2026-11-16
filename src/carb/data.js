@@ -259,3 +259,8 @@ export function info(id) {
   return {...p, id, piece: piece?.piece || null, role: piece?.role || p.role, likely: piece ? false : p.likely, group: piece ? piece.group : p.group, fits: piece ? piece.fits : p.fits, step: piece ? piece.step : p.step, specs: piece ? piece.specs || [] : p.specs || []};
 }
 export const groupIndex = (key) => GROUPS.findIndex((g) => g.key === key);
+/** Its name line: "47 · THROTTLE SENSOR ASSY"; a piece of reference 1 names itself first: "Top cover · part of 1". */
+export function nameOf(id) {
+  const i = info(id);
+  return i.piece ? `${i.piece[0].toUpperCase()}${i.piece.slice(1)} · part of 1` : `${i.ref} · ${i.name}`;
+}

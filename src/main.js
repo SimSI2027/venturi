@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm} from './lib/asm.js';
-import {PARTS, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, specValue, groupIndex} from './carb/data.js';
+import {PARTS, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, nameOf, specValue, groupIndex} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -92,7 +92,7 @@ async function main() {
 
   // --- UI: header, hint, dock (explode + pills), parts panel (PARTS / SPECS), detail card, hover card, footer
   const ui = el('div', 'iw', null, app);
-  const head = el('div', 'iw-head', '<span class="iw-brand">VENTURI <b>39</b></span><span class="iw-dot">·</span><span class="iw-sub">Find it, turn it, put it back.</span>', ui);
+  const head = el('div', 'iw-head', `<span class="iw-brand">VENTURI <b>39</b></span><span class="iw-dot">·</span><span class="iw-sub">Find it, turn it, put it back.<span class="iw-cnt"> · <b>${PARTS.length}</b> references</span></span>`, ui);
   const qSeg = el('span', 'iw-q', '<button data-t="high">High</button><button data-t="med">Med</button><button data-t="low">Low</button>', head);
   // the "?" controls card
   const helpBtn = el('button', 'iw-help', '?', head);
@@ -106,7 +106,7 @@ async function main() {
   el('div', 'iw-rule', null, ui);
   const hint =el('div', 'iw-hint', null, ui);
   const dropped = [];
-  const setHint = () => (hint.textContent = `13 groups · ${PARTS.length} references · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.map((k) => ' · ' + k).join('')}`);
+  const setHint = () => (hint.textContent = `13 groups · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.map((k) => ' · ' + k).join('')}`);
   el('div', 'vt-foot', NOTICE, ui);
 
   const TIERS = ['high', 'med', 'low'];
@@ -553,10 +553,7 @@ async function main() {
     guide.card.classList.remove('away');
     rows.forEach((r) => r.classList.remove('on'));
   }
-  const label = (id) => {
-    const i = info(id);
-    return `${i.ref} · ${i.name}${i.piece ? ` (${i.piece})` : ''}`;
-  };
+  const label = nameOf;
   function showDetail(id) {
     const i = info(id);
     const gi = groupIndex(i.group);
@@ -566,8 +563,10 @@ async function main() {
     const fits = i.fits ? label(i.fits) : 'the carburetor joint (engine) and the air intake duct';
     const sp = i.specs.map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('');
     detail.innerHTML =
-      `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>` +
-      (i.piece ? `<div class="vt-pc">this piece: ${esc(i.piece)}</div>` : '') +
+      // a piece of reference 1 names itself first, then the fiche number and name it belongs to
+      (i.piece
+        ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
+        : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
       `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` +
       `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd></dl>` +
       (sp ? `<table>${sp}</table>` : '') +
@@ -691,8 +690,8 @@ async function main() {
     card.classList.toggle('show', !!h);
     if (h) {
       const i = info(h.userData.part);
-      card.children[0].textContent = `${i.ref} · ${i.name}`;
-      card.children[1].textContent = `${nn(groupIndex(i.group))} · ${GROUPS[groupIndex(i.group)].label}${i.piece ? ' · ' + i.piece : ''}`;
+      card.children[0].textContent = nameOf(h.userData.part);
+      card.children[1].textContent = `${nn(groupIndex(i.group))} · ${GROUPS[groupIndex(i.group)].label}`;
     }
   }
   const hoverPts = [];

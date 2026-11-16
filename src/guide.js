@@ -1,15 +1,12 @@
 // The two guided modes (TEAR DOWN, REBUILD): their numbered steps from data.js, the saved checkboxes, the step
 // card (Back / Next, the one-line note, the brass callouts, the progress line), the Steps list and the owner's
 // Notes field. Everything saved goes to local storage only.
-import {STEPS_B, N_B, ADDED_STEP, NOTES_C, info} from './carb/data.js';
+import {STEPS_B, N_B, ADDED_STEP, NOTES_C, nameOf} from './carb/data.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const nn = (n) => String(n).padStart(2, '0');
 const callouts = (mode, n) => NOTES_C.filter((c) => c.at.some((a) => a.mode === mode && a.step === n)).map((c) => c.text);
-const partLine = (ids) => ids.map((id) => {
-  const i = info(id);
-  return `${i.ref} ${i.name}${i.piece ? ` (${i.piece})` : ''}`;
-});
+const partLine = (ids) => ids.map(nameOf);
 
 export const MODES = {
   teardown: {
