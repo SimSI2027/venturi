@@ -345,7 +345,6 @@ async function main() {
 
   // --- the ATV prop: each mesh's way off (off 0 home, 1 away), its opacity and a brass glow (the step's piece)
   const ATV_DIR = new THREE.Vector3(1, 0.5, -0.95); // the photo's front three-quarter, from the front left, 20 deg up
-  const GHOST = 0.38; // OFF THE ATV: the quad at 38% so the carburetor reads in place
   // outward from the carburetor, but never toward the intro's camera (what flies that way is turned aside and back)
   const toCam = ATV_DIR.clone().normalize();
   const outward = (c) => {
@@ -383,7 +382,7 @@ async function main() {
     const piece = guide.step()?.piece;
     for (const a of A) {
       aim(a.off, on && a.kind !== 'plastic' ? 0 : 1, now);
-      aim(a.op, !on || a.kind === 'plastic' ? 0 : a.kind === 'piece' ? (a.piece === piece ? 1 : 0.6) : GHOST, now);
+      aim(a.op, !on || a.kind === 'plastic' ? 0 : 1, now); // OFF THE ATV: the quad solid, its plastics off
       aim(a.glow, on && a.piece === piece ? 1 : 0, now);
     }
     aim(atvAT, on ? 1 : 0, now);
@@ -585,6 +584,7 @@ async function main() {
   const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
   const guideDir = () => {
     if (guide.mode === 'atv') {
+      if (guide.n === 1) return ATV_DIR; // from outside the quad, the photo's view
       // from the side the step's parts are on (the shifter side, -Z, when it is the whole carburetor or the ATV)
       const ps = curParts().filter((p) => p.id !== '1');
       let side = -1;
@@ -602,6 +602,7 @@ async function main() {
   };
   // OFF THE ATV: the carburetor, the step's parts or ATV piece, and 40 cm of the quad round them for context
   const atvSubject = () => {
+    if (guide.n === 1) return A.filter((a) => a.kind !== 'plastic').map((a) => a.mesh); // step 1: the whole quad
     const c = carb.position;
     const box = [-1, 1].flatMap((x) => [-1, 1].flatMap((y) => [-1, 1].map((z) => new THREE.Vector3(c.x + x * 22, c.y + y * 16, c.z + z * 20))));
     const piece = guide.step()?.piece;
@@ -1030,11 +1031,12 @@ async function main() {
       const key = [st.explode, focus, view.phase, view.env.v, S.size.w, S.size.h, view.base ? view.base.toArray() : 0, detail.classList.contains('show'), guide.mode, guide.n].join();
       if (key !== autoKey || !autoCam) {
         // guided: framed where the parts are going, not where they are on the way
-        if (guide.mode) poseAll(st.explode, true), placeCarb(carbOutT.to);
+        if (guide.mode) poseAll(st.explode, true), placeCarb(carbOutT.to), A.forEach((a) => a.mesh.position.copy(a.way).multiplyScalar(a.off.to));
         autoCam = frame(autoSubject(), autoDir(), 1, autoKeep());
         if (guide.mode) {
           poseAll(st.explode);
           placeCarb(carbOutT.v);
+          placeAtv();
           if (solo.part) placeSolo(solo.T.v);
         }
       }
