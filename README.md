@@ -8,6 +8,11 @@ An interactive three.js guide to a Keihin flat-slide carburetor with accelerator
 YFZ450, I.D. mark 5TG1 00), built entirely in code. Every one of the 79 parts-diagram references is a clickable part:
 find it, see where it sits, and follow the order it comes off and goes back.
 
+## What this carburetor is
+
+A **Keihin FCR-MX 39**: a flat-slide carburetor with an accelerator pump, I.D. mark **5TG1 00**, fitted to the Yamaha YFZ450.
+Years: rebuild-kit sellers list this carburetor for the 2004 to 2009 YFZ450 ([Krenbits](https://krenbits.com/products/em-carb-rebuild-kit-carburetor-for-yamaha-yfz450-2004-2009)); that is a seller's fitment table, not a Yamaha statement, and the OEM carburetor assembly number changes between years (5TG-14101-10 and -21 in 2005 lists, -34 in a 2007 list), so check your own year and VIN before ordering parts.
+
 ## Controls
 
 - **Drag** to orbit, **wheel / pinch** to zoom. The page opens on the assembled carburetor; idle, the view sways gently.
