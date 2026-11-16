@@ -255,6 +255,8 @@ html, body { background: var(--iw-bg); }
 }
 @media (max-width: 999px) {
   .vt-pbtn { display: block; z-index: 6; }
+  .iw-head { right: 112px; } /* run 11: the header wraps short of PARTS (78 wide, 16 in), so "?" never runs under it */
+  .iw-hint { top: 112px; } /* and the hint sits under the wrapped line */
   .vt-panel { display: none; top: 60px; }
   .vt-panel.open { display: flex; }
   .vt-tabs .vt-x { display: block; }
