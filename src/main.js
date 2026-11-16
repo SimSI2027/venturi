@@ -606,7 +606,13 @@ async function main() {
     return null;
   }
   let down = null;
+  // two fingers on a held part zoom it (the wheel's twin)
+  const fingers = new Map();
+  let pinch = null;
+  const gap = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
   canvas.addEventListener('pointerdown', (e) => {
+    fingers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+    if (fingers.size === 2 && solo.part && solo.T.to > 0) return (pinch = {d: gap(), z: solo.zoom}), (solo.drag = null), (down = null);
     down = {x: e.clientX, y: e.clientY, t: performance.now()};
     setNdc(e);
     if (solo.part && solo.T.to > 0) {
@@ -619,6 +625,11 @@ async function main() {
   });
   const axY = new THREE.Vector3(), axX = new THREE.Vector3(), qd = new THREE.Quaternion();
   canvas.addEventListener('pointermove', (e) => {
+    if (fingers.has(e.pointerId)) fingers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+    if (pinch && fingers.size === 2) {
+      solo.zoom = THREE.MathUtils.clamp(pinch.z * (gap() / pinch.d), 0.35, 5);
+      lastInput = performance.now();
+    }
     if (!solo.drag || e.pointerId !== solo.drag.id) return;
     const dx = e.clientX - solo.drag.x, dy = e.clientY - solo.drag.y;
     solo.drag.x = e.clientX;
@@ -634,7 +645,10 @@ async function main() {
     solo.zoom = THREE.MathUtils.clamp(solo.zoom * Math.exp(-e.deltaY * 0.0015), 0.35, 5);
     lastInput = performance.now();
   }, {passive: false});
+  const lift = (e) => (fingers.delete(e.pointerId), fingers.size < 2 && (pinch = null));
+  canvas.addEventListener('pointercancel', lift);
   canvas.addEventListener('pointerup', (e) => {
+    lift(e);
     solo.drag = null;
     if (!down) return;
     const tap = Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6 && performance.now() - down.t < 500;
