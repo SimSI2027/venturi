@@ -121,18 +121,18 @@ export function createStage(canvas) {
   key.shadow.normalBias = 0.04;
   scene.add(key, key.target);
   // cool rim from behind
-  const rim = new THREE.DirectionalLight(0x9cb8ff, 3.2);
+  const rim = new THREE.DirectionalLight(0xe4e4e5, 3.2); // run 8: barely cool, so silver aluminium reads neutral
   rim.position.set(90, 55, -130);
   scene.add(rim);
   // low fill so the shadow side keeps its form
-  const fill = new THREE.HemisphereLight(0xa9b4c6, 0x0c0c0e, 0.35);
+  const fill = new THREE.HemisphereLight(0xbababc, 0x0c0c0e, 0.35);
   scene.add(fill);
   const under = new THREE.DirectionalLight(0xffe6c8, 0.35);
   under.position.set(30, -60, 90);
   scene.add(under);
   // cool fill from the lower right at 25% of the key (main.js keeps the ratio): lifts the receiver's side
   // wall and port edges out of black, no shadow, so it costs nothing on any tier
-  const cool = new THREE.DirectionalLight(0x9db9ff, 0.75);
+  const cool = new THREE.DirectionalLight(0xdcdde0, 0.75); // run 8: only just cool (no blue on silver)
   cool.position.set(90, -50, 70);
   scene.add(cool);
 

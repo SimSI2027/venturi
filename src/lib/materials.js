@@ -311,9 +311,11 @@ export function makeMaterials() {
   const grain = castNormal();
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
   return {
-    cast: std({color: 0x868a90, metalness: 0.6, roughness: 0.55, envMapIntensity: 0.5, normalMap: grain, normalScale: new THREE.Vector2(0.35, 0.35)}),
-    machined: std({color: 0xa9adb3, metalness: 1, roughness: 0.3, envMapIntensity: 0.6}),
-    bore: std({color: 0x8a8e94, metalness: 1, roughness: 0.26, envMapIntensity: 0.6}),
+    // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the
+    // cast faces show no blue or lavender tint at the default view
+    cast: std({color: 0xb9b9b5, metalness: 0.3, roughness: 0.5, envMapIntensity: 0.35, normalMap: grain, normalScale: new THREE.Vector2(0.35, 0.35)}),
+    machined: std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}),
+    bore: std({color: 0x9a9995, metalness: 0.8, roughness: 0.28, envMapIntensity: 0.45}),
     brass: std({color: 0xc9a24b, metalness: 1, roughness: 0.3}),
     steel: std({color: 0xa7adb5, metalness: 1, roughness: 0.32}),
     steelDark: std({color: 0x5c626b, metalness: 1, roughness: 0.38}),
