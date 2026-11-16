@@ -295,14 +295,16 @@ export function createStage(canvas) {
   });
   const hulls = [];
   let sel = null;
+  // h: one object or a list (the hovered part plus a guided step's parts)
   const select = (h) => {
     sel = h;
-    outline.selectedObjects = h && S.tier !== 'low' ? [h] : [];
+    const list = [h].flat().filter(Boolean);
+    outline.selectedObjects = S.tier !== 'low' ? list : [];
     hulls.forEach((m) => m.removeFromParent());
     hulls.length = 0;
-    if (!h || S.tier !== 'low') return;
+    if (!list.length || S.tier !== 'low') return;
     const ms = [];
-    h.traverse((o) => o.isMesh && ms.push(o));
+    list.forEach((o) => o.traverse((c) => c.isMesh && c.material !== hullMat && ms.push(c)));
     for (const o of ms) {
       const m = new THREE.Mesh(o.geometry, hullMat);
       m.raycast = () => {};

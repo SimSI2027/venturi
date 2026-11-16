@@ -263,35 +263,64 @@ async function main() {
   const gDim = parts.map(() => 0);
   const gRim = parts.map(() => 0);
   const offA = (id) => typeof info(id).step === 'string'; // comes off in section A, on the ATV
+  // guided "off": half a body-length out along the way the part really comes off (its group's offset + its own)
+  const bodyBox = new THREE.Box3().setFromObject(partOf['1'].obj).getSize(new THREE.Vector3());
+  const HALF = 0.5 * Math.max(bodyBox.x, bodyBox.y, bodyBox.z);
+  for (const p of parts) {
+    const d = p.asm.offset.clone().add(p.ex);
+    p.gOff = (d.lengthSq() > 1e-8 ? d.normalize() : new THREE.Vector3(0, 1, 0)).multiplyScalar(HALF);
+  }
+  const hT = parts.map(() => tween(0, 0.45)); // guided: the part hidden (1) or shown (0)
   function poseAll(e, useTo = false) {
     const m = useTo ? mixT.to : mixT.v;
     for (const a of asms) {
-      const g = a.groupAmt(e);
-      a.poseEach((p) => {
-        const w = useTo ? wT[p.k].to : wT[p.k].v;
-        const b = Asm.partAmt(p, e);
-        return [g + (w - g) * m, b + (w - b) * m];
-      });
+      const g = a.groupAmt(e) * (1 - m);
+      a.poseEach((p) => [g, Asm.partAmt(p, e) * (1 - m)]);
+      for (const p of a.parts) p.obj.position.addScaledVector(p.gOff, (useTo ? wT[p.k].to : wT[p.k].v) * m);
     }
   }
-  /** Each part's target for the current step; the step's own parts move 0.35 s after the camera sets off. */
+  /**
+   * Each part's target for the current step. TEAR DOWN: steps before n hidden, step n's parts half a body-length
+   * out, later parts in place. REBUILD: steps before n in place, step n's parts hovering off their seat (home in
+   * 0.6 s on Next), later parts hidden. The step's own parts move 0.35 s after the camera sets off.
+   */
   function guideTargets(now, enter = false) {
     const s = guide.step();
     const cur = new Set(s ? s.parts : []);
     const n = guide.n;
+    const carbMode = guide.mode === 'teardown' || guide.mode === 'rebuild';
     parts.forEach((p, i) => {
       let w = 0;
-      if (guide.mode === 'teardown') w = cur.has(p.id) || (REMOVED_AT[p.id] ?? (offA(p.id) ? 0 : Infinity)) <= n ? 1 : 0;
-      else if (guide.mode === 'rebuild') w = cur.has(p.id) ? 0 : (FITTED_AT[p.id] ?? (offA(p.id) ? Infinity : 0)) <= n ? 0 : 1;
-      else if (guide.mode === 'atv') w = (offA(p.id) ? Number(info(p.id).step.slice(1)) : Infinity) <= n ? 1 : 0; // section A's hoses and cable cover
-      gDim[i] = w && !cur.has(p.id) ? 1 : 0;
+      let h = 0;
+      if (guide.mode === 'teardown') {
+        const r = REMOVED_AT[p.id] ?? (offA(p.id) ? 0 : Infinity);
+        w = cur.has(p.id) || r < n ? 1 : 0;
+        h = !cur.has(p.id) && r < n ? 1 : 0;
+      } else if (guide.mode === 'rebuild') {
+        const f = FITTED_AT[p.id] ?? (offA(p.id) ? Infinity : 0);
+        w = cur.has(p.id) || f > n ? 1 : 0;
+        h = !cur.has(p.id) && f > n ? 1 : 0;
+      } else if (guide.mode === 'atv') w = (offA(p.id) ? Number(info(p.id).step.slice(1)) : Infinity) <= n ? 1 : 0; // section A's hoses and cable cover
+      gDim[i] = guide.mode === 'atv' && w && !cur.has(p.id) ? 1 : 0;
       gRim[i] = cur.has(p.id) || (guide.mode === 'atv' && n === 8) ? 1 : 0;
+      const wasHidden = hT[i].v > 0.5;
+      aim(hT[i], guide.mode ? h : 0, now);
       if (!guide.mode) return;
-      if (cur.has(p.id)) {
-        if (enter) hold(wT[i], 1 - w);
-        aim(wT[i], w, now + 350);
-      } else if (enter) hold(wT[i], w);
-      else aim(wT[i], w, now);
+      if (!carbMode) {
+        if (cur.has(p.id)) {
+          if (enter) hold(wT[i], 1 - w);
+          aim(wT[i], w, now + 350);
+        } else if (enter) hold(wT[i], w);
+        else aim(wT[i], w, now);
+        return;
+      }
+      if (h) {
+        if (enter) hold(wT[i], 0); // fades out where it is
+      } else if (wasHidden) hold(wT[i], w); // fades in where it belongs
+      else if (cur.has(p.id)) {
+        if (enter) hold(wT[i], 0);
+        aim(wT[i], 1, now + 350, 0.6);
+      } else aim(wT[i], 0, now, 0.6);
     });
   }
   /** Go to a guided mode (null: explore) at step n (default: the last step seen there). */
@@ -306,6 +335,7 @@ async function main() {
     if (enter) {
       aim(mixT, m ? 1 : 0, now);
       if (m && docked()) showTab('steps');
+      if (m === 'teardown' || m === 'rebuild') range.value = st.target = 0; // the guided carburetor starts assembled
     }
     guideTargets(now, enter && !!m && mixT.v === 0);
     atvTargets(now);
@@ -672,6 +702,7 @@ async function main() {
   const ndc = new THREE.Vector2();
   let pointer = null;
   let hovered = null;
+  let lastOl = '';
   let pickDirty = true;
   let lastPick = null;
   const anchor = new THREE.Vector3();
@@ -694,7 +725,7 @@ async function main() {
         if (p === solo.part) return root;
         continue;
       }
-      if (dim[parts.indexOf(p)] > 0.4) continue;
+      if (dim[parts.indexOf(p)] > 0.4 || !root.visible) continue;
       anchor.copy(root.worldToLocal(h.point.clone()));
       return root;
     }
@@ -743,7 +774,6 @@ async function main() {
     if (h === hovered) return;
     hovered = h;
     cardPos.side = 'r';
-    S.select(h);
     card.classList.toggle('show', !!h);
     if (h) {
       const i = info(h.userData.part);
@@ -812,7 +842,7 @@ async function main() {
   let carbFloor = FLOOR_Y;
   let poseKey = NaN; // changes only when a carburetor part moves (the shadow pass follows it, not the ATV)
   function placeFloor() {
-    poseKey = st.explode + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + carbOutT.v * 19;
+    poseKey = st.explode + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + hT.reduce((s, T) => s + T.v, 0) * 23 + carbOutT.v * 19;
     const k = poseKey + atvAT.v * 17;
     if (floorKey === k) return;
     floorKey = k;
@@ -918,7 +948,7 @@ async function main() {
   };
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
-  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), atvAT.v, carbOutT.v, intro.on ? intro.t : -1, ...A.flatMap((a) => [a.off.v, a.op.v, a.glow.v])];
+  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), lastOl, atvAT.v, carbOutT.v, intro.on ? intro.t : -1, ...A.flatMap((a) => [a.off.v, a.op.v, a.glow.v])];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -969,7 +999,8 @@ async function main() {
       aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
-      Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], r < 0.004 ? 0 : r);
+      const hd = stepT(hT[i], now);
+      Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], r < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd);
     });
     const fl = 1 + 0.3 * THREE.MathUtils.smoothstep(st.explode, 0.5, 0.8);
     S.cool.intensity = 0.25 * S.key.intensity * fl; // the cool fill keeps 25% of the key
@@ -1022,9 +1053,15 @@ async function main() {
     // hover outline + name card
     const ph = pointer ? (pickDirty ? (lastPick = pick()) : lastPick) : null;
     pickDirty = false; // the raycast reruns after the pointer moves or a frame is drawn
-    setHover(sel ? null : ph);
+    // guided: the step's parts keep the brass outline and the first one carries the name card
+    const gOut = intro.on || sel ? [] : guide.mode === 'atv' ? [carb] : guide.mode ? curParts().map((p) => p.obj).filter((o) => o.visible) : [];
+    const gLab = guide.mode === 'atv' ? null : gOut[0] || null;
+    if (!ph && gLab && hovered !== gLab) anchor.copy(gLab.worldToLocal(new THREE.Box3().setFromObject(gLab).getCenter(new THREE.Vector3())));
+    setHover(sel ? null : ph || gLab);
+    const olKey = [hovered, ...gOut].map((o) => o?.id).join();
+    if (olKey !== lastOl) S.select([hovered, ...gOut].filter((o, k, a) => o && a.indexOf(o) === k)), (lastOl = olKey);
     canvas.style.cursor = solo.drag ? 'grabbing' : sel && ph ? 'grab' : ph ? 'pointer' : '';
-    aim(hvT, hovered ? 1 : 0, now);
+    aim(hvT, hovered || gOut.length ? 1 : 0, now);
     S.outline.edgeStrength = 4.5 * stepT(hvT, now);
     lead.classList.toggle('show', !!hovered);
     if (hovered) drawLeader();
