@@ -21,21 +21,49 @@ function latheX(pts, seg = 64) {
   return g;
 }
 
+// the slide cavity: x SX0..SX1 (the slide is x -0.7..0.3, its plate at -0.88), z +/-SZ (its rollers reach 2.63),
+// open from y SY (below the closed slide's foot) up through the tower top; its 2 side walls are the guide faces
+const SX0 = -0.95, SX1 = 0.55, SZ = 2.75, SY = -0.5;
+/** The body's section across the cavity: a U round the slot and the bore's lower half, extruded along X. */
+function cavitySection() {
+  const zc = Math.sqrt(BORE_R * BORE_R - SY * SY);
+  const s = new THREE.Shape();
+  s.moveTo(-3.25, -2.85);
+  s.lineTo(3.25, -2.85);
+  s.lineTo(3.25, 4.45);
+  s.lineTo(SZ, 4.45);
+  s.lineTo(SZ, SY);
+  s.lineTo(zc, SY);
+  s.absarc(0, 0, BORE_R, Math.atan2(SY, zc), Math.atan2(SY, -zc), true);
+  s.lineTo(-SZ, SY);
+  s.lineTo(-SZ, 4.45);
+  s.lineTo(-3.25, 4.45);
+  s.closePath();
+  const g = extrudeXY(s, SX1 - SX0, 0.08, 48, {free: true});
+  g.rotateY(Math.PI / 2);
+  g.translate((SX0 + SX1) / 2, 0, 0);
+  return g;
+}
+
 export function buildBody(index) {
   const A = new Asm('body', 'Body', {index});
   const {cast, machined, bore, steel, brass} = A.M;
   const g = [];
-  // main block round the bore and the slide tower above it (tower wider for the rollers' rails)
-  g.push(blockX(-2.9, 2.9, -2.85, 2.6, -3.2, 2.6, BORE_R));
-  g.push(blockX(-3.25, 3.25, -2.2, 4.45, -2.0, 1.0, BORE_R + 0.05, 0.6));
+  // main block round the bore and the slide tower above it (tower wider for the rollers' rails), each in two
+  // halves either side of the slide cavity (x SX0..SX1), which runs from the bore up through the tower top
+  for (const [x0, x1] of [[-3.2, SX0], [SX1, 2.6]]) g.push(blockX(-2.9, 2.9, -2.85, 2.6, x0, x1, BORE_R));
+  for (const [x0, x1] of [[-2.0, SX0], [SX1, 1.0]]) g.push(blockX(-3.25, 3.25, -2.2, 4.45, x0, x1, BORE_R + 0.05, 0.6));
+  g.push(cavitySection());
   // bosses: throttle shaft both sides, pilot air face, starter plunger, hot start, pilot screw, sensor seat
   // (the +Z shaft boss and the pilot air face stop short so the sensor O-ring 62 and diaphragm 78 show on them)
   g.push(orient(cylY(1.05, 0, 0.15), [0, 0, 1], [0.8, 2.55, 3.1]));
   g.push(orient(cylY(1.05, 0, 0.5), [0, 0, -1], [0.8, 2.55, -3.1]));
   g.push(orient(cylY(1.45, 0, 0.2), [0, 0, 1], [1.6, -1.4, 2.85]));
-  g.push(orient(cylY(0.72, 0, 0.55), [0, 0, 1], [-2.4, -1.2, 2.85]));
-  g.push(cylY(0.62, 2.4, 3.9).translate(2.1, 0, 1.6));
-  g.push(cylY(0.5, -3.25, -2.4).translate(3.35, 0, 0)); // pilot screw boss: its O-ring (51) shows under the face
+  // the 2 starter plunger bores: cold start out of the +Z face, hot start down from the top boss
+  g.push(orient(tubeY(0.72, 0.25, 0, 0.55), [0, 0, 1], [-2.4, -1.2, 2.85]));
+  g.push(tubeY(0.62, 0.3, 2.4, 3.9).translate(2.1, 0, 1.6));
+  // pilot screw boss: a bored boss under the engine end, its O-ring (51) shows under the face
+  g.push(tubeY(0.5, 0.17, -3.25, -2.4).translate(3.35, 0, 0), cylY(0.62, -2.62, -2.4).translate(3.35, 0, 0));
   g.push(rbox(1.2, 1.6, 1.2, 0.25).translate(3.1, -2.2, 0));
   // float chamber mating flange: its face at y -2.85 sits on the bowl gasket (25, y -2.95..-2.85)
   g.push(rbox(6.6, 0.35, 6.1, 0.12).translate(-0.2, -2.675, 0));
@@ -58,14 +86,19 @@ export function buildBody(index) {
   const lip = mk(latheX([[-5.9, 2.95], [-5.82, 3.12], [-5.62, 3.16], [-5.62, 2.95], [-5.9, 2.95]]), machined);
   // spigot toward the engine
   const spigot = mk(latheX([[2.5, 2.4], [4.2, 2.4], [4.25, 2.55], [4.6, 2.55], [4.65, 2.35], [4.9, 2.3], [4.9, BORE_R + 0.05], [2.5, BORE_R + 0.05]]), cast);
-  // the bore itself: machined, brighter than the casting
-  const boreM = mk(latheX([[-5.8, BORE_R + 0.002], [4.9, BORE_R + 0.002], [4.9, BORE_R - 0.03], [-5.8, BORE_R - 0.03]], 64), bore);
+  // the bore itself: machined, brighter than the casting, open to the slide cavity between SX0 and SX1
+  const ring = (x0, x1) => latheX([[x0, BORE_R + 0.002], [x1, BORE_R + 0.002], [x1, BORE_R - 0.03], [x0, BORE_R - 0.03]], 64);
+  // inside: the cavity's 2 guide faces (machined, where the rollers run), the needle jet bore in the bore floor
+  // (a machined ring round the nozzle's top), the accelerator pump nozzle aimed into the bore toward the engine
+  const guides = [-1, 1].map((sz) => rbox(SX1 - SX0 - 0.1, 4.0, 0.02, 0.008).translate((SX0 + SX1) / 2, 2.4, sz * (SZ - 0.012)));
+  const boreM = mk(merge([ring(-5.8, SX0), ring(SX1, 4.9), ...guides, tubeY(0.45, 0.29, -2.02, -1.9).translate(-0.2, 0, 0)]), bore);
+  const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.7, -1.93, 0]), brass);
   // throttle shaft through the body, and the cable pulley on it (-Z, under the cable cover)
   const shaft = mk(orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), steel, 0.8, 2.55, 0);
   const pulley = mk(merge([orient(cylY(0.95, 0, 0.55), [0, 0, -1], [0, 0, 0]), orient(cylY(1.2, 0.45, 0.6), [0, 0, -1], [0, 0, 0])]), machined, 0.8, 2.55, -3.6);
   // vent and overflow nipples on the -Z face, the fuel inlet nipple on the bowl side lives on the bowl
   const nips = mk(merge([orient(tubeY(0.22, 0.12, 0, 0.9), [0, 0, -1], [-1.8, -2.25, -2.9]), orient(tubeY(0.22, 0.12, 0, 0.9), [0, 0, -1], [1.0, -2.25, -2.9])]), brass);
-  const body = part([0, 0, 0], casting, bowlFace, seat, bell, lip, spigot, boreM, shaft, pulley, nips);
+  const body = part([0, 0, 0], casting, bowlFace, seat, bell, lip, spigot, boreM, nozzle, shaft, pulley, nips);
   A.add(body, '1');
   return A;
 }
