@@ -4,7 +4,7 @@ import {Asm} from '../lib/asm.js';
 import {THREE, rbox, merge, cylY, tubeY, hexY, latheY, orient, oring, springY, plateXY, extrudeXY, rpoly, mk, part} from './kit.js';
 
 export function buildSlide(index) {
-  const A = new Asm('slide', 'Slide', {offset: [0, 5.5, 0], index});
+  const A = new Asm('slide', 'Slide', {offset: [0, 9.0, 0], index});
   const {anod, steel, machined, rubber, brass} = A.M;
   const NX = -0.2; // needle axis x
   // 9 throttle valve (flat slide): an anodised slab in profile, x -0.5..0.5 by y -1.8..1.8, 4.4 wide in z, with the

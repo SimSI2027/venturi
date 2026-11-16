@@ -1,4 +1,4 @@
-// 1 hoses: drain pipe (71) and drain hose (72) with its clamp (75); two air vent hoses (57, 58) with clip (39);
+// 1 hoses (from the photos): drain pipe (71) and drain hose (72) with its clamp (75); two air vent hoses (57, 58) with clip (39);
 // the cable-cover hose (68) with clip (69); fuel hose (73) with clips (74, 76). Each comes away from its fitting.
 import {Asm} from '../lib/asm.js';
 import {THREE, merge, cylY, tubeY, orient, hose, rbox, mk, part} from './kit.js';
@@ -13,23 +13,26 @@ function clip(r, dir, p) {
 export function buildHoses(index) {
   const A = new Asm('hoses', 'Hoses', {offset: [0, -1.0, 0], index, axis: [0, -1, 0]});
   const {hose: hm, vinyl, steel, zinc, plastic} = A.M;
-  // air vent hoses from the two -Z nipples, down past the bowl
-  const v1 = hose([[-1.8, -2.25, -3.5], [-1.8, -2.3, -4.1], [-1.9, -3.4, -4.4], [-2.1, -7.0, -4.3], [-2.2, -11.0, -4.0]], 0.27);
-  const v2 = hose([[1.0, -2.25, -3.5], [1.0, -2.3, -4.0], [1.1, -3.4, -4.3], [1.4, -7.0, -4.4], [1.6, -11.0, -4.2]], 0.27);
-  A.add(part([0, 0, 0], mk(v1, hm)), '57', {ex: [-1.0, -1.5, -8.0], order: 0.1, axis: [0, 0, -1]});
-  A.add(part([0, 0, 0], mk(v2, hm)), '58', {ex: [1.0, -1.5, -10.0], order: 0.15, axis: [0, 0, -1]});
-  A.add(part([0, 0, 0], mk(clip(0.27, [0, 0, -1], [-1.8, -2.25, -3.75]), zinc)), '39', {ex: [-1.0, -0.6, -9.6], order: 0.05, axis: [0, 0, -1]});
-  // the cable cover's hose, short, down from the cover's foot
-  A.add(part([0, 0, 0], mk(hose([[2.8, 0.2, -4.4], [2.9, -0.6, -4.6], [3.1, -2.6, -4.8], [3.3, -5.0, -4.6]], 0.2), hm)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
-  A.add(part([0, 0, 0], mk(clip(0.2, [0.1, -1, -0.2], [2.85, -0.3, -4.5]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
+  // 2 air vent hoses (from the photos), each about 1.5 H long: from the 2 nipples on the tower's engine face up in a
+  // loop over the top cover, crossing, then down in front of the engine spigot to below the bowl
+  const NX = 2.45, NY = 7.8;
+  const v1 = hose([[NX, NY, 1.6], [3.0, 8.2, 1.6], [3.2, 10.4, 1.2], [3.1, 11.3, -0.6], [3.6, 10.2, -2.1], [4.6, 6.2, -1.3], [5.05, 2.5, -0.5], [5.1, -2.0, -0.3], [5.1, -7.0, -0.3], [5.1, -10.8, -0.3]], 0.32, 0.17);
+  const v2 = hose([[NX, NY, -1.6], [3.0, 8.2, -1.6], [3.3, 10.0, -1.2], [3.4, 10.9, 0.7], [3.8, 9.8, 2.0], [4.75, 6.0, 1.2], [5.2, 2.5, 0.45], [5.25, -2.0, 0.35], [5.25, -7.0, 0.35], [5.25, -10.4, 0.35]], 0.32, 0.17);
+  A.add(part([0, 0, 0], mk(v1, hm)), '57', {ex: [6.0, 1.0, 0], order: 0.1, axis: [1, 0, 0]});
+  A.add(part([0, 0, 0], mk(v2, hm)), '58', {ex: [8.0, 1.0, 0], order: 0.15, axis: [1, 0, 0]});
+  A.add(part([0, 0, 0], mk(clip(0.32, [1, 0.6, 0], [2.75, 8.0, 1.6]), zinc)), '39', {ex: [5.0, 1.6, 0], order: 0.05, axis: [1, 0, 0]});
+  // the cable cover's hose (vinyl, from the photos): from the nipple at the cover's foot down the cable side,
+  // out round the pump lobe, to below the bowl
+  A.add(part([0, 0, 0], mk(hose([[0.95, -0.6, -4.33], [0.95, -1.6, -4.45], [1.05, -4.2, -5.5], [1.15, -7.0, -6.0], [1.2, -10.2, -5.9]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
+  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [0.95, -0.95, -4.36]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
-  A.add(part([1.6, -7.5, 1.0], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [6.0, -9.0, 4.0], order: 0.4});
-  A.add(part([0, 0, 0], mk(hose([[1.6, -8.2, 1.0], [1.6, -9.4, 1.05], [1.5, -11.0, 1.2]], 0.25), vinyl)), '72', {ex: [6.0, -12.0, 4.0], order: 0.1});
-  A.add(part([1.55, -9.9, 1.1], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
-  // fuel hose from the inlet nipple on the bowl, out and up toward the tank
-  const fuel = hose([[2.3, -3.9, 3.9], [2.3, -3.9, 4.6], [2.6, -3.2, 5.6], [3.8, -1.0, 6.2], [5.0, 1.0, 6.4]], 0.42, 0.22);
+  A.add(part([1.4, -8.4, 2.0], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [6.0, -9.0, 4.0], order: 0.4});
+  A.add(part([0, 0, 0], mk(hose([[1.4, -9.1, 2.0], [1.4, -10.3, 2.05], [1.3, -11.6, 2.2]], 0.25), vinyl)), '72', {ex: [6.0, -12.0, 4.0], order: 0.1});
+  A.add(part([1.37, -10.4, 2.07], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
+  // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank
+  const fuel = hose([[1.0, -3.3, 4.46], [1.0, -2.0, 4.5], [1.3, -0.9, 5.3], [2.2, 0.3, 6.4], [3.4, 1.4, 7.2], [4.8, 2.6, 7.6]], 0.42, 0.22);
   A.add(part([0, 0, 0], mk(fuel, hm)), '73', {ex: [3.5, -4.0, 6.5], order: 0.3, axis: [0, 0, 1]});
-  A.add(part([0, 0, 0], mk(clip(0.42, [0, 0, 1], [2.3, -3.9, 4.15]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2, axis: [0, 0, 1]});
-  A.add(part([0, 0, 0], mk(clip(0.42, [0.6, 1, 0.1], [4.7, 0.5, 6.35]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0, 1, 0], [1.0, -3.0, 4.46]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0.7, 0.65, 0.5], [3.1, 1.15, 7.05]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25, axis: [0, 0, 1]});
   return A;
 }
