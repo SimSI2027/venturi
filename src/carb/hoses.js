@@ -31,9 +31,10 @@ export function buildHoses(index) {
   A.add(part([0, 0, 0], mk(hose([[-3.05, -8.7, 0.3], [-3.05, -9.9, 0.35], [-3.2, -11.5, 0.5]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
   A.add(part([-3.07, -9.9, 0.33], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
   // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank
-  const fuel = hose([[1.0, -1.4, 3.96], [1.0, -0.2, 4.0], [1.3, 0.9, 4.9], [2.2, 1.9, 6.2], [3.4, 2.8, 7.0], [4.8, 3.8, 7.4]], 0.42, 0.22);
+  // (run 8: the inlet's top at y -1.53, z 5.6, bowl.js)
+  const fuel = hose([[1.0, -2.3, 5.6], [1.0, -1.0, 5.62], [1.2, 0.2, 6.2], [1.9, 1.3, 7.1], [3.1, 2.3, 7.7], [4.6, 3.3, 8.0]], 0.42, 0.22);
   A.add(part([0, 0, 0], mk(fuel, hm)), '73', {ex: [3.5, -4.0, 6.5], order: 0.3, axis: [0, 0, 1]});
-  A.add(part([0, 0, 0], mk(clip(0.42, [0, 1, 0], [1.0, -1.1, 3.96]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2, axis: [0, 0, 1]});
-  A.add(part([0, 0, 0], mk(clip(0.42, [0.7, 0.55, 0.5], [3.1, 2.6, 6.85]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0, 1, 0], [1.0, -2.0, 5.6]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0.7, 0.55, 0.5], [2.8, 2.1, 7.6]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25, axis: [0, 0, 1]});
   return A;
 }

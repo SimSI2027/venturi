@@ -81,8 +81,10 @@ export function buildBowl(index) {
     orient(cylY(0.45, 0, 0.5), [0, 0, 1], [-0.6, yb + 0.75, 2.05]), // drain plug boss, sensor side, low
     orient(cylY(0.4, 0, 0.5), [0, 0, 1], [1.0, -4.7, 2.95]), // fuel inlet boss
   ]);
-  // fuel inlet fitting: a steel elbow out of the sensor side, turned up, a hex at its foot (hose 73 goes on it)
-  const inlet = merge([hose([[1.0, -4.7, z], [1.0, -4.7, z + 0.55], [1.0, -4.42, z + 0.83], [1.0, -3.9, z + 0.86], [1.0, -1.6, z + 0.86]], 0.22, 0.12), orient(hexY(0.34, 0, 0.22), [0, 0, 1], [1.0, -4.7, z])]);
+  // fuel inlet fitting (carb_7): a steel elbow straight out of the sensor side just under the joint, turned up, 0.10 H
+  // tall above the bend, a hex at its foot, a bead near its top (hose 73 goes on it)
+  const IZ = z + 2.2, IT = -4.7 + 1.65;
+  const inlet = merge([hose([[1.0, -4.7, z - 0.3], [1.0, -4.7, IZ - 0.45], [1.0, -4.42, IZ - 0.05], [1.0, -3.9, IZ], [1.0, IT, IZ]], 0.22, 0.12), orient(hexY(0.34, 0, 0.22), [0, 0, 1], [1.0, -4.7, z - 0.1]), tubeY(0.27, 0.12, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]);
   const face = slabY(OPEN.map(([x, zz]) => [x + (x < 0 ? -0.3 : 0.3), zz + (zz < 0 ? -0.3 : 0.3)]), y1 - 0.02, 0.06, OPEN, 0.5); // machined mating face
   A.add(part([0, 0, 0], mk(g, cast), mk(inlet, steel), mk(face, machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   A.add(part([0, y1 + 0.05, 0], mk(slabY(FLANGE, 0, 0.1, OPEN), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});

@@ -1,7 +1,7 @@
 // 6 linkage, on the cable side (-Z), from the photo: the flat shield-shaped throttle cable cover (65) with gasket (66), seal (67) and 2 bolts (70);
 // throttle shaft screw (42, under the top cover); plates (40, 41); adjusting screw (44) and its spring (43).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, orient, springY, screwY, plateXY, mk, part} from './kit.js';
+import {THREE, rbox, merge, cylY, tubeY, hexY, orient, springY, screwY, plateXY, rpoly, circ, extrudeXY, mk, part} from './kit.js';
 import {SHIELD, CUPZ, inset, slabZ} from './body.js';
 
 export function buildLinkage(index) {
@@ -14,7 +14,12 @@ export function buildLinkage(index) {
   const boss = orient(tubeY(0.42, 0.18, 0, 0.75), [0, 1, 0], [-2.2, 7.65, 0]);
   const pads = merge(BOLTS.map(([x, y]) => orient(cylY(0.55, 0, 0.12), [0, 0, -1], [x, y, -0.27])));
   const nip = tubeY(0.2, 0.1, -0.7, 0.1).translate(0.95, -1.25, 0); // the hose 68 nipple at the lobe's foot
-  A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, boss, pads]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
+  // the cable bracket (carb_7): a flat lug standing up off the cover's engine-end top corner to 0.08 H over the top
+  // cover (y 9.43), a round hole near its top for the cable adjuster; outline in (z, y), extruded 0.5 along X
+  const ls = rpoly([[5.65, 6.4, 0.2], [3.85, 6.4, 0.2], [3.85, 8.8, 0.5], [4.3, 9.43, 0.45], [5.2, 9.43, 0.45], [5.65, 8.8, 0.5]], 0.3);
+  ls.holes.push(circ(4.75, 8.65, 0.42));
+  const lug = extrudeXY(ls, 0.5, 0.08, 12, {free: true}).rotateY(Math.PI / 2).translate(-1.6, 0, -(CUPZ - 0.33)); // shape x -> -z
+  A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, boss, pads, lug]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
   // 66 gasket under it, its rim a little proud of the cover so the black edge shows
   A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35)], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});
   // 67 seal: the rubber grommet where the cable enters the cover's boss
