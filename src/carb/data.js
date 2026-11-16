@@ -27,7 +27,7 @@ export const PARTS = [
   {ref: 18, name: 'JET, SLOW (#42)', role: 'pilot jet #42', group: 'jets', fits: '1', step: 25, specs: ['pilot_jet']},
   {ref: 19, name: 'JET (#90)', role: 'starter jet #90', group: 'jets', fits: '1', step: 26, specs: ['starter_jet']},
   // the known conflict: shown as both, with the stamp check (see CONFLICT_20)
-  {ref: 20, name: 'JET, MAIN (#100)', role: 'fiche says main jet #100; manual lists pilot air jet #100 and main jet #158: CONFLICT, show both', group: 'jets', fits: '17', step: 22, specs: ['main_jet', 'pilot_air_jet']},
+  {ref: 20, name: 'JET, MAIN (#100)', role: 'pilot air jet #100 (the fiche names it a main jet; the manual lists the main jet as #158)', group: 'jets', fits: '1', step: 27, specs: ['pilot_air_jet']},
   {ref: 21, name: 'FLOAT', role: 'float', group: 'float', fits: '22', step: 20, specs: ['float_height']},
   {ref: 22, name: 'PIN, FLOAT ARM', role: 'float pin', group: 'float', fits: '1', step: 19},
   {ref: 23, name: 'VALVE, NEEDLE', role: 'float needle valve', group: 'float', fits: '1', step: 21, specs: ['valve_seat']},
@@ -97,9 +97,11 @@ export const PIECES = {
   '1-pilot': {piece: 'pilot air diaphragm cover', group: 'pilot-air', fits: '1', step: 13},
   '1-bowl': {piece: 'float chamber', group: 'bowl', fits: '1', step: 17, specs: ['float_height']},
   '1-spacer': {piece: 'spacer (under the needle jet)', group: 'jets', fits: '17', step: 24},
+  // the manual's main jet #158 has no reference of its own on this fiche (reference 20 is the #100 pilot air jet)
+  '1-mainjet': {piece: 'main jet', role: 'main jet (the manual lists #158; this fiche has no reference of its own for it, its #100 jet is reference 20). Check the number stamped on your jet.', group: 'jets', fits: '17', step: 22, specs: ['main_jet']},
 };
 
-export const CONFLICT_20 = 'Fiche: JET, MAIN (#100). Manual: main jet #158, pilot air jet #100. Check the number stamped on your jet.';
+export const CONFLICT_20 = 'Fiche: JET, MAIN (#100). Manual: main jet #158, pilot air jet #100. Shown here as the pilot air jet (#100, in the bell mouth); the #158 main jet has no reference of its own on this fiche. Check the number stamped on your jet.';
 
 // --- the 13 groups, in the manual's disassembly order. dir: the way the group really comes off, carb space
 // (+X toward the engine, -X the bell mouth toward the air box, +Y up, +Z the throttle sensor side).
@@ -160,12 +162,12 @@ export const STEPS_B = [
   {n: 19, text: 'Float pin', parts: ['22']},
   {n: 20, text: 'Float', parts: ['21']},
   {n: 21, text: 'Needle valve', parts: ['23', '24']},
-  {n: 22, text: 'Main jet', parts: ['20']},
+  {n: 22, text: 'Main jet', parts: ['1-mainjet']},
   {n: 23, text: 'Needle jet', parts: ['17']},
   {n: 24, text: 'Spacer', parts: ['1-spacer']},
   {n: 25, text: 'Pilot jet', parts: ['18']},
   {n: 26, text: 'Starter jet', parts: ['19']},
-  {n: 27, text: 'Pilot air jet', parts: ['20'], note: 'Reference 20 is the #100 jet: see its card.'},
+  {n: 27, text: 'Pilot air jet', parts: ['20'], note: 'Reference 20, the #100 jet: check the number stamped on your jet.'},
 ];
 
 // Section C: the notes the page shows at the matching step. at: {mode: 'teardown'|'rebuild'|'atv', step}
@@ -243,6 +245,6 @@ export const PART = Object.fromEntries(PARTS.map((p) => [String(p.ref), p]));
 export function info(id) {
   const piece = PIECES[id];
   const p = PART[piece ? '1' : id];
-  return {...p, id, piece: piece?.piece || null, group: piece ? piece.group : p.group, fits: piece ? piece.fits : p.fits, step: piece ? piece.step : p.step, specs: piece ? piece.specs || [] : p.specs || []};
+  return {...p, id, piece: piece?.piece || null, role: piece?.role || p.role, likely: piece ? false : p.likely, group: piece ? piece.group : p.group, fits: piece ? piece.fits : p.fits, step: piece ? piece.step : p.step, specs: piece ? piece.specs || [] : p.specs || []};
 }
 export const groupIndex = (key) => GROUPS.findIndex((g) => g.key === key);

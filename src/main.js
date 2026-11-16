@@ -548,7 +548,7 @@ async function main() {
     detail.innerHTML =
       `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>` +
       (i.piece ? `<div class="vt-pc">this piece: ${esc(i.piece)}</div>` : '') +
-      `<div class="vt-role${i.ref === 20 ? ' warn' : ''}">${esc(role)}</div>` +
+      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` +
       `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd></dl>` +
       (sp ? `<table>${sp}</table>` : '') +
       '<div class="vt-hint">Drag to turn it · Esc or click away to put it back</div>';
