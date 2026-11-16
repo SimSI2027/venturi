@@ -28,6 +28,31 @@ Years: rebuild-kit sellers list this carburetor for the 2004 to 2009 YFZ450 ([Kr
 - **?** (button or key) shows these controls on the page.
 - **High / Med / Low** sets the render quality; `?perf=1` shows a performance overlay.
 
+## Jets
+
+Stock settings, straight from the service manual (`specs.json`):
+
+| Part | Stock |
+|---|---|
+| Main jet | #158 |
+| Main air jet | 1.0 mm |
+| Pilot jet | #42 |
+| Pilot air jet | #100 |
+| Starter jet | #90 |
+| Jet needle | NDSR, clip in groove 4 |
+| Cutaway | 1.5 |
+
+What each part governs, by throttle opening (a general rule of thumb for slide carburetors, not a manual figure):
+
+| Throttle range | Governed by |
+|---|---|
+| Idle to about 1/8 | Pilot screw and pilot jet |
+| About 1/8 to 3/4 | Jet needle (and its clip groove) |
+| About 3/4 to full | Main jet |
+| Quick opening | Accelerator pump |
+
+Jets are replaceable: altitude, temperature and intake or exhaust changes can all call for a different size. Do not change them from this page; the service manual decides.
+
 ## Notice
 
 **Visual guide only. Follow the service manual.** Shapes are eyeballed from the parts diagram and the manual's
