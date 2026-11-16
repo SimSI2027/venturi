@@ -17,7 +17,7 @@ export const UY = 1.52; // the underside's bosses and every part under them, bui
 export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
 export const CUPZ = -4.5; // the cable-wheel housing's face (the cover's gasket sits on it)
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
-export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 3.6};
+export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 4.6}; // (overlay round 1: the knob 1.0 further out)
 export const SENS = 4.95; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
 // run 8 (carb_3): 15% smaller and turned 20 degrees about the throttle shaft, its air-box top corner down, the lobe
@@ -38,10 +38,10 @@ const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.
 // the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
 export const FLANGE = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
-  [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.6, 0.15], [2.85, 3.1, 0.25], [2.85, 3.75, 0.35], [2.35, 3.95, 0.35], [1.75, 3.55, 0.15],
-  [1.3, 3.4, 0.2], [-0.2, 3.45, 0.3], [-2.0, 3.4, 0.2], [-2.6, 3.55, 0.15], [-3.25, 3.95, 0.35], [-3.75, 3.75, 0.35], [-3.75, 3.1, 0.25], [-3.35, 2.6, 0.15],
+  [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.95, 0.15], [2.85, 3.45, 0.25], [2.85, 4.1, 0.35], [2.35, 4.3, 0.35], [1.75, 3.9, 0.15],
+  [1.3, 3.75, 0.2], [-0.2, 3.8, 0.3], [-2.0, 3.75, 0.2], [-2.6, 3.9, 0.15], [-3.25, 4.3, 0.35], [-3.75, 4.1, 0.35], [-3.75, 3.45, 0.25], [-3.35, 2.95, 0.15],
   [-3.35, 0.8, 0.2], [-3.45, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
-export const EARS = [[2.35, -3.45], [2.35, 3.45], [-3.25, 3.45], [-3.25, -3.45]]; // the 4 bowl screws
+export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]]; // the 4 bowl screws (run 8 overlays: the sensor side 0.35 wider)
 /** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
 export function slabY(pts, y, t, hole = null, r = 0.3) {
   const s = rpoly(pts, r);

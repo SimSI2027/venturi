@@ -8,8 +8,8 @@ import {HT, UY, FLANGE, EARS, slabY} from './body.js';
 // run 8, from the 2 underside photos: the lip in the flange's outline (4 corner screw ears), a rounded belly under it
 // (0.35 H tall to the plug boss), the big hex plug near the centre, the drain nipple at the engine (-X) end, the round
 // pump cover overhanging the cable-side corner by half its width. Built at y local, then lifted by UY.
-export const BOWL = {x0: -3.3, x1: 2.4, y0: HT.bottom - UY, yb: HT.bottom - UY + 0.35, y1: -4.1, z: 3.4, lift: UY};
-export const PUMP = [-1.5, -3.8]; // the pump's axis (x, z): under the belly's cable-side edge, half of it outside
+export const BOWL = {x0: -3.3, x1: 2.4, y0: HT.bottom - UY, yb: HT.bottom - UY + 0.35, y1: -4.1, z: 3.75, lift: UY}; // z: the belly's sensor side
+export const PUMP = [-1.5, -4.0]; // the pump's axis (x, z): under the belly's cable-side edge, over half of it outside (overlay round 2)
 export const DRAIN = [-3.05, 0.3]; // the drain nipple (x, z), pointing down out of the belly's engine end
 export const PY0 = BOWL.y0 + 0.75; // the pump housing's face (local y): the cover under it ends level with the plug boss
 
@@ -67,9 +67,10 @@ export function buildBowl(index) {
   const cx = -0.45, yt = y1 - 0.3, hb = yt - yb;
   // the lip: the flange outline, 0.4 thick, open over the belly; the belly: straight sides bulging a little, then
   // curling in under a rounded lower edge to a flat floor
-  const OPEN = [[-2.95, -3.0], [2.05, -3.0], [2.05, 3.0], [-2.95, 3.0]];
+  const OPEN = [[-2.95, -3.0], [2.05, -3.0], [2.05, 3.35], [-2.95, 3.35]];
   const lip = slabY(FLANGE, y1 - 0.2, 0.4, OPEN);
-  const body = belly(cx, 2.75, 3.25, [[yt, 1.0], [yt - 0.3 * hb, 1.02], [yt - 0.6 * hb, 1.0], [yt - 0.8 * hb, 0.96], [yt - 0.9 * hb, 0.9], [yt - 0.96 * hb, 0.82], [yb, 0.72]], 0.3);
+  // (run 8 overlays: the belly wider toward the sensor side, z -3.35..4.05, as carb_7 and carb_8 show)
+  const body = belly(cx, 2.75, 3.7, [[yt, 1.0], [yt - 0.3 * hb, 1.02], [yt - 0.6 * hb, 1.0], [yt - 0.8 * hb, 0.96], [yt - 0.9 * hb, 0.9], [yt - 0.96 * hb, 0.82], [yb, 0.72]], 0.3).translate(0, 0, 0.35);
   const [PX, PZ] = PUMP, [DX, DZ] = DRAIN;
   const g = merge([
     lip, body,
@@ -78,12 +79,12 @@ export function buildBowl(index) {
     cylY(0.36, PY0 + 0.3, y1 - 0.45).translate(PX + 0.9, 0, PZ + 0.3), // pump rod guide, up the cable side
     cylY(0.5, yb - 0.1, yb + 0.9).translate(DX, 0, DZ), // drain nipple boss at the engine end (pipe 71 in it)
     cylY(0.38, yb + 0.4, -4.55).translate(-2.7, 0, 2.4), // accelerator jet boss up the corner (jet 77 on top)
-    orient(cylY(0.45, 0, 0.5), [0, 0, 1], [-0.6, yb + 0.75, 2.05]), // drain plug boss, sensor side, low
-    orient(cylY(0.4, 0, 0.5), [0, 0, 1], [1.0, -4.7, 2.95]), // fuel inlet boss
+    orient(cylY(0.45, 0, 0.5), [0, 0, 1], [-0.6, yb + 0.75, 2.55]), // drain plug boss, sensor side, low
+    orient(cylY(0.4, 0, 0.5), [0, 0, 1], [1.0, -4.7, 3.3]), // fuel inlet boss
   ]);
   // fuel inlet fitting (carb_7): a steel elbow straight out of the sensor side just under the joint, turned up, 0.10 H
   // tall above the bend, a hex at its foot, a bead near its top (hose 73 goes on it)
-  const IZ = z + 2.2, IT = -4.7 + 1.65;
+  const IZ = z + 1.85, IT = -4.7 + 1.65;
   const inlet = merge([hose([[1.0, -4.7, z - 0.3], [1.0, -4.7, IZ - 0.45], [1.0, -4.42, IZ - 0.05], [1.0, -3.9, IZ], [1.0, IT, IZ]], 0.22, 0.12), orient(hexY(0.34, 0, 0.22), [0, 0, 1], [1.0, -4.7, z - 0.1]), tubeY(0.27, 0.12, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]);
   const face = slabY(OPEN.map(([x, zz]) => [x + (x < 0 ? -0.3 : 0.3), zz + (zz < 0 ? -0.3 : 0.3)]), y1 - 0.02, 0.06, OPEN, 0.5); // machined mating face
   A.add(part([0, 0, 0], mk(g, cast), mk(inlet, steel), mk(face, machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
@@ -91,7 +92,7 @@ export function buildBowl(index) {
   // 5 screws: 4 Phillips pan heads from below through the corner ears
   const sc = screwY(1.0, 0.3, 0.15, 0.22).rotateX(Math.PI);
   A.add(part([0, y1 - 0.42, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
-  A.add(part([-0.6, yb + 0.75, 2.55], mk(orient(merge([hexY(0.34, 0, 0.25), screwY(0.6, 0.18, 0.18, 0.01)]), [0, 0, 1]), steel)), '26', {ex: [0, 0, 2.4], order: 0.1, axis: [0, 0, 1]});
+  A.add(part([-0.6, yb + 0.75, 3.05], mk(orient(merge([hexY(0.34, 0, 0.25), screwY(0.6, 0.18, 0.18, 0.01)]), [0, 0, 1]), steel)), '26', {ex: [0, 0, 2.4], order: 0.1, axis: [0, 0, 1]});
   // 38 the big hex bottom plug (main jet access) under the boss, 37 its O-ring, wider than the hex so its edge shows
   A.add(part([-0.2, y0 - 0.03, 0], mk(merge([hexY(1.05, -0.4, 0), screwY(0.4, 0.62, 0.62, 0.01).rotateX(Math.PI)]), machined)), '38', {ex: [0, -3.4, 0], order: 0.1});
   A.add(part([-0.2, y0 - 0.0, 0], mk(oring(1.08, 0.06), rubber)), '37', {ex: [0, -2.4, 0], order: 0.15});

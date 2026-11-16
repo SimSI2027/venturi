@@ -19,8 +19,8 @@ export function buildSensor(index) {
   bs.holes.push(circ(-1.15, -1.0, 0.16), circ(2.15, -1.0, 0.16), circ(0, 0, 1.08)); // the O-ring (62) shows in its hole
   const bracket = extrudeXY(bs, 0.22, 0.05, 8, {free: true}).translate(0, 0, 0.12);
   const conn = (w, h, d) => merge([rbox(w, h, d, 0.15), rbox(w + 0.16, 0.4, d + 0.16, 0.12).translate(0, h / 2 - 0.2, 0), rbox(0.3, 0.5, 0.2, 0.06).translate(0, 0, d / 2 + 0.05)]);
-  const lead = hose([[3.65, 0.7, 0.7], [4.3, 0.5, 1.0], [4.7, -0.8, 1.9], [4.4, -3.5, 3.0], [3.8, -6.5, 3.6], [3.4, -8.6, 3.7]], 0.17, 0.001);
-  A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(conn(1.1, 2.4, 1.0).translate(3.4, -9.9, 3.7), grey)), '47', {ex: [0, 1.8, 3.0], order: 0});
+  const lead = hose([[3.65, 0.7, 0.7], [4.3, 0.5, 1.0], [4.6, -0.8, 1.8], [4.0, -3.5, 2.4], [2.6, -5.8, 2.5], [1.5, -7.4, 2.4]], 0.17, 0.001);
+  A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(conn(1.1, 2.4, 1.0).translate(1.4, -8.8, 2.4), grey)), '47', {ex: [0, 1.8, 3.0], order: 0});
   A.add(part([SX - 1.2, SY + 0.55, FZ + 0.72], mk(orient(screwY(0.9, 0.24, 0.13, 0.18), [0, 0, 1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});
   // 62 O-ring: on the shaft boss's face, between it and the sensor head
   A.add(part([SX, SY, FZ], mk(oring(0.95, 0.06).rotateX(Math.PI / 2), rubber)), '62', {ex: [0, 1.8, 1.6], order: 0.1});
