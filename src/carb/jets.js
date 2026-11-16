@@ -18,7 +18,7 @@ export function buildJets(index) {
   A.add(part([NX, -5.1, 0], mk(merge([hexY(0.38, -0.35, 0), screwY(0.35, 0.24, 0.24, 0.01).rotateX(Math.PI)]), brass)), '1-mainjet', {ex: [0, -2.4, 0], order: 0.2});
   // 20 the #100 jet = pilot air jet: in the air-box spigot's floor (run 8: the air box is +X), screwed in along the
   // bore from the air-box end; it comes off toward +X
-  A.add(part([4.25, -2.17, 0], mk(orient(jetY(0.65, 0.15, 0.22, 0.22), [1, 0, 0]), brass)), '20', {ex: [-2.0, 4.0, 0], order: 0.7, axis: [1, 0, 0]});
+  A.add(part([4.0, -2.17, 0], mk(orient(jetY(0.65, 0.15, 0.22, 0.22), [1, 0, 0]), brass)), '20', {ex: [-2.0, 4.0, 0], order: 0.7, axis: [1, 0, 0]});
   // 18 pilot jet #42 (long and slim) and 19 starter jet #90: screwed up into their bosses under the body, hex at
   // the boss foot (body.js); 77 accelerator jet: hex up, in its boss in the bowl's corner (bowl.js)
   A.add(part([0.7, -5.0, 1.1], mk(merge([jetY(1.4, 0.16), latheY([[-1.9, 0], [-1.9, 0.1], [-1.4, 0.1], [-1.4, 0]])]).rotateX(Math.PI), brass)), '18', {ex: [1.8, 0, 0], order: 0.5});

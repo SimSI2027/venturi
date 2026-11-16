@@ -214,7 +214,7 @@ export function buildBody(index) {
   const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
-  const SP = 4.25, RE = mm(24), RA = mm(25), BD = mm(1);
+  const SP = 4.0, RE = mm(24), RA = mm(25), BD = mm(1); // overlay round 1 (carb_3): 90 face to face
   const spigots = mk(merge([
     latheX([[2.5, RA], [SP - 0.3, RA], [SP - 0.25, RA + BD], [SP - 0.08, RA + BD], [SP - 0.03, RA], [SP, RA - 0.04], [SP, BORE_R + 0.05], [2.5, BORE_R + 0.05]]),
     latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),

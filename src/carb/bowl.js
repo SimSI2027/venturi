@@ -77,8 +77,10 @@ export function buildBowl(index) {
   // fuel inlet fitting (carb_7): a steel elbow out of the upper box's sensor side, turned up, a hex at its foot, a
   // bead near its top (hose 73 goes on it)
   const IY = -3.18, IZ = 6.2, IT = IY + 2.45, z0 = RIM[13][1]; // (landmarks: 0.6 out, its top 0.8 higher)
-  const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.45], [1.0, IY + 0.28, IZ - 0.05], [1.0, IY + 0.8, IZ], [1.0, IT, IZ]], 0.22, 0.12), orient(hexY(0.34, 0, 0.22), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.27, 0.12, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]);
-  A.add(part([0, 0, 0], mk(g, cast), mk(merge([inlet, rod]), steel), mk(merge([face, nipple]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.5], [1.0, IY + 0.3, IZ - 0.05], [1.0, IY + 0.85, IZ], [1.0, IT, IZ]], 0.36, 0.2), orient(hexY(0.5, 0, 0.3), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.42, 0.2, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]); // overlay round 1 (carb_8): 8 across
+  // overlay round 2 (carb_7, carb_8): the cast boss the inlet comes out of, on the upper box's sensor side
+  const iboss = rbox(1.4, 1.1, 1.0, 0.3).translate(1.0, IY, z0 + 0.35);
+  A.add(part([0, 0, 0], mk(merge([g, iboss]), cast), mk(merge([inlet, rod]), steel), mk(merge([face, nipple]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   A.add(part([0, HT.joint - 0.05, 0], mk(tier(RIM, 0.05, -0.05, 0.03, inset(RIM, 0.3)), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
   // 5 screws: 4 Phillips pan heads, M4 x 12, up through the corner ears of the flange band
   const sc = screwY(mm(12), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)
