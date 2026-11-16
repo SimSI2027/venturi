@@ -121,6 +121,14 @@ export function buildBody(index) {
   for (const [x0, x1] of [[-2.6, SX0], [SX1, 2.6]]) g.push(outlineX(LOW, x0, x1, BORE_R));
   for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(outlineX(OUTLINE, x0, x1, BORE_R + 0.05));
   g.push(cavitySection());
+  // the tower's ribs and bosses (carb_7, carb_8, carb_11): the top cover's 2 bolt bosses down the middle of the
+  // engine and air-box faces, 2 vertical ribs on the engine face, 2 round bosses on the air-box face, a rib band
+  // round both faces at the outline's band height
+  const CX = (TX0 + TX1) / 2;
+  for (const sx of [-1, 1]) g.push(cylY(0.5, 4.9, TT, 0.1).translate(CX + sx * 2.35, 0, 0));
+  for (const z of [-1.4, -2.5]) g.push(rbox(0.5, 3.6, 0.36, 0.12).translate(TX0 - 0.1, 4.6, z));
+  for (const z of [-1.9, 1.9]) g.push(orient(tubeY(0.45, 0.2, 0, 0.35), [1, 0, 0], [TX1 - 0.05, 5.2, z]));
+  for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
   // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
   // the cover (65) closes it
   g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), slabZ(SHIELD, (CUPZ - TZ) / 2, -CUPZ - TZ, [inset(SHIELD, 0.35)]));
