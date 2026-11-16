@@ -35,7 +35,7 @@ export function buildSensor(index) {
   const C47 = coupX(2.3).translate(...in47([-9.35, 7.6, 6.9]));
   // 47: the TPS and its lead, with the grey coupler (run 12: see the block above; no mirroring)
   A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(C47, grey)), '47', {ex: [0, 1.8, 3.0], order: 0});
-  A.add(part([SX, SY, FZ + 0.72], mk(orient(screwY(0.9, 0.24, 0.13, 0.18), [0, 0, 1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});
+  A.add(part([SX, SY, FZ + 1.17], mk(orient(screwY(0.9, 0.24, 0.13, 0.18), [0, 0, 1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});
   // 62 O-ring: on the shaft boss's face, between it and the sensor head
   A.add(part([SX, SY, FZ], mk(oring(0.95, 0.06).rotateX(Math.PI / 2), rubber)), '62', {ex: [0, 1.8, 1.6], order: 0.1});
   // 59 cover 1: the flat aluminium plate over the sensor side (cut at lower left round the pilot air cover), on its
