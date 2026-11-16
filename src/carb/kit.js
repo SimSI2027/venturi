@@ -1,12 +1,31 @@
-// Shape helpers for the carburetor, on top of Ironwood's geo.js. Units: cm. Carb space: -X toward the engine,
+// Shape helpers for the carburetor, on top of Ironwood's geo.js. Run 9: the world is in mm (1 unit = 1 mm). The parts are
+// sketched in sketch units u (the old cm sketch, 6.6% small) and baked into mm by toMM at build: 1 u = MM mm. Real sizes
+// are written in mm through mm(). Carb space: -X toward the engine,
 // +X the air box (run 8: the photos carb_7 and carb_8 settled it; run 7 had them swapped), +Y up, +Z the
 // throttle-sensor side. Visual model, eyeballed from the
 // fiche and the manual's drawings: no real dimensions.
 import * as THREE from 'three';
 import {rbox, extrudeXY, rpoly, circ, spring as springX, smooth, merge, at} from '../lib/geo.js';
+import {MM} from '../stage.js';
 
 export {THREE, rbox, extrudeXY, rpoly, circ, merge, at, smooth};
 const Y = new THREE.Vector3(0, 1, 0);
+/** A real size in mm, as sketch units. */
+export const mm = (v) => v / MM;
+const baked = new WeakSet();
+/** Bake a built group into mm: every part's rest pose, fan-out and child positions, the group's offset, and each
+ * geometry once (a uniform factor, so rotations and the parts' own scales are kept exactly). */
+export function toMM(A) {
+  A.offset.multiplyScalar(MM);
+  for (const p of A.parts) {
+    for (const v of [p.obj.position, p.rest, p.ex]) v.multiplyScalar(MM);
+    p.obj.traverse((o) => {
+      if (o !== p.obj) o.position.multiplyScalar(MM);
+      if (o.isMesh && !baked.has(o.geometry)) baked.add(o.geometry), o.geometry.scale(MM, MM, MM);
+    });
+  }
+  return A;
+}
 
 /** Segments for a radius: round at the default view, cheap on the small pins. */
 const segs = (r) => (r < 0.15 ? 12 : r < 0.4 ? 20 : r < 1 ? 32 : 56);

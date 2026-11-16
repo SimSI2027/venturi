@@ -3,9 +3,9 @@
 // Run 8: H = 16.55 cm, top cover (y 8.11) to bowl bottom (y -8.44); bore-axis length 8.5 = 0.51 H. The 2 new photos
 // (carb_7 engine side, carb_8 air-box side) put the ENGINE at -X and the AIR BOX at +X (run 7 had them swapped).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, mk, part} from './kit.js';
+import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, mk, part, mm} from './kit.js';
 
-export const BORE_R = 1.95;
+export const BORE_R = mm(19.5); // run 9: the 39 bore (sketch units, baked into mm by toMM)
 // run 8 proportions (carb_7, along the bore), H = top cover to bowl bottom = 16.55 (the bore ring, 4.8 across, is
 // 0.29 H): the top cover's top at +8.11 (0.49 H above the bore centre), the bowl joint at -2.48 (0.64 H under the
 // top), the bowl's belly at -8.44; across Z 3 masses side by side, 0.65 H in all: the cable-wheel housing out to -5.1,
@@ -178,19 +178,20 @@ export function buildBody(index) {
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
   const bowlFace = mk(rbox(5.9, 0.02, 6.6, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
   const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
-  // 2 short plain round spigots (outer r 2.4 = 0.25 H across), a thin bead near each lip, machined end faces
-  const SP = 4.25;
+  // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
+  // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
+  const SP = 4.25, RE = mm(24), RA = mm(25), BD = mm(1);
   const spigots = mk(merge([
-    latheX([[2.5, 2.4], [SP - 0.3, 2.4], [SP - 0.25, 2.52], [SP - 0.08, 2.52], [SP - 0.03, 2.4], [SP, 2.36], [SP, BORE_R + 0.05], [2.5, BORE_R + 0.05]]),
-    latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, 2.36], [-SP + 0.03, 2.4], [-SP + 0.08, 2.52], [-SP + 0.25, 2.52], [-SP + 0.3, 2.4], [-2.5, 2.4]]),
+    latheX([[2.5, RA], [SP - 0.3, RA], [SP - 0.25, RA + BD], [SP - 0.08, RA + BD], [SP - 0.03, RA], [SP, RA - 0.04], [SP, BORE_R + 0.05], [2.5, BORE_R + 0.05]]),
+    latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),
   ]), cast);
   // the bore itself: machined, brighter than the casting, open to the slide cavity between SX0 and SX1
   const ring = (x0, x1) => latheX([[x0, BORE_R + 0.002], [x1, BORE_R + 0.002], [x1, BORE_R - 0.03], [x0, BORE_R - 0.03]], 64);
   // inside: the cavity's 2 guide faces (machined strips on its engine-side wall, where the 4 rollers run), the needle jet bore in the bore floor
   // (a machined ring round the nozzle's top), the accelerator pump nozzle aimed into the bore toward the engine
   const guides = [-1, 1].map((sz) => rbox(0.02, 6.0, 0.5, 0.008).translate(SX1 - 0.012, 3.2, sz * 2.5));
-  const boreM = mk(merge([ring(-SP, SX0), ring(SX1, SP), ...guides, tubeY(0.45, 0.29, -2.02, -1.9).translate(-0.2, 0, 0)]), bore);
-  const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -1.93, 0]), brass);
+  const boreM = mk(merge([ring(-SP, SX0), ring(SX1, SP), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
+  const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -BORE_R + 0.02, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it
   const shaft = mk(merge([orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), rbox(0.22, 2.4, 0.5, 0.08).translate(0.4, -1.05, -0.9)]), steel, SHX, SHY, 0);

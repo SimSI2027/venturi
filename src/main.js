@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import fontMed from '@fontsource/barlow-condensed/files/barlow-condensed-latin-500-normal.woff2';
 import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2';
-import {createStage, FLOOR_Y} from './stage.js';
+import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm} from './lib/asm.js';
 import {PARTS, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, nameOf, specValue, groupIndex} from './carb/data.js';
@@ -22,6 +22,7 @@ import {buildFloat} from './carb/float.js';
 import {buildJets} from './carb/jets.js';
 import {buildMixture} from './carb/mixture.js';
 import {buildBody} from './carb/body.js';
+import {toMM} from './carb/kit.js';
 import {createGuide, MODES, REMOVED_AT, FITTED_AT} from './guide.js';
 
 const MARKS = {parsed: performance.now()};
@@ -30,6 +31,8 @@ const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const clamp01 = (t) => Math.min(1, Math.max(0, t));
 const BUILD = {hoses: buildHoses, sensor: buildSensor, starters: buildStarters, top: buildTop, slide: buildSlide, linkage: buildLinkage, 'pilot-air': buildPilotAir, pump: buildPump, bowl: buildBowl, float: buildFloat, jets: buildJets, mixture: buildMixture, body: buildBody};
 const NOTICE = 'Visual guide only. Follow the service manual.';
+// run 9: the model is at real scale, 1 unit = 1 mm (correction 14)
+const SCALE_NOTE = 'real size in mm: 191.8 tall, 120.8 wide, engine spigot 48 across (Sudco FCR-MX39 table); every other size is estimated to scale from photos';
 
 async function loadFonts() {
   const faces = [
@@ -69,7 +72,7 @@ async function main() {
   const carb = new THREE.Group();
   scene.add(carb);
   const asms = GROUPS.map((g, i) => {
-    const a = BUILD[g.key](i);
+    const a = toMM(BUILD[g.key](i)); // run 9: baked into mm (1 unit = 1 mm)
     carb.add(a.group);
     a.finalize();
     compile(a.group);
@@ -98,7 +101,7 @@ async function main() {
   const helpBtn = el('button', 'iw-help', '?', head);
   helpBtn.setAttribute('aria-label', 'Controls');
   helpBtn.setAttribute('aria-expanded', 'false');
-  const HELP = [['Drag', 'orbit'], ['Wheel / pinch', 'zoom'], ['Hover a part', 'its name and group'], ['Click a part', 'bring it forward, drag to spin it'], ['Esc / click away', 'put it back, leave a group'], ['Explode', 'groups, then their parts, come apart'], ['01 to 13', 'fly to a group, dim the rest'], ['Tear down · Rebuild', 'guided steps: Back / Next or ← →'], ['Parts', 'search, specs, steps and your notes'], ['High · Med · Low', 'render quality'], ['?', 'this card']];
+  const HELP = [['Drag', 'orbit'], ['Wheel / pinch', 'zoom'], ['Hover a part', 'its name and group'], ['Click a part', 'bring it forward, drag to spin it'], ['Esc / click away', 'put it back, leave a group'], ['Explode', 'groups, then their parts, come apart'], ['01 to 13', 'fly to a group, dim the rest'], ['Tear down · Rebuild', 'guided steps: Back / Next or ← →'], ['Parts', 'search, specs, steps and your notes'], ['High · Med · Low', 'render quality'], ['Scale', SCALE_NOTE], ['?', 'this card']];
   const helpCard = el('div', 'iw-helpcard', HELP.map(([k, v]) => `<div><b>${k}</b><span>${v}</span></div>`).join(''), ui);
   const setHelp = (on) => (helpCard.classList.toggle('on', on), helpBtn.setAttribute('aria-expanded', String(on)));
   helpBtn.onclick = () => setHelp(!helpCard.classList.contains('on'));
@@ -180,7 +183,7 @@ async function main() {
     return r;
   });
   const specs = el('div', 'vt-specs', null, pBody);
-  specs.innerHTML = `<table>${Object.keys(SPEC_LABELS).map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('')}</table><p class="vt-src">${esc('Source: YFZ450 service manual, chapter 2 specifications and chapter 6')}</p>`;
+  specs.innerHTML = `<table>${Object.keys(SPEC_LABELS).map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('')}</table><p class="vt-src">${esc('Source: YFZ450 service manual, chapter 2 specifications and chapter 6')}</p><p class="vt-src">${esc('Model scale: ' + SCALE_NOTE + '.')}</p>`;
   specs.hidden = true;
   search.addEventListener('input', () => {
     const s = search.value.trim().toLowerCase();
@@ -219,8 +222,8 @@ async function main() {
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.dampingFactor = 0.07;
-  controls.minDistance = 6;
-  controls.maxDistance = 300;
+  controls.minDistance = 6 * MM;
+  controls.maxDistance = 300 * MM;
   controls.maxPolarAngle = Math.PI * 0.9; // low enough to look up at the jets (the floor is one-sided)
   controls.zoomSpeed = 0.9;
   let lastInput = performance.now();
@@ -267,7 +270,7 @@ async function main() {
     p.ext = 0.5 * (Math.abs(p.ax.x) * s.x + Math.abs(p.ax.y) * s.y + Math.abs(p.ax.z) * s.z);
   }
   // 1 thin brass dashed line per hovering part, from its seat to the part (drawn over everything)
-  const DASH = [0.22, 0.14];
+  const DASH = [0.22 * MM, 0.14 * MM];
   const MAXD = 600;
   const dashGeo = new THREE.BufferGeometry();
   dashGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXD * 6), 3));
@@ -282,7 +285,7 @@ async function main() {
     if (guide.mode) for (const p of curParts()) {
       const w = wT[p.k].v * mixT.v;
       if (w < 0.03 || hT[p.k].v > 0.5 || p === solo.part) continue;
-      const L = Math.max(OFF * w - p.ext, 0.25); // from the seat to the part's near face
+      const L = Math.max(OFF * w - p.ext, 0.25 * MM); // from the seat to the part's near face
       for (let s = 0; s < L && k < MAXD; s += DASH[0] + DASH[1], k++) {
         dv.copy(p.seat).addScaledVector(p.ax, s).toArray(arr, k * 6);
         dv.copy(p.seat).addScaledVector(p.ax, Math.min(L, s + DASH[0])).toArray(arr, k * 6 + 3);
@@ -481,7 +484,7 @@ async function main() {
     const d = GROUPS[i].dir;
     return Math.abs(d[2]) > 0.5 ? new THREE.Vector3(-0.45 * Math.sign(d[2]), 0.45, Math.sign(d[2])) : HERO_DIR;
   };
-  const ground = (y = S.floor.position.y) => [-3, 3].flatMap((x) => [-2.5, 2.5].map((z) => new THREE.Vector3(x, y, z)));
+  const ground = (y = S.floor.position.y) => [-3 * MM, 3 * MM].flatMap((x) => [-2.5 * MM, 2.5 * MM].map((z) => new THREE.Vector3(x, y, z)));
   // guided: the current step's parts with the body they come off, seen from the side they come off
   const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
   // ...from the end of the step's first part's fitting axis, so its seat shows: from below for the jets, float and
@@ -774,7 +777,7 @@ async function main() {
     floorKey = poseKey;
     let lo = Infinity;
     for (const p of subjectPts(carb)) lo = Math.min(lo, p.y);
-    carbFloor = Math.min(FLOOR_Y, lo - 0.5);
+    carbFloor = Math.min(FLOOR_Y, lo - 0.5 * MM);
     S.floor.position.y = carbFloor;
   }
 

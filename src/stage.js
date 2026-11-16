@@ -19,9 +19,12 @@ import {setEnvironment} from './lib/materials.js';
 // colours are exact on both tiers; the floor fades to transparent into it.
 // the floor sits 3.5 cm under the gun's lowest point (the stock's toe, y -18.5) so its contact shadow and
 // reflection read right under it in the default view; it sinks to FLOOR_LOW as the parts drop on explode
-// Venturi: the floor sits 0.5 cm under the carburetor's lowest point (the hose ends, y -12 cm); main.js lowers it
-// under the exploded parts.
-export const FLOOR_Y = -12.5;
+// Venturi: the floor sits 5 mm under the carburetor's lowest point (the hose ends); main.js lowers it under the
+// exploded parts.
+// Run 9: the world is in mm (1 unit = 1 mm). The carburetor's parts are still sketched in their old units and
+// baked into mm at build time (kit.js toMM); every stage size below is written in those old units times MM.
+export const MM = 10.66;
+export const FLOOR_Y = -12.5 * MM;
 
 const Vignette = {
   uniforms: {tDiffuse: {value: null}, uAmount: {value: 0}, uAspect: {value: 1}},
@@ -106,19 +109,19 @@ export function createStage(canvas) {
   setEnvironment(scene.environment);
   scene.environmentIntensity = 0.95;
 
-  const camera = new THREE.PerspectiveCamera(30, 1, 0.3, 1500);
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.3 * MM, 1500 * MM);
 
   // key: soft, upper left, slightly warm
   const key = new THREE.DirectionalLight(0xfff0dd, 3.0);
-  key.position.set(-40, 70, 50);
-  key.target.position.set(0, -6, 0);
+  key.position.set(-40 * MM, 70 * MM, 50 * MM);
+  key.target.position.set(0, -6 * MM, 0);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
-  Object.assign(key.shadow.camera, {left: -40, right: 40, top: 40, bottom: -40, near: 20, far: 200});
+  Object.assign(key.shadow.camera, {left: -40 * MM, right: 40 * MM, top: 40 * MM, bottom: -40 * MM, near: 20 * MM, far: 200 * MM});
   key.shadow.radius = 22;
   key.shadow.blurSamples = 24;
   key.shadow.bias = -0.0006;
-  key.shadow.normalBias = 0.04;
+  key.shadow.normalBias = 0.04 * MM;
   scene.add(key, key.target);
   // cool rim from behind
   const rim = new THREE.DirectionalLight(0xe4e4e5, 3.2); // run 8: barely cool, so silver aluminium reads neutral
@@ -140,14 +143,14 @@ export function createStage(canvas) {
   // 12% that fades out within 40 cm of the gun's footprint (x -44..71, z 0), one soft elliptical
   // contact shadow centred under the gun, and a soft warm pool of light, fading to transparent
   // into the CSS background. Linear values, tone mapped like the rest.
-  const floorGeo = new THREE.CircleGeometry(400, 96);
+  const floorGeo = new THREE.CircleGeometry(400 * MM, 96);
   const floorU = {
     uBase: {value: new THREE.Color(0.011, 0.012, 0.014)},
     uPool: {value: new THREE.Color(0.05, 0.042, 0.032)},
     uC: {value: new THREE.Vector2(0, 0)}, // the carburetor's centre over the floor
     uStrength: {value: 0.12},
-    uR: {value: new THREE.Vector2(45, 240)},
-    uS: {value: 1}, // footprint scale: 1 the carburetor, ~12 the ATV (main.js)
+    uR: {value: new THREE.Vector2(45 * MM, 240 * MM)},
+    uS: {value: MM}, // footprint scale: the carburetor in mm
   };
   const floorR = new Reflector(floorGeo, {
       textureWidth: 1024,
@@ -204,9 +207,9 @@ export function createStage(canvas) {
   floorR.rotation.x = -Math.PI / 2;
   floorR.position.y = FLOOR_Y;
   scene.add(floorR);
-  const catcher = new THREE.Mesh(new THREE.CircleGeometry(260, 64), new THREE.ShadowMaterial({color: 0x050506, opacity: 0.55, depthWrite: false}));
+  const catcher = new THREE.Mesh(new THREE.CircleGeometry(260 * MM, 64), new THREE.ShadowMaterial({color: 0x050506, opacity: 0.55, depthWrite: false}));
   catcher.rotation.x = -Math.PI / 2;
-  catcher.position.y = FLOOR_Y + 0.05;
+  catcher.position.y = FLOOR_Y + 0.05 * MM;
   catcher.receiveShadow = true;
   catcher.renderOrder = -1;
   // not added: the floor shader draws the one contact shadow (the key light's cast shadow sat
@@ -219,7 +222,7 @@ export function createStage(canvas) {
   // SSAO (GTAO) on the gun only: the floors are hidden from its normal/depth pass, which also
   // keeps the Reflector from re-rendering the scene a second time inside it
   const ao = new GTAOPass(scene, camera, 4, 4);
-  ao.updateGtaoMaterial({radius: 0.6, distanceExponent: 1.4, thickness: 0.7, scale: 1.0, samples: 16});
+  ao.updateGtaoMaterial({radius: 0.6 * MM, distanceExponent: 1.4, thickness: 0.7 * MM, scale: 1.0, samples: 16});
   ao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16});
   ao.blendIntensity = 0.8;
   // half resolution: the largest GPU pass; AO is soft, the blend samples it bilinearly

@@ -2,7 +2,7 @@
 // (4) and gasket (29), spring (30), diaphragm (28), O-ring (31); the link lever plate (45) with the pump rod running
 // up the cable side to it, the timing adjusting screw (8) and its washers (6, 7) on the plate.
 import {Asm} from '../lib/asm.js';
-import {merge, cylY, tubeY, hexY, latheY, orient, oring, springY, screwY, plateXY, rbox, lift, mk, part} from './kit.js';
+import {merge, cylY, tubeY, hexY, latheY, orient, oring, springY, screwY, plateXY, rbox, lift, mk, part, mm} from './kit.js';
 import {BOWL, PUMP, PY0} from './bowl.js';
 
 const [PX, PZ] = PUMP, PY = PY0 - 0.2; // pump axis under the bowl's cable-side edge (the housing's face at PY + 0.2)
@@ -15,7 +15,7 @@ export function buildPump(index) {
   const ears = merge([0, 2.1, 4.2].map((a) => cylY(0.34, -0.4, 0).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER)));
   const cov = merge([latheY([[-0.55, 0], [-0.55, 1.25], [-0.4, 1.5], [0, 1.6], [0, 0]].reverse().map(([y, r]) => [y, r]).reverse()), ears, cylY(0.35, -0.85, -0.5)]);
   A.add(part([PX, PY, PZ], mk(cov, cast)), '27', {ex: [0, -3.4, 0], order: 0.15});
-  const scr = screwY(0.9, 0.2, 0.11, 0.14).rotateX(Math.PI);
+  const scr = screwY(mm(8), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 8 (Keihin list)
   A.add(part([PX, PY - 0.42, PZ], ...[0, 2.1, 4.2].map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
   // the stack under the bowl's pump housing (its face at PY + 0.2): gasket 29 on the cover, diaphragm 28 on the
   // gasket; both a little wider than the cover and housing, so their black edges show between them

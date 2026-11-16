@@ -2,7 +2,7 @@
 // rod's guide and the fuel inlet fitting, its gasket (25),
 // screws (5), drain plug (26), bottom plug (38) with O-ring (37). Comes off downward.
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, gasketXZ, extrudeXY, rpoly, hose, lift, mk, part} from './kit.js';
+import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, gasketXZ, extrudeXY, rpoly, hose, lift, mk, part, mm} from './kit.js';
 import {HT, UY, FLANGE, EARS, slabY} from './body.js';
 
 // run 8, from the 2 underside photos: the lip in the flange's outline (4 corner screw ears), a rounded belly under it
@@ -90,7 +90,7 @@ export function buildBowl(index) {
   A.add(part([0, 0, 0], mk(g, cast), mk(inlet, steel), mk(face, machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   A.add(part([0, y1 + 0.05, 0], mk(slabY(FLANGE, 0, 0.1, OPEN), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
   // 5 screws: 4 Phillips pan heads from below through the corner ears
-  const sc = screwY(1.0, 0.3, 0.15, 0.22).rotateX(Math.PI);
+  const sc = screwY(mm(12), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)
   A.add(part([0, y1 - 0.42, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
   A.add(part([-0.6, yb + 0.75, 3.05], mk(orient(merge([hexY(0.34, 0, 0.25), screwY(0.6, 0.18, 0.18, 0.01)]), [0, 0, 1]), steel)), '26', {ex: [0, 0, 2.4], order: 0.1, axis: [0, 0, 1]});
   // 38 the big hex bottom plug (main jet access) under the boss, 37 its O-ring, wider than the hex so its edge shows
