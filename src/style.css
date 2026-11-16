@@ -112,7 +112,7 @@ html, body { background: var(--iw-bg); }
 .iw-pills { display: flex; gap: clamp(3px, 0.45vw, 8px); justify-content: center; justify-content: safe center; flex-wrap: nowrap;
   overflow-x: auto; scrollbar-width: none; }
 .iw-pills::-webkit-scrollbar { display: none; }
-.iw-pills .iw-btn { flex: none; font-size: clamp(13px, 1.55vw, 17px); letter-spacing: clamp(0.07em, 0.14vw, 0.16em); padding: 6px clamp(7px, 1.1vw, 18px); }
+.iw-pills .iw-btn { flex: none; font-size: clamp(13px, 1.55vw, 17px); letter-spacing: clamp(0.06em, 0.13vw, 0.16em); padding: 6px clamp(5px, 0.85vw, 18px); } /* run 10: all 13 whole at 800 px */
 .iw-pills .iw-btn { background: var(--iw-panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .iw-pills .iw-btn i { font-style: normal; color: var(--iw-mute); margin-right: clamp(3px, 0.4vw, 6px); font-size: 0.82em; }
 .iw-pills .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }

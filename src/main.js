@@ -418,7 +418,7 @@ async function main() {
     }
     return out;
   }
-  function frame(obj, dir = HERO_DIR, fill = 1, keep = []) {
+  function frame(obj, dir = HERO_DIR, fill = 1, keep = [], loose = []) {
     const pts = subjectPts(obj);
     dir = dir.clone().normalize();
     const f = dir.clone().negate();
@@ -442,6 +442,17 @@ async function main() {
       ox += ((x0 + x1) / 2 - (W.x0 + W.x1) / 2) * D * tx;
       oy += ((y0 + y1) / 2 - (W.y0 + W.y1) / 2) * D * ty;
       D *= Math.max((x1 - x0) / (W.x1 - W.x0), (y1 - y0) / (W.y1 - W.y0));
+    }
+    // run 10 (item 9): loose points (the hanging hose runs on load) stay inside the usable area (which keeps its own
+    // 6 px margins) but take no part in the fill or the centring
+    if (loose.length) {
+      const WF = windowOf(1), xc = (WF.x0 + WF.x1) / 2, yc = (WF.y0 + WF.y1) / 2, hw = (WF.x1 - WF.x0) / 2, hh = (WF.y1 - WF.y0) / 2;
+      let k = 1;
+      for (const p of loose) {
+        const d = p.clone().sub(c), z = Math.max(d.dot(f) + D, 1e-3);
+        k = Math.max(k, Math.abs((d.dot(r) - ox) / (z * tx) - xc) / hw, Math.abs((d.dot(u) - oy) / (z * ty) - yc) / hh);
+      }
+      D *= k;
     }
     // keep: points that must stay inside the window but take no part in centring (the contact shadow)
     if (keep.length) {
@@ -497,7 +508,12 @@ async function main() {
     if (Math.abs(a.z) > 0.7) return new THREE.Vector3(-0.4, 0.42, Math.sign(a.z));
     return new THREE.Vector3(Math.sign(a.x), 0.4, 0.5);
   };
-  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
+  // run 10 (item 9): assembled, with nothing in focus, the carburetor is framed without its hanging hose runs (they
+  // stay inside the usable area as loose points), so the castings fill 70-85% on load, not the hoses' ends
+  const hoseAsm = asms.find((a) => a.key === 'hoses');
+  const bare = () => !guide.mode && focus < 0 && st.explode < 0.02;
+  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
+  const autoLoose = () => (bare() ? subjectPts(hoseAsm.group) : []);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
   const followFrom = (dur = 0.9) => (view.follow = {from: {t: controls.target.clone(), p: camera.position.clone()}, t0: performance.now(), dur: dur * 1000});
@@ -941,7 +957,7 @@ async function main() {
       if (key !== autoKey || !autoCam) {
         // guided: framed where the parts are going, not where they are on the way
         if (guide.mode) poseAll(st.explode, true);
-        autoCam = frame(autoSubject(), autoDir(), 1, autoKeep());
+        autoCam = frame(autoSubject(), autoDir(), 1, autoKeep(), autoLoose());
         if (guide.mode) {
           poseAll(st.explode);
           if (solo.part) placeSolo(solo.T.v);
