@@ -1,6 +1,6 @@
 // 10 float: float (21) on its pin (22), needle valve (23) hung on the float tang by its clip (24).
 import {Asm} from '../lib/asm.js';
-import {merge, rbox, cylY, latheY, orient, oring, mk, part} from './kit.js';
+import {merge, rbox, cylY, latheY, orient, oring, lift, mk, part} from './kit.js';
 
 export function buildFloat(index) {
   const A = new Asm('float', 'Float', {offset: [0, -7.0, 0], index});
@@ -15,5 +15,5 @@ export function buildFloat(index) {
   // 23 needle valve: small body with the rubber-tipped cone pointing up into the seat
   A.add(part([1.2, -4.95, 0], mk(latheY([[0, 0], [0, 0.17], [0.55, 0.17], [0.62, 0.12], [0.8, 0.04], [0.8, 0]]), steel), mk(latheY([[0.62, 0], [0.62, 0.12], [0.8, 0.04], [0.85, 0]]), rubber)), '23', {ex: [1.8, 0.4, 0], order: 0.6});
   A.add(part([1.2, -4.92, 0], mk(oring(0.2, 0.03), steel)), '24', {ex: [2.6, -0.4, 0], order: 0.65});
-  return A;
+  return lift(A, 0.9);
 }

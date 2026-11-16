@@ -2,7 +2,7 @@
 // (4) and gasket (29), spring (30), diaphragm (28), O-ring (31); the link lever plate (45) with the pump rod running
 // up the cable side to it, the timing adjusting screw (8) and its washers (6, 7) on the plate.
 import {Asm} from '../lib/asm.js';
-import {merge, cylY, tubeY, hexY, latheY, orient, oring, springY, screwY, plateXY, rbox, mk, part} from './kit.js';
+import {merge, cylY, tubeY, hexY, latheY, orient, oring, springY, screwY, plateXY, rbox, lift, mk, part} from './kit.js';
 import {BOWL, PUMP} from './bowl.js';
 
 const [PX, PZ] = PUMP, PY = BOWL.y0 - 0.35; // pump axis under the bowl (the lobe's face at PY + 0.2)
@@ -26,11 +26,11 @@ export function buildPump(index) {
   // 45 link lever plate at the foot of the cable cover, with the pump rod running down the cable side through the
   // bowl's guide to the diaphragm; 8 adjusting screw through the plate's end with washers 6, 7
   const RX = -0.4, RZ = PZ - 0.3, RY = -0.9;
-  A.add(part([RX, RY, RZ], mk(merge([rbox(1.9, 0.7, 0.18, 0.06).translate(0.55, 0, -0.35), cylY(0.12, PY + 0.05 - RY, 0.1)]), machined)), '45', {ex: [0, 1.2, -2.4], order: 0.55, axis: [0, 0, -1]});
+  A.add(part([RX, RY, RZ], mk(merge([rbox(1.9, 0.7, 0.18, 0.06).translate(0.55, 0, -0.35), cylY(0.12, PY + BOWL.lift + 0.05 - RY, 0.1)]), machined)), '45', {ex: [0, 1.2, -2.4], order: 0.55, axis: [0, 0, -1]});
   const sx = RX + 1.0, sy = RY + 0.55, sz = RZ - 0.35; // the head 0.2 above the plate, the 2 washers under it
   const adj = merge([screwY(1.2, 0.13, 0.13, 0.01), cylY(0.3, 0, 0.32)]);
   A.add(part([sx, sy, sz], mk(adj, steel)), '8', {ex: [0, 3.6, -3.0], order: 0.6, axis: [0, 1, 0]});
   A.add(part([sx, sy, sz], mk(tubeY(0.3, 0.14, -0.08, 0), steel)), '6', {ex: [0, 2.8, -3.0], order: 0.65, axis: [0, 1, 0]});
   A.add(part([sx, sy - 0.08, sz], mk(tubeY(0.26, 0.14, -0.08, 0), steel)), '7', {ex: [0, 2.2, -3.0], order: 0.7, axis: [0, 1, 0]});
-  return A;
+  return lift(A, BOWL.lift, ['45', '8', '6', '7']);
 }

@@ -81,6 +81,11 @@ export function plateXY(w, h, t, r = 0.2, holes = []) {
   for (const [x, y, hr] of holes) s.holes.push(circ(x, y, hr));
   return extrudeXY(s, Math.max(t, 0.09), 0.04, 8, {free: true});
 }
+/** Lift a group's registered parts (and their rest pose) by dy, all but the ids in skip (run 7: the body's underside moved up). */
+export function lift(A, dy, skip = []) {
+  for (const p of A.parts) if (!skip.includes(p.id)) (p.obj.position.y += dy), (p.rest.y += dy);
+  return A;
+}
 /** Mesh helper. */
 export function mk(geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
   const m = new THREE.Mesh(geo, mat);

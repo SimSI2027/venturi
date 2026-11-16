@@ -12,8 +12,8 @@ export function buildSensor(index) {
   // 47 TPS (from the photo): black, on the shaft's +Z end at the top, its long body along the bore toward the
   // engine, an ear for its screw (36), a wire lead to its grey coupler
   const [SX, SY] = SHAFT, FZ = TOWER.z + 0.65; // FZ: the cover plate's outer face
-  const head = merge([orient(cylY(1.0, 0, 0.75), [0, 0, 1]), rbox(3.3, 1.45, 0.75, 0.25).translate(1.7, 0.45, 0.38), rbox(0.9, 0.9, 0.45, 0.2).translate(-1.2, 0.55, 0.23)]);
-  const lead = hose([[3.3, 0.7, 0.45], [4.3, 0.6, 0.7], [5.0, -0.6, 1.3], [5.3, -2.0, 1.7]], 0.17, 0.001);
+  const head = merge([orient(cylY(0.85, 0, 0.9), [0, 0, 1]), rbox(4.2, 1.7, 0.9, 0.3).translate(1.6, 0.6, 0.45), rbox(0.9, 0.9, 0.45, 0.2).translate(-1.2, 0.55, 0.23)]);
+  const lead = hose([[3.65, 0.7, 0.45], [4.3, 0.6, 0.7], [5.0, -0.6, 1.3], [5.3, -2.0, 1.7]], 0.17, 0.001);
   const coupler = rbox(1.1, 1.5, 0.9, 0.15).translate(5.4, -2.8, 1.8);
   A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(lead, wire), mk(coupler, grey)), '47', {ex: [0, 1.8, 3.0], order: 0});
   A.add(part([SX - 1.2, SY + 0.55, FZ + 0.47], mk(orient(screwY(0.9, 0.24, 0.13, 0.18), [0, 0, 1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});

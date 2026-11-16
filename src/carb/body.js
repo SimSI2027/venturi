@@ -6,10 +6,11 @@ import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hex
 
 export const BORE_R = 1.95;
 export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 8.5}; // the slide tower; the lower block is x +/-2.6
-export const BOT = -4.0; // the body's underside: the float chamber gasket face
+export const BOT = -3.1; // the body's underside: the float chamber gasket face (photos: 1.15 under the bore)
+const UY = 0.9; // run 7: the underside's bosses, built for BOT -4.0, lifted with it
 export const SHAFT = [-0.2, 6.8]; // throttle shaft (x, y), across the tower along Z
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below
-export const SHIELD = [[3.4, 8.9, 0.9], [-2.9, 9.1, 0.6], [-2.9, 5.6, 0.5], [-1.3, 3.9, 0.6], [-1.0, 0.4, 0.6], [0.45, -0.4, 0.7], [1.9, 0.4, 0.6], [2.3, 3.2, 0.8], [3.5, 7.6, 0.8]];
+export const SHIELD = [[4.0, 8.9, 0.9], [-2.9, 9.1, 0.6], [-2.9, 5.6, 0.5], [-1.3, 3.9, 0.6], [-1.0, 0.4, 0.6], [0.45, -0.4, 0.7], [1.9, 0.4, 0.6], [2.4, 3.4, 0.8], [4.1, 7.3, 0.8]];
 // the sensor side's flat cover plate outline (59), cut at lower left round the pilot air cover
 export const PLATE59 = [[-1.8, 8.1], [3.6, 8.1], [3.6, 1.0], [1.8, 1.0], [1.8, 3.4], [0.6, 4.3], [-1.8, 4.4]];
 /** A counter-clockwise outline moved inward by d (outward if d < 0), corners kept. */
@@ -60,8 +61,9 @@ function cavitySection() {
   const zc = Math.sqrt(BORE_R * BORE_R - SY * SY);
   const s = new THREE.Shape();
   const Z = TOWER.z, T = TOWER.top;
-  s.moveTo(-Z, BOT);
-  s.lineTo(Z, BOT);
+  s.moveTo(-Z + 1.0, BOT);
+  s.lineTo(Z - 1.0, BOT);
+  s.quadraticCurveTo(Z, BOT, Z, BOT + 1.0);
   s.lineTo(Z, T);
   s.lineTo(SZ, T);
   s.lineTo(SZ, SY);
@@ -70,6 +72,8 @@ function cavitySection() {
   s.lineTo(-SZ, SY);
   s.lineTo(-SZ, T);
   s.lineTo(-Z, T);
+  s.lineTo(-Z, BOT + 1.0);
+  s.quadraticCurveTo(-Z, BOT, -Z + 1.0, BOT);
   s.closePath();
   const g = extrudeXY(s, SX1 - SX0, 0.08, 48, {free: true});
   g.rotateY(Math.PI / 2);
@@ -85,7 +89,7 @@ export function buildBody(index) {
   // halves either side of the slide cavity (x SX0..SX1), which runs from the bore up through the tower top
   const {x0: TX0, x1: TX1, z: TZ, top: TT} = TOWER;
   const [SHX, SHY] = SHAFT;
-  for (const [x0, x1] of [[-2.6, SX0], [SX1, 2.6]]) g.push(blockX(-TZ, TZ, BOT, 2.4, x0, x1, BORE_R));
+  for (const [x0, x1] of [[-2.6, SX0], [SX1, 2.6]]) g.push(blockX(-TZ, TZ, BOT, 2.4, x0, x1, BORE_R, 1.0));
   for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(blockX(-TZ, TZ, -1.0, TT, x0, x1, BORE_R + 0.05, 0.5));
   g.push(cavitySection());
   // cable side (-Z): a shallow cup in the shield outline round the throttle wheel; the cover (65) closes it
@@ -100,10 +104,10 @@ export function buildBody(index) {
   g.push(orient(tubeY(0.7, 0.25, 0, 3.0), [0, 0, 1], [-2.75, 3.8, 0.5]));
   g.push(tubeY(0.62, 0.3, 3.0, 7.9).translate(-2.75, 0, 1.6));
   // pilot screw: a lug under the engine spigot, outside the bowl, with a bored boss; its O-ring (51) shows under it
-  g.push(rbox(1.3, 1.9, 1.6, 0.3).translate(3.0, -3.15, 0));
-  g.push(tubeY(0.5, 0.17, -4.6, -3.9).translate(3.0, 0, 0));
+  g.push(rbox(1.3, 1.9, 1.6, 0.3).translate(3.0, -3.15 + UY, 0));
+  g.push(tubeY(0.5, 0.17, -4.6 + UY, -3.9 + UY).translate(3.0, 0, 0));
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
-  g.push(rbox(6.1, 0.35, 7.4, 0.12).translate(-0.45, BOT + 0.175, 0));
+  g.push(rbox(6.1, 0.35, 6.4, 0.12).translate(-0.45, BOT + 0.175, 0));
   // the projection on the engine spigot that keys into the joint slot
   g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
@@ -111,15 +115,15 @@ export function buildBody(index) {
   // the underside (every fitted jet sits in its own boss): the main jet tower round the needle jet (open below:
   // spacer and main jet hex show), the pilot jet and starter jet bosses, the needle valve seat boss, the 2 float
   // pin posts either side of the float's hinge
-  g.push(tubeY(0.98, 0.8, -5.2, BOT + 0.05).translate(-0.2, 0, 0));
-  g.push(cylY(0.32, -5.0, BOT + 0.05).translate(0.7, 0, 1.1));
-  g.push(cylY(0.32, -4.75, BOT + 0.05).translate(-1.7, 0, -0.8));
-  g.push(tubeY(0.4, 0.2, -4.45, BOT + 0.05).translate(1.2, 0, 0));
-  for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(1.8, -4.52, z));
+  g.push(tubeY(0.98, 0.8, -5.2 + UY, BOT + 0.05).translate(-0.2, 0, 0));
+  g.push(cylY(0.32, -5.0 + UY, BOT + 0.05).translate(0.7, 0, 1.1));
+  g.push(cylY(0.32, -4.75 + UY, BOT + 0.05).translate(-1.7, 0, -0.8));
+  g.push(tubeY(0.4, 0.2, -4.45 + UY, BOT + 0.05).translate(1.2, 0, 0));
+  for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(1.8, -4.52 + UY, z));
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
-  const bowlFace = mk(rbox(5.8, 0.02, 7.1, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
-  const seat = mk(tubeY(0.22, 0.1, -4.49, -4.15).translate(1.2, 0, 0), brass);
+  const bowlFace = mk(rbox(5.8, 0.02, 6.1, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
+  const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
   // 2 short plain round spigots (outer r 2.4 = 0.25 H across), a thin bead near each lip, machined end faces
   const SP = 4.25;
   const spigots = mk(merge([

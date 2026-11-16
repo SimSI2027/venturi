@@ -1,6 +1,6 @@
 // 12 mixture: pilot screw (49) from below at the engine end, with spring (50), washer (52), O-ring (51).
 import {Asm} from '../lib/asm.js';
-import {merge, cylY, tubeY, latheY, oring, springY, screwY, mk, part} from './kit.js';
+import {merge, cylY, tubeY, latheY, oring, springY, screwY, lift, mk, part} from './kit.js';
 
 export function buildMixture(index) {
   const A = new Asm('mixture', 'Mixture', {offset: [5.0, -4.0, 4.0], index, axis: [0, -1, 0]});
@@ -13,5 +13,5 @@ export function buildMixture(index) {
   A.add(part([X, -3.78 + DY, 0], mk(springY(0.42, 0.2, 0.035, 5), steel)), '50', {ex: [0.9, -2.0, 0], order: 0.2});
   A.add(part([X, -3.37 + DY, 0], mk(tubeY(0.24, 0.14, -0.05, 0.03), steel)), '52', {ex: [1.6, -1.2, 0], order: 0.3});
   A.add(part([X, -3.3 + DY, 0], mk(oring(0.17, 0.045), rubber)), '51', {ex: [2.3, -0.5, 0], order: 0.4});
-  return A;
+  return lift(A, 0.9);
 }

@@ -16,23 +16,23 @@ export function buildHoses(index) {
   // 2 air vent hoses (from the photos), each about 1.5 H long: from the 2 nipples on the tower's engine face up in a
   // loop over the top cover, crossing, then down in front of the engine spigot to below the bowl
   const NX = 2.45, NY = 7.8;
-  const v1 = hose([[NX, NY, 1.6], [3.0, 8.2, 1.6], [3.2, 10.4, 1.2], [3.1, 11.3, -0.6], [3.6, 10.2, -2.1], [4.6, 6.2, -1.3], [5.05, 2.5, -0.5], [5.1, -2.0, -0.3], [5.1, -7.0, -0.3], [5.1, -10.8, -0.3]], 0.32, 0.17);
-  const v2 = hose([[NX, NY, -1.6], [3.0, 8.2, -1.6], [3.3, 10.0, -1.2], [3.4, 10.9, 0.7], [3.8, 9.8, 2.0], [4.75, 6.0, 1.2], [5.2, 2.5, 0.45], [5.25, -2.0, 0.35], [5.25, -7.0, 0.35], [5.25, -10.4, 0.35]], 0.32, 0.17);
+  const v1 = hose([[NX, NY, 1.6], [3.0, 8.3, 1.7], [3.1, 10.5, 1.5], [3.2, 11.4, -0.3], [3.6, 10.6, -2.2], [4.6, 6.6, -1.7], [5.1, 2.5, -0.9], [5.1, -2.0, -0.6], [5.1, -7.0, -0.6], [5.1, -10.9, -0.6]], 0.32, 0.17);
+  const v2 = hose([[NX, NY, -1.6], [3.0, 8.3, -1.5], [3.1, 10.0, -1.2], [3.4, 10.6, -2.3], [4.6, 7.0, -2.3], [5.2, 3.0, -1.4], [5.25, -2.0, -1.25], [5.25, -7.0, -1.25], [5.25, -11.6, -1.25]], 0.32, 0.17);
   A.add(part([0, 0, 0], mk(v1, hm)), '57', {ex: [6.0, 1.0, 0], order: 0.1, axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(v2, hm)), '58', {ex: [8.0, 1.0, 0], order: 0.15, axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(clip(0.32, [1, 0.6, 0], [2.75, 8.0, 1.6]), zinc)), '39', {ex: [5.0, 1.6, 0], order: 0.05, axis: [1, 0, 0]});
   // the cable cover's hose (vinyl, from the photos): from the nipple at the cover's foot down the cable side,
   // out round the pump lobe, to below the bowl
-  A.add(part([0, 0, 0], mk(hose([[0.95, -0.6, -4.33], [0.95, -1.6, -4.45], [1.05, -4.2, -5.5], [1.15, -7.0, -6.0], [1.2, -10.2, -5.9]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
+  A.add(part([0, 0, 0], mk(hose([[0.95, -0.6, -4.33], [0.95, -1.6, -4.45], [1.05, -3.6, -5.2], [1.15, -6.5, -5.4], [1.2, -10.0, -5.3]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
   A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [0.95, -0.95, -4.36]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
-  A.add(part([1.4, -8.4, 2.0], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [6.0, -9.0, 4.0], order: 0.4});
-  A.add(part([0, 0, 0], mk(hose([[1.4, -9.1, 2.0], [1.4, -10.3, 2.05], [1.3, -11.6, 2.2]], 0.25), vinyl)), '72', {ex: [6.0, -12.0, 4.0], order: 0.1});
-  A.add(part([1.37, -10.4, 2.07], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
+  A.add(part([1.4, -7.5, 2.0], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [6.0, -9.0, 4.0], order: 0.4});
+  A.add(part([0, 0, 0], mk(hose([[1.4, -8.2, 2.0], [1.4, -9.4, 2.05], [1.3, -11.0, 2.2]], 0.25), vinyl)), '72', {ex: [6.0, -12.0, 4.0], order: 0.1});
+  A.add(part([1.37, -9.5, 2.07], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
   // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank
-  const fuel = hose([[1.0, -3.3, 4.46], [1.0, -2.0, 4.5], [1.3, -0.9, 5.3], [2.2, 0.3, 6.4], [3.4, 1.4, 7.2], [4.8, 2.6, 7.6]], 0.42, 0.22);
+  const fuel = hose([[1.0, -1.4, 3.96], [1.0, -0.2, 4.0], [1.3, 0.9, 4.9], [2.2, 1.9, 6.2], [3.4, 2.8, 7.0], [4.8, 3.8, 7.4]], 0.42, 0.22);
   A.add(part([0, 0, 0], mk(fuel, hm)), '73', {ex: [3.5, -4.0, 6.5], order: 0.3, axis: [0, 0, 1]});
-  A.add(part([0, 0, 0], mk(clip(0.42, [0, 1, 0], [1.0, -3.0, 4.46]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2, axis: [0, 0, 1]});
-  A.add(part([0, 0, 0], mk(clip(0.42, [0.7, 0.65, 0.5], [3.1, 1.15, 7.05]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0, 1, 0], [1.0, -1.1, 3.96]), zinc)), '74', {ex: [3.5, -5.2, 5.4], order: 0.2, axis: [0, 0, 1]});
+  A.add(part([0, 0, 0], mk(clip(0.42, [0.7, 0.55, 0.5], [3.1, 2.6, 6.85]), zinc)), '76', {ex: [3.9, -2.8, 6.5], order: 0.25, axis: [0, 0, 1]});
   return A;
 }
