@@ -32,7 +32,7 @@ const clamp01 = (t) => Math.min(1, Math.max(0, t));
 const BUILD = {hoses: buildHoses, sensor: buildSensor, starters: buildStarters, top: buildTop, slide: buildSlide, linkage: buildLinkage, 'pilot-air': buildPilotAir, pump: buildPump, bowl: buildBowl, float: buildFloat, jets: buildJets, mixture: buildMixture, body: buildBody};
 const NOTICE = 'Visual guide only. Follow the service manual.';
 // run 9: the model is at real scale, 1 unit = 1 mm (correction 14)
-const SCALE_NOTE = 'real size in mm: 191.8 tall, 120.8 wide, engine spigot 48 across (Sudco FCR-MX39 table); every other size is estimated to scale from photos';
+const SCALE_NOTE = 'real size in mm: 191.8 tall, 120.8 wide, engine spigot 48 across, 63.5 from the engine spigot face to the body’s air-box face (Sudco FCR-MX39 table); every other size is estimated to scale from photos';
 
 async function loadFonts() {
   const faces = [

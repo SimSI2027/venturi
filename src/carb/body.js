@@ -11,6 +11,9 @@ export const BORE_R = mm(19.5); // run 9: the 39 bore (sketch units, baked into 
 // top), the bowl's belly at -8.44; across Z 3 masses side by side, 0.65 H in all: the cable-wheel housing out to -5.1,
 // the slide tower +/-3.3, the sensor housing out to +5.6
 export const HT = {top: 8.11, joint: -2.48, bottom: -8.44};
+// run 11 (item 4, correction 21): B = 63.5 from the engine spigot's face (-X) to the body's own air-box face, where
+// the air-box adapter ring (50 across) bolts on as a separate step about 11 deep; run 10's body ran 70.3 to there
+export const ENG_FACE = -4.0, BODY_AF = ENG_FACE + mm(63.5), ADAPT = BODY_AF + mm(11);
 export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; the lower block is x +/-2.6
 export const BOT = HT.joint; // the body's underside: the float chamber gasket face
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
@@ -167,7 +170,7 @@ export function buildBody(index) {
   const {x0: TX0, x1: TX1, z: TZ, top: TT} = TOWER;
   const [SHX, SHY] = SHAFT;
   const LOW = clipY(OUTLINE, 3.1);
-  for (const [x0, x1] of [[-2.6, SX0], [SX1, 2.6]]) g.push(outlineX(LOW, x0, x1, BORE_R));
+  for (const [x0, x1] of [[-2.6, SX0], [SX1, BODY_AF]]) g.push(outlineX(LOW, x0, x1, BORE_R));
   for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(outlineX(OUTLINE, x0, x1, BORE_R + 0.05));
   g.push(cavitySection());
   // the tower's ribs and bosses (carb_7, carb_8, carb_11): the top cover's 2 bolt bosses down the middle of the
@@ -226,9 +229,11 @@ export function buildBody(index) {
   // (run 11: the needle valve seat in it is Keihin 36, a piece of 23 in float.js)
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
-  const SP = 4.0, RE = mm(24), RA = mm(25), BD = mm(1); // overlay round 1 (carb_3): 90 face to face
+  // run 11 (item 4): the air-box one is the adapter ring, BODY_AF to ADAPT (11), a 3 mm flange step at its root
+  // against the body's face, the bead near its lip
+  const SP = -ENG_FACE, RE = mm(24), RA = mm(25), BD = mm(1), FL = mm(3), AF = BODY_AF, AD = ADAPT;
   const spigots = mk(merge([
-    latheX([[2.5, RA], [SP - 0.3, RA], [SP - 0.25, RA + BD], [SP - 0.08, RA + BD], [SP - 0.03, RA], [SP, RA - 0.04], [SP, BORE_R + 0.05], [2.5, BORE_R + 0.05]]),
+    latheX([[AF - 0.05, BORE_R + 0.05], [AF - 0.05, RA + FL - 0.03], [AF, RA + FL], [AF + mm(2.5), RA + FL], [AF + mm(2.5) + 0.03, RA + FL - 0.05], [AF + mm(2.5) + 0.05, RA], [AD - 0.3, RA], [AD - 0.25, RA + BD], [AD - 0.08, RA + BD], [AD - 0.03, RA], [AD, RA - 0.04], [AD, BORE_R + 0.05], [AF - 0.05, BORE_R + 0.05]]),
     latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),
   ]), cast);
   // the bore itself: machined, brighter than the casting, open to the slide cavity between SX0 and SX1
@@ -236,7 +241,7 @@ export function buildBody(index) {
   // inside: the cavity's 2 guide faces (machined strips on its engine-side wall, where the 4 rollers run), the needle jet bore in the bore floor
   // (a machined ring round the nozzle's top), the accelerator pump nozzle aimed into the bore toward the engine
   const guides = [-1, 1].map((sz) => rbox(0.02, 6.0, 0.5, 0.008).translate(SX1 - 0.012, 3.2, sz * 2.5));
-  const boreM = mk(merge([ring(-SP, SX0), ring(SX1, SP), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
+  const boreM = mk(merge([ring(-SP, SX0), ring(SX1, ADAPT), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -BORE_R + 0.02, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it
