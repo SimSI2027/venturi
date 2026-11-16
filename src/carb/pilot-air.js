@@ -3,7 +3,7 @@ import {Asm} from '../lib/asm.js';
 import {merge, cylY, tubeY, latheY, orient, springY, screwY, mk, part} from './kit.js';
 
 export function buildPilotAir(index) {
-  const A = new Asm('pilot-air', 'Pilot air', {offset: [1.0, -2.6, 6.0], index});
+  const A = new Asm('pilot-air', 'Pilot air', {offset: [1.0, -2.6, 6.0], index, axis: [0, 0, 1]});
   const {cast, rubber, steel, zinc} = A.M;
   const Z = [0, 0, 1];
   // cover: a domed round cover with two screw ears and its screws

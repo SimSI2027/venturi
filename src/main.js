@@ -221,7 +221,7 @@ async function main() {
   controls.dampingFactor = 0.07;
   controls.minDistance = 6;
   controls.maxDistance = 300;
-  controls.maxPolarAngle = Math.PI * 0.62;
+  controls.maxPolarAngle = Math.PI * 0.9; // low enough to look up at the jets (the floor is one-sided)
   controls.zoomSpeed = 0.9;
   let lastInput = performance.now();
   controls.addEventListener('start', () => {
@@ -252,12 +252,45 @@ async function main() {
   const wT = parts.map(() => tween(0, 1.1));
   const mixT = tween(0, 0.9);
   const gRim = parts.map(() => 0);
-  // guided "off": half a body-length out along the way the part really comes off (its group's offset + its own)
+  // guided "off": 0.3 body-lengths out along the part's real fitting axis (its own, else its group's), so it hovers
+  // directly in line with its seat. seat: the part's centre at rest (carb space); ext: its half-length on the axis.
   const bodyBox = new THREE.Box3().setFromObject(partOf['1'].obj).getSize(new THREE.Vector3());
-  const HALF = 0.5 * Math.max(bodyBox.x, bodyBox.y, bodyBox.z);
+  const OFF = 0.3 * Math.max(bodyBox.x, bodyBox.y, bodyBox.z);
+  carb.updateMatrixWorld(true);
   for (const p of parts) {
-    const d = p.asm.offset.clone().add(p.ex);
-    p.gOff = (d.lengthSq() > 1e-8 ? d.normalize() : new THREE.Vector3(0, 1, 0)).multiplyScalar(HALF);
+    const gd = new THREE.Vector3(...GROUPS[asms.indexOf(p.asm)].dir);
+    p.ax = (p.axis || p.asm.axis || (gd.lengthSq() > 1e-8 ? gd.normalize() : new THREE.Vector3(0, 1, 0))).clone();
+    p.gOff = p.ax.clone().multiplyScalar(OFF);
+    const b = new THREE.Box3().setFromObject(p.obj);
+    const s = b.getSize(new THREE.Vector3());
+    p.seat = carb.worldToLocal(b.getCenter(new THREE.Vector3()));
+    p.ext = 0.5 * (Math.abs(p.ax.x) * s.x + Math.abs(p.ax.y) * s.y + Math.abs(p.ax.z) * s.z);
+  }
+  // 1 thin brass dashed line per hovering part, from its seat to the part (drawn over everything)
+  const DASH = [0.22, 0.14];
+  const MAXD = 600;
+  const dashGeo = new THREE.BufferGeometry();
+  dashGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXD * 6), 3));
+  const dashes = new THREE.LineSegments(dashGeo, new THREE.LineBasicMaterial({color: 0xc9a24b, transparent: true, opacity: 0.9, depthTest: false, depthWrite: false, toneMapped: false}));
+  Object.assign(dashes, {renderOrder: 20, frustumCulled: false, visible: false});
+  carb.add(dashes);
+  compile(dashes);
+  const dv = new THREE.Vector3();
+  function placeDashes() {
+    const arr = dashGeo.attributes.position.array;
+    let k = 0;
+    if (guide.mode) for (const p of curParts()) {
+      const w = wT[p.k].v * mixT.v;
+      if (w < 0.03 || hT[p.k].v > 0.5 || p === solo.part) continue;
+      const L = Math.max(OFF * w - p.ext, 0.25); // from the seat to the part's near face
+      for (let s = 0; s < L && k < MAXD; s += DASH[0] + DASH[1], k++) {
+        dv.copy(p.seat).addScaledVector(p.ax, s).toArray(arr, k * 6);
+        dv.copy(p.seat).addScaledVector(p.ax, Math.min(L, s + DASH[0])).toArray(arr, k * 6 + 3);
+      }
+    }
+    dashGeo.setDrawRange(0, k * 2);
+    dashGeo.attributes.position.needsUpdate = true;
+    dashes.visible = k > 0;
   }
   const hT = parts.map(() => tween(0, 0.45)); // guided: the part hidden (1) or shown (0)
   function poseAll(e, useTo = false) {
@@ -269,8 +302,8 @@ async function main() {
     }
   }
   /**
-   * Each part's target for the current step. TEAR DOWN: steps before n hidden, step n's parts half a body-length
-   * out, later parts in place. REBUILD: steps before n in place, step n's parts hovering off their seat (home in
+   * Each part's target for the current step. TEAR DOWN: steps before n hidden, step n's parts 0.3 body-lengths
+   * out on their fitting axis, later parts in place. REBUILD: steps before n in place, step n's parts hovering off their seat (home in
    * 0.6 s on Next), later parts hidden. The step's own parts move 0.35 s after the camera sets off.
    */
   function guideTargets(now, enter = false, quick = false) {
@@ -451,11 +484,15 @@ async function main() {
   const ground = (y = S.floor.position.y) => [-3, 3].flatMap((x) => [-2.5, 2.5].map((z) => new THREE.Vector3(x, y, z)));
   // guided: the current step's parts with the body they come off, seen from the side they come off
   const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
+  // ...from the end of the step's first part's fitting axis, so its seat shows: from below for the jets, float and
+  // bowl, from above for the top and slide, square to the face for the side covers
   const guideDir = () => {
     const p = curParts()[0];
     if (!p) return HERO_DIR;
-    const gi = asms.indexOf(p.asm);
-    return GROUPS[gi].dir[1] < -0.5 ? new THREE.Vector3(-0.55, 0.16, 1) : groupDir(gi);
+    const a = p.ax;
+    if (Math.abs(a.y) > 0.7) return new THREE.Vector3(-0.42, 1.25 * Math.sign(a.y), 0.62);
+    if (Math.abs(a.z) > 0.7) return new THREE.Vector3(-0.4, 0.42, Math.sign(a.z));
+    return new THREE.Vector3(Math.sign(a.x), 0.4, 0.5);
   };
   const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
@@ -850,6 +887,7 @@ async function main() {
     poseAll(st.explode);
     parts.forEach((p) => p.obj.scale.set(1, 1, 1));
     placeFloor();
+    placeDashes();
     // solo: the selected part flies forward; once home again it is released
     stepT(solo.T, now);
     solo.zoomV = Math.abs(solo.zoom - solo.zoomV) < 1e-4 ? solo.zoom : solo.zoomV + (solo.zoom - solo.zoomV) * 0.3;

@@ -3,7 +3,7 @@ import {Asm} from '../lib/asm.js';
 import {merge, cylY, tubeY, latheY, oring, springY, screwY, mk, part} from './kit.js';
 
 export function buildMixture(index) {
-  const A = new Asm('mixture', 'Mixture', {offset: [5.0, -4.0, 4.0], index});
+  const A = new Asm('mixture', 'Mixture', {offset: [5.0, -4.0, 4.0], index, axis: [0, -1, 0]});
   const {brass, steel, rubber} = A.M;
   const X = 3.35;
   // 49 pilot screw: knurled head below, shank up into its boss, brass needle tip

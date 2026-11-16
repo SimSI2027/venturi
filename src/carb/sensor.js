@@ -4,7 +4,7 @@ import {Asm} from '../lib/asm.js';
 import {THREE, rbox, merge, cylY, tubeY, orient, oring, screwY, plateXY, hose, extrudeXY, rpoly, mk, part} from './kit.js';
 
 export function buildSensor(index) {
-  const A = new Asm('sensor', 'Sensor', {offset: [0, 3.0, 7.5], index});
+  const A = new Asm('sensor', 'Sensor', {offset: [0, 3.0, 7.5], index, axis: [0, 0, 1]});
   const {plastic, rubber, steel, zinc, wire, machined} = A.M;
   const grey = A.M.plastic.clone();
   grey.color.set(0x5a5d62); // couplers are grey

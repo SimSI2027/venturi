@@ -50,9 +50,10 @@ export class Asm {
    * key, label: ids. offset: where the whole group goes at full explode [x, y, z] cm (along the way it really
    * comes off). index: its place in the manual's disassembly order (staggers the group phase).
    */
-  constructor(key, label, {offset = [0, 0, 0], index = 0} = {}) {
+  constructor(key, label, {offset = [0, 0, 0], index = 0, axis = null} = {}) {
     this.key = key;
     this.label = label;
+    this.axis = axis ? new THREE.Vector3(...axis).normalize() : null; // its parts' usual fitting axis
     this.group = new THREE.Group();
     this.group.name = key;
     this.parts = [];
@@ -64,8 +65,9 @@ export class Asm {
   /**
    * Register a part. id: its part id ('47', '1-top'). ex: its own fan-out [x, y, z] cm in group space at full
    * explode. rot: fan-out rotation [rx, ry, rz]. order: 0..1 stagger inside the part phase (first off = 0).
+   * axis: the way it really comes off its seat, when not the group's direction (the guided modes use it).
    */
-  add(obj, id, {ex = [0, 0, 0], rot = null, order = 0} = {}) {
+  add(obj, id, {ex = [0, 0, 0], rot = null, order = 0, axis = null} = {}) {
     obj.userData.part = id;
     obj.userData.asm = this.key;
     this.group.add(obj);
@@ -78,6 +80,7 @@ export class Asm {
       ex: new THREE.Vector3(...ex),
       rot: rot ? new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)) : null,
       order,
+      axis: axis ? new THREE.Vector3(...axis).normalize() : null, // its real fitting axis, off its seat (null: the group's)
       U: {dim: {value: 1}, rim: {value: 0}},
       mats: new Set(),
     };
