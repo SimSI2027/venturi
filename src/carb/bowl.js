@@ -12,7 +12,7 @@ import {THREE, merge, tubeY, hexY, orient, oring, screwY, extrudeXY, rpoly, hose
 import {HT, FLANGE, RIM, EARS, inset} from './body.js';
 
 // heights (carb space): the joint, the top lip under the gasket, the flange band, the belly's 2 floors, the boss
-export const BY = {lip: HT.joint - 0.1, band: -4.45, ear: -5.05, shallow: -6.4, deep: -7.05, boss: -8.0}; // (landmarks: the plug 0.5 lower)
+export const BY = {lip: HT.joint - 0.1, band: -4.45, ear: -5.05, shallow: -6.4, deep: -7.35, boss: -8.3}; // run 10: deep floor and plug boss 0.3 lower (carb_7: boss foot 90 under the bore)
 export const PUMP = [0.0, -3.4]; // the pump's axis (x, z): its housing lobe out of the belly's cable side (carb_12)
 export const PYW = -6.6; // the pump housing's face (carb space): the cover (pump.js) sits under it
 export const DRAIN = [-3.37, 0.3]; // the drain nipple (x, z), pointing down out of the belly's engine end
