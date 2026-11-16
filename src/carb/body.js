@@ -41,7 +41,18 @@ export function buildBody(index) {
   g.push(rbox(6.6, 0.35, 6.1, 0.12).translate(-0.2, -2.675, 0));
   // spigot ridge and the projection that keys into the joint slot
   g.push(rbox(0.6, 0.5, 0.6, 0.12).translate(3.6, 2.55, 0));
+  // the underside, from the manual's drawings (every fitted jet sits in its own boss): the main jet tower round
+  // the needle jet (open below: spacer and main jet hex show), the pilot jet and starter jet bosses, the needle
+  // valve seat boss, and the 2 float pin posts either side of the float's hinge
+  g.push(tubeY(0.98, 0.8, -4.05, -2.8).translate(-0.2, 0, 0));
+  g.push(cylY(0.32, -3.85, -2.8).translate(1.1, 0, 0.7));
+  g.push(cylY(0.32, -3.6, -2.8).translate(-1.7, 0, -0.8));
+  g.push(tubeY(0.4, 0.2, -3.3, -2.8).translate(1.7, 0, 0));
+  for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(2.3, -3.37, z));
   const casting = mk(merge(g), cast);
+  // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
+  const bowlFace = mk(rbox(5.9, 0.02, 5.7, 0.008).translate(-0.2, -2.855, 0), machined);
+  const seat = mk(tubeY(0.22, 0.1, -3.34, -3.0).translate(1.7, 0, 0), brass);
   // bell mouth toward the air box: flared, its lip machined
   const bell = mk(latheX([[-3.1, 2.45], [-4.4, 2.55], [-5.1, 2.8], [-5.55, 3.1], [-5.75, 3.05], [-5.8, 2.75], [-5.6, 2.35], [-5.0, 2.05], [-4.0, BORE_R], [-3.1, BORE_R]].reverse()), cast);
   const lip = mk(latheX([[-5.9, 2.95], [-5.82, 3.12], [-5.62, 3.16], [-5.62, 2.95], [-5.9, 2.95]]), machined);
@@ -54,7 +65,7 @@ export function buildBody(index) {
   const pulley = mk(merge([orient(cylY(0.95, 0, 0.55), [0, 0, -1], [0, 0, 0]), orient(cylY(1.2, 0.45, 0.6), [0, 0, -1], [0, 0, 0])]), machined, 0.8, 2.55, -3.6);
   // vent and overflow nipples on the -Z face, the fuel inlet nipple on the bowl side lives on the bowl
   const nips = mk(merge([orient(tubeY(0.22, 0.12, 0, 0.9), [0, 0, -1], [-1.8, -2.25, -2.9]), orient(tubeY(0.22, 0.12, 0, 0.9), [0, 0, -1], [1.0, -2.25, -2.9])]), brass);
-  const body = part([0, 0, 0], casting, bell, lip, spigot, boreM, shaft, pulley, nips);
+  const body = part([0, 0, 0], casting, bowlFace, seat, bell, lip, spigot, boreM, shaft, pulley, nips);
   A.add(body, '1');
   return A;
 }

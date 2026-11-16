@@ -23,6 +23,7 @@ export function buildBowl(index) {
     ear(x0 + 0.35, -z + 0.35), ear(x1 - 0.35, -z + 0.35), ear(x0 + 0.35, z - 0.35), ear(x1 - 0.35, z - 0.35),
     cylY(1.45, -8.0, y0 + 0.1).translate(-2.0, 0, 0), // pump housing: its face sits on the diaphragm (pump.js)
     cylY(0.95, y0 - 0.15, y0 + 0.3).translate(-0.2, 0, 0),
+    cylY(0.38, y0 + 0.4, -3.2).translate(-2.5, 0, 2.2), // accelerator jet boss up the corner (jet 77 on top)
     cylY(0.45, y0 - 0.25, y0 + 0.3).translate(1.6, 0, 1.0),
     orient(cylY(0.5, 0, 0.35), [0, 0, 1], [2.3, -3.9, z - 0.1]),
     orient(cylY(0.45, 0, 0.3), [0, 0, -1], [0.8, -6.8, -z + 0.1]),
