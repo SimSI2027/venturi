@@ -254,7 +254,16 @@ export function buildAtv() {
   const rfen = raise(rfen0, 0.03 * L - clearance(rfen0, RX, RY, RR, RZ, RW));
   add(merge(S.map((s) => shell(sided(rfen, s), 48, 12))), M.gloss, 'body', {name: 'rear fenders'});
 
-  // @seat
+  // --- one grey seat 0.42 L long, 0.12 L wide at the front and 0.20 L at the rear, rising 10 deg toward the tail
+  const sLen = 0.42 * L, sx0 = 4, sMid = sx0 - sLen / 2;
+  const sRise = Math.tan(THREE.MathUtils.degToRad(10));
+  const seat = (u, v) => {
+    const c = 2 * v - 1;
+    const x = sx0 - u * sLen;
+    const end = 5 * (Math.max(0, 1 - u / 0.07) ** 2 + Math.max(0, (u - 0.93) / 0.07) ** 2);
+    return [x, SEAT_Y + sRise * (sMid - x) - end - 7 * c ** 4, c * lerp(0.06 * L, 0.1 * L, u)];
+  };
+  add(shell(seat, 36, 14, 2), M.seat, 'plastic', {name: 'seat', lift: [-18, 55, 0], t0: 1.2});
 
   // @frame
 
