@@ -192,7 +192,9 @@ export function buildBody(index) {
   // run 9 (carb_8): the wheel housing reads curved from the air-box end: its outer rim rounded off (bevel 0.3)
   const cupS = rpoly(SHIELD, 0.3);
   cupS.holes.push(rpoly(inset(SHIELD, 0.35), 0.21, new THREE.Path()));
-  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.3, 12, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
+  // run 11: bevel 0.1 (was 0.3): on the 0.35 wall a 0.3 bevel from both the outline and the hole crossed, and the
+  // cup triangulated as a solid face over the throttle wheel at the cover's plane (since run 9)
+  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 12, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
   const SF = SENS + 0.22;

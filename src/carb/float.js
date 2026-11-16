@@ -20,7 +20,7 @@ export function buildFloat(index) {
   // body mesh), its O-ring (37), the fuel screen on its top (44) and the retaining screw beside it (38)
   A.add(part([1.2, -4.32, 0], mk(tubeY(0.22, 0.1, -0.17, 0.17), brass)), 'K36', {ex: [2.6, 1.0, 0], order: 0.7});
   A.add(part([1.2, -4.22, 0], mk(oring(0.235, 0.035), rubber)), 'K37', {ex: [2.6, 1.7, 0], order: 0.75});
-  A.add(part([1.2, -4.0, 0], mk(merge([tubeY(0.16, 0.12, 0, 0.3), cylY(0.16, 0.28, 0.32)]), steel)), 'K44', {ex: [2.6, 2.4, 0], order: 0.8});
+  A.add(part([1.2, -4.15, 0], mk(merge([tubeY(0.16, 0.12, 0, 0.3), cylY(0.16, 0.28, 0.32)]), steel)), 'K44', {ex: [2.6, 2.4, 0], order: 0.8});
   A.add(part([1.2, -4.45, 0.52], mk(screwY(0.35, 0.15, 0.08, 0.08).rotateX(Math.PI), steel)), 'K38', {ex: [1.2, -0.6, 1.4], order: 0.68});
   return lift(A, UY);
 }

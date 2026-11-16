@@ -2,7 +2,7 @@
 // throttle shaft screw (42, under the top cover); plates (40, 41); adjusting screw (44) and its spring (43).
 import {Asm} from '../lib/asm.js';
 import {THREE, rbox, merge, cylY, tubeY, hexY, orient, springY, screwY, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
-import {SHIELD, CUPZ, LINK, inset, slabZ, c3, clipY} from './body.js';
+import {SHIELD, CUPZ, LINK, SHAFT, inset, slabZ, c3, clipY} from './body.js';
 
 export function buildLinkage(index) {
   const A = new Asm('linkage', 'Linkage', {offset: [0, 1.0, -7.5], index, axis: [0, 0, -1]});
@@ -44,7 +44,8 @@ export function buildLinkage(index) {
   const recess = orient(hexY(0.17, 0.27, 0.335), [0, 0, -1]);
   A.add(part([0, 0, CUPZ - 0.73], ...BOLTS.flatMap(([x, y]) => [mk(bolt.clone(), steel, x, y, 0), mk(recess.clone(), rubber, x, y, 0)])), '70', {ex: [0, 0, -3.4], order: 0});
   // 42 throttle shaft screw: holds the lift lever on the shaft, reached from the top
-  A.add(part([0.2, 6.05, -1.6], mk(screwY(0.9, 0.24, 0.13, 0.18), steel)), '42', {ex: [0, 5.5, 4.5], order: 0.6, axis: [0, 1, 0]});
+  // (run 11: over the shaft's axis, which moved 1.1 toward the air box; the shank down through it)
+  A.add(part([SHAFT[0], 6.05, -1.6], mk(screwY(0.9, 0.24, 0.13, 0.18), steel)), '42', {ex: [0, 5.5, 4.5], order: 0.6, axis: [0, 1, 0]});
   // run 10 (item 7): 40 and 41 are the accelerator pump's 2 link levers as the Keihin FCR-MX diagram draws them (its 64
   // and 65), stamped steel on the pivot pin under the cable cup (body.js LINK, its 2 torsion springs there): 40 with a
   // tab bent out toward the cover holding the timing adjusting screw 44 (Keihin 250) and its spring 43 (251), the

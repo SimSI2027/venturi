@@ -21,7 +21,7 @@ export function buildPump(index) {
   A.add(part([PX, PY, PZ], mk(cov, cast)), '27', {ex: [0, -3.4, 0], order: 0.15});
   const scr = screwY(mm(8), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 8 (Keihin list)
   const PT = mm(1.2); // the plate's thickness
-  A.add(part([PX, PY - 0.4 - PT, PZ], ...EA.map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
+  A.add(part([PX, PY - 0.4, PZ], ...EA.map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
   // the stack under the bowl's pump housing: gasket 29 on the cover, diaphragm 28 on the gasket; both a little
   // wider than the cover and housing, so their black edges show between them
   A.add(part([PX, PY, PZ], mk(tubeY(1.72, 1.3, 0, 0.1), rubber)), '29', {ex: [0, -2.5, 0], order: 0.3});
@@ -37,9 +37,10 @@ export function buildPump(index) {
   const c = (p, s, t) => [p[0] + d[0] * s + nrm[0] * t, p[1] + d[1] * s + nrm[1] * t];
   const STRAP = [c(EAR, -SR, -SR), c(ADJ, SR, -SR), c(ADJ, SR, SR), c(EAR, -SR, SR)];
   const strap = extrudeXY(rpoly(STRAP, SR * 0.9), PT, 0.03, 10, {free: true}).rotateX(Math.PI / 2);
-  A.add(part([0, PY - 0.4 - PT / 2, 0], mk(strap, steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});
+  // (on its seat: on the ear's top, against the bowl lobe's face, the cover screw through both)
+  A.add(part([0, PY + PT / 2, 0], mk(strap, steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});
   // 8 adjusting screw up through the plate's ear into the lobe, a knurled head under it, washers 6 and 7 between
-  const yb = PY - 0.4 - PT; // the plate's underside
+  const yb = PY; // the plate's underside (run 11: it sits on the cover ear's top)
   const adj = merge([screwY(1.0, 0.13, 0.13, 0.01).rotateX(Math.PI), cylY(0.3, -0.32, 0)]);
   A.add(part([ADJ[0], yb - 0.16, ADJ[1]], mk(adj, steel)), '8', {ex: [0, -3.6, 0], order: 0.1, axis: [0, -1, 0]});
   A.add(part([ADJ[0], yb, ADJ[1]], mk(tubeY(0.3, 0.14, -0.08, 0), steel)), '6', {ex: [0, -2.8, 0], order: 0.12, axis: [0, -1, 0]});
