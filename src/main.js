@@ -575,6 +575,7 @@ async function main() {
   let pointer = null;
   let hovered = null;
   let lastOl = '';
+  let olVer = 0; // the outline's change counter for the change check (lastOl is text: a string never compares as unchanged)
   let guideLab = false; // the name card is the guided step's label, not a pointer hover
   let bodyC = null;
   let pickDirty = true;
@@ -833,7 +834,7 @@ async function main() {
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
   const settled = () => !view.follow && [mixT, ...wT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), lastOl];
+  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -923,7 +924,7 @@ async function main() {
     setHover(sel ? null : ph || gLab);
     guideLab = !ph && !!gLab && hovered === gLab;
     const olKey = [hovered, ...gOut].map((o) => o?.id).join();
-    if (olKey !== lastOl) S.select([hovered, ...gOut].filter((o, k, a) => o && a.indexOf(o) === k)), (lastOl = olKey);
+    if (olKey !== lastOl) S.select([hovered, ...gOut].filter((o, k, a) => o && a.indexOf(o) === k)), (lastOl = olKey), olVer++;
     canvas.style.cursor = solo.drag ? 'grabbing' : sel && ph ? 'grab' : ph ? 'pointer' : '';
     aim(hvT, hovered || gOut.length ? 1 : 0, now);
     S.outline.edgeStrength = 4.5 * stepT(hvT, now);
