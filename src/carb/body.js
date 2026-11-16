@@ -17,7 +17,10 @@ export const ENG_FACE = -4.0, BODY_AF = ENG_FACE + mm(63.5), ADAPT = BODY_AF + m
 export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; the lower block is x +/-2.6
 export const BOT = HT.joint; // the body's underside: the float chamber gasket face
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
-export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
+// throttle shaft (x, y), across the tower along Z; run 11 (item 7, round 1): 1.1 toward the air box (was -0.2), where
+// the owner's cable side (mine_4: the wheel) and sensor side (mine_2: the TPS hub) both put it, 12-17 mm off
+export const SHAFT = [0.9, 5.6];
+export const SLIDE_LUG = [0.2, 3.35]; // the slide's lug the link arm (Keihin 16) lifts
 export const LINK = [0.75, -1.7]; // run 10: the pump linkage's pivot (x, y), along Z on the cable side under the cable cup
 export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
@@ -251,8 +254,10 @@ export function buildBody(index) {
   const wheel = latheY([[0, 0], [0, 1.33], [0.04, 1.39], [0.08, 1.39], [0.1, 1.22], [0.16, 1.22], [0.18, 1.39], [0.22, 1.39], [0.26, 1.33], [0.26, 0]]); // run 8: 14% smaller, inside the smaller cover
   const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, 0, 0, CUPZ + 0.28);
   A.add(part([SHX, SHY, 0], shaft, pulley), 'K12');
-  A.add(part([SHX, SHY, 0], mk(rbox(0.22, 2.4, 0.5, 0.08).translate(0.4, -1.05, -0.9), steel)), 'K16');
-  A.add(part([SHX + 0.51, SHY - 1.9, -0.9], mk(orient(screwY(0.45, 0.13, 0.08, 0.09), [1, 0, 0]), steel)), 'K18');
+  // the link arm from the shaft down to the slide's lug (run 11: angled, the shaft now stands 0.7 toward the air box of it)
+  const [LGX, LGY] = SLIDE_LUG, LA = Math.atan2(LGX - SHX, SHY - LGY), LL = Math.hypot(LGX - SHX, SHY - LGY) + 0.3;
+  A.add(part([SHX, SHY, 0], mk(rbox(0.22, LL, 0.5, 0.08).translate(0, -LL / 2 + 0.15, -0.9).rotateZ(LA), steel)), 'K16');
+  A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(screwY(0.45, 0.13, 0.08, 0.09), [1, 0, 0]), steel)), 'K18');
   A.add(part([SHX, SHY, CUPZ + 0.55], mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel)), 'K14');
   A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15');
   const nips = mk(merge(nipG), brass);

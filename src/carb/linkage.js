@@ -30,8 +30,10 @@ export function buildLinkage(index) {
   const lug = extrudeXY(ls, 0.95, 0.1, 12, {free: true}).rotateY(Math.PI / 2).translate(-3.12, 0, -(CUPZ - 0.33)); // shape x -> -z
   A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
   // run 11 (item 3): the bracket is Keihin 10, its own piece of 65, held by Keihin 11 (M5 x 8) from the engine side
-  A.add(part([0, 0, CUPZ - 0.33], mk(lug, cast)), 'K10', {ex: [0, 0, -1.8], order: 0.25});
-  A.add(part([-3.12, 5.6, -4.3], mk(orient(merge([cylY(mm(4), 0, mm(4.5), 0.03), screwY(mm(8), mm(2.5), mm(2.5), 0.01)]), [-1, 0, 0]), steel), mk(orient(hexY(mm(2), mm(3.6), mm(4.6)), [-1, 0, 0]), rubber)), 'K11', {ex: [-1.6, 0, -1.8], order: 0.2, axis: [-1, 0, 0]});
+  // item 7 round 2: 0.45 (4.8 mm) further out toward the cable side, where mine_3 (3.7) and mine_5 (6.2) both put it
+  const KZ = -0.45;
+  A.add(part([0, 0, CUPZ - 0.33 + KZ], mk(lug, cast)), 'K10', {ex: [0, 0, -1.8], order: 0.25});
+  A.add(part([-3.12, 5.6, -4.3 + KZ], mk(orient(merge([cylY(mm(4), 0, mm(4.5), 0.03), screwY(mm(8), mm(2.5), mm(2.5), 0.01)]), [-1, 0, 0]), steel), mk(orient(hexY(mm(2), mm(3.6), mm(4.6)), [-1, 0, 0]), rubber)), 'K11', {ex: [-1.6, 0, -1.8], order: 0.2, axis: [-1, 0, 0]});
   // 66 gasket under it, its rim a little proud of the cover so the black edge shows
   A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35)], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});
   // 67 seal: the rubber grommet where the cable enters the cover's boss
