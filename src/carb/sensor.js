@@ -36,7 +36,7 @@ export function buildSensor(index) {
   // air-box face, the stop screw comes out along the bore to the black star knob (8 rounded lobes, 20 across) at
   // knob height 2.2, z 4.0; the switch body sits higher up on that face on plate 63, its 2 wires run down the
   // sensor side to the small grey connector beside the fuel inlet
-  const KX = HOUSE_X + 0.55, KY = 2.2, KZ = 4.0;
+  const KX = HOUSE_X + 0.55, KY = 3.2, KZ = 4.4; // run 10 landmarks (carb_8): the knob 1.0 higher, 0.4 out
   const star = new THREE.Shape();
   for (let i = 0; i <= 96; i++) {
     const t = (i / 96) * Math.PI * 2, r = mm(7.4) + mm(2.6) * Math.pow(0.5 + 0.5 * Math.cos(8 * t), 0.7);

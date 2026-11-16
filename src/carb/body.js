@@ -173,8 +173,8 @@ export function buildBody(index) {
   for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.45, 0.2, 0, 0.35), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up
   for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
   // run 9 (carb_8): the top cover's bolt lug on the tower's air-box face, a tapered block under the cover's tab
-  // (run 9 landmarks: under the top cover's lowered air-box bolt, top.js)
-  g.push(rbox(0.75, 1.3, 1.5, 0.3).translate(CX + 2.15, TT - 1.95, 0), rbox(0.5, 0.8, 1.1, 0.2).translate(CX + 2.45, TT - 1.7, 0));
+  // (run 9 landmarks: under the top cover's lowered air-box bolt, top.js; run 10: 0.39 higher with it)
+  g.push(rbox(0.75, 1.3, 1.5, 0.3).translate(CX + 2.15, TT - 1.56, 0), rbox(0.5, 0.8, 1.1, 0.2).translate(CX + 2.45, TT - 1.31, 0));
   // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
   // the cover (65) closes it
   // run 9 (carb_8): the wheel housing reads curved from the air-box end: its outer rim rounded off (bevel 0.3)

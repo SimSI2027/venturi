@@ -15,7 +15,7 @@ import {HT, FLANGE, RIM, EARS, inset} from './body.js';
 export const BY = {lip: HT.joint - 0.1, band: -4.45, ear: -5.05, shallow: -6.4, deep: -7.35, boss: -8.3}; // run 10: deep floor and plug boss 0.3 lower (carb_7: boss foot 90 under the bore)
 export const PUMP = [0.0, -3.4]; // the pump's axis (x, z): its housing lobe out of the belly's cable side (carb_12)
 export const PYW = -6.6; // the pump housing's face (carb space): the cover (pump.js) sits under it
-export const DRAIN = [-3.37, 0.3]; // the drain nipple (x, z), pointing down out of the belly's engine end
+export const DRAIN = [-3.37, 0.76]; // the drain nipple (x, z), pointing down out of the belly's engine end (run 10, carb_7: 0.46 toward the sensor side)
 const PLUG = [-0.2, 0]; // the bottom plug under the main jet
 const DSCR = [1.1, 1.05]; // the drain screw (26) in its boss on the shallow end (carb_12, carb_bottom)
 
@@ -35,10 +35,10 @@ const arc = (cx, cz, r, a0, a1, n, cr = 0.1) => Array.from({length: n}, (_, i) =
 // the belly's plan (24 points, carb_12: a rounded rectangle inside the band, its engine end bulged round the drain)
 const BELLY = [[-2.73, -2.95], [-1.68, -2.98], [-0.51, -3.0], [0.31, -2.98], [1.13, -2.95], [1.59, -2.8, 0.35], [1.77, -2.4], [1.83, -1.0], [1.88, 0, 0.4], [1.83, 1.0],
   [1.77, 2.2], [1.59, 2.6, 0.35], [1.13, 2.7], [0.31, 2.72], [-0.51, 2.75], [-1.68, 2.72], [-2.73, 2.7], [-3.13, 2.55, 0.35], [-3.25, 2.2], [-3.25, 1.0],
-  [-3.37, 0.3, 0.45], [-3.25, -0.4], [-3.25, -2.4], [-3.13, -2.8, 0.35]];
+  [-3.37, 0.76, 0.45], [-3.25, -0.4], [-3.25, -2.4], [-3.13, -2.8, 0.35]];
 // the deeper step under the jets and the plug (the shallow end toward the air box stays up at BY.shallow)
 const DEEP = [[-2.78, -2.7], [-1.09, -2.75], [0.43, -2.7], [0.78, -2.4, 0.35], [0.83, -1.0], [0.87, 0, 0.3], [0.83, 1.0], [0.78, 2.2, 0.35], [0.43, 2.45], [-1.09, 2.5],
-  [-2.78, 2.45], [-3.02, 2.2, 0.35], [-3.08, 1.0], [-3.13, 0.3, 0.35], [-3.08, -1.0], [-3.02, -2.4, 0.35]];
+  [-2.78, 2.45], [-3.02, 2.2, 0.35], [-3.08, 1.0], [-3.13, 0.76, 0.35], [-3.08, -1.0], [-3.02, -2.4, 0.35]];
 
 export function buildBowl(index) {
   const A = new Asm('bowl', 'Bowl', {offset: [0, -11.0, 0], index});
@@ -76,7 +76,7 @@ export function buildBowl(index) {
   const rod = orient(tubeY(0.12, 0.001, 0, -0.9 - PYW - 0.4), [0, 1, 0], [0.8, PYW + 0.4, -3.75]);
   // fuel inlet fitting (carb_7): a steel elbow out of the upper box's sensor side, turned up, a hex at its foot, a
   // bead near its top (hose 73 goes on it)
-  const IY = -3.18, IZ = 6.2, IT = IY + 2.45, z0 = RIM[13][1]; // (landmarks: 0.6 out, its top 0.8 higher)
+  const IY = -3.18, IZ = 6.6, IT = IY + 2.675, z0 = RIM[13][1]; // run 10 landmarks (carb_7): 0.4 further out, its top 0.22 higher
   const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.5], [1.0, IY + 0.3, IZ - 0.05], [1.0, IY + 0.85, IZ], [1.0, IT, IZ]], 0.36, 0.2), orient(hexY(0.5, 0, 0.3), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.42, 0.2, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]); // overlay round 1 (carb_8): 8 across
   // overlay round 2 (carb_7, carb_8): the cast boss the inlet comes out of, on the upper box's sensor side
   const iboss = rbox(1.4, 1.1, 1.0, 0.3).translate(1.0, IY, z0 + 0.35);
