@@ -43,6 +43,21 @@ const BELLY = [[-2.73, -2.95], [-1.68, -2.98], [-0.51, -3.0], [0.31, -2.98], [1.
 const DEEP = [[-2.78, -2.7], [-1.09, -2.75], [0.43, -2.7], [0.78, -2.4, 0.35], [0.83, -1.0], [0.87, 0, 0.3], [0.83, 1.0], [0.78, 2.2, 0.35], [0.43, 2.45], [-1.09, 2.5],
   [-2.78, 2.45], [-3.02, 2.2, 0.35], [-3.08, 1.0], [-3.13, 0.3, 0.35], [-3.08, -1.0], [-3.02, -2.4, 0.35]].map(PLAN);
 
+/** Run 12 (item 8, cmp_2): the belly narrows toward the drain: its outline scales about the drain nipple, from 1 at the
+ * flange band's foot (BY.ear) to 0.9 at the shallow floor and 0.8 at the deep one. The side walls are single quads from
+ * ring to ring, so moving the ring vertices tapers them in a straight line; the flange band and its screws stay put. */
+const TAPER = (y) => (y >= BY.ear ? 1 : y >= BY.shallow ? 1 - (0.1 * (BY.ear - y)) / (BY.ear - BY.shallow) : Math.max(0.8, 0.9 - (0.1 * (BY.shallow - y)) / (BY.shallow - BY.deep)));
+function taper(g) {
+  const p = g.attributes.position, [dx, dz] = DRAIN;
+  for (let i = 0; i < p.count; i++) {
+    const f = TAPER(p.getY(i));
+    p.setX(i, dx + (p.getX(i) - dx) * f);
+    p.setZ(i, dz + (p.getZ(i) - dz) * f);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
 export function buildBowl(index) {
   const A = new Asm('bowl', 'Bowl', {offset: [0, -11.0, 0], index});
   const {cast, machined, rubber, steel, zinc, brass} = A.M;
@@ -62,9 +77,9 @@ export function buildBowl(index) {
     tier(RIM, BY.lip, BY.lip - 0.3, 0.08, BOX), // the top lip in the joint's outline, open
     tier(BOX, BY.lip - 0.25, BY.band, 0.1, inset(BOX, 0.32)), // the upper box: straight walls
     tier(FLANGE, BY.band, BY.ear, 0.15, inset(BOX, 0.32)), // the flange band stepping out, the 4 screw ears at its corners
-    tier(BELLY, BY.ear, BY.shallow, 0.12, inset(BELLY, 0.3)), // the belly's walls
-    tier(BELLY, BY.shallow + 0.32, BY.shallow, 0.25), // its floor at the shallow end
-    tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3), // the deeper step under the jets
+    taper(tier(BELLY, BY.ear, BY.shallow, 0.12, inset(BELLY, 0.3))), // the belly's walls (run 12: tapering toward the drain)
+    taper(tier(BELLY, BY.shallow + 0.32, BY.shallow, 0.25)), // its floor at the shallow end
+    taper(tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3)), // the deeper step under the jets
     tier(BOSS, BY.deep + 0.1, BY.boss, 0.2, null, 0.1), // the plug boss
     tier(PASS, BY.deep + 0.05, BY.deep - 0.38, 0.12, null, 0.1), // the curled passage
     tier(DSB, BY.shallow + 0.05, BY.shallow - 0.45, 0.12, null, 0.05), // the drain screw's boss
