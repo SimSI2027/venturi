@@ -40,7 +40,7 @@ const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.
 export const FLANGE = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
   [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.6, 0.15], [2.85, 3.1, 0.25], [2.85, 3.75, 0.35], [2.35, 3.95, 0.35], [1.75, 3.55, 0.15],
   [1.3, 3.4, 0.2], [-0.2, 3.45, 0.3], [-2.0, 3.4, 0.2], [-2.6, 3.55, 0.15], [-3.25, 3.95, 0.35], [-3.75, 3.75, 0.35], [-3.75, 3.1, 0.25], [-3.35, 2.6, 0.15],
-  [-3.35, 0.8, 0.2], [-3.55, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
+  [-3.35, 0.8, 0.2], [-3.45, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
 export const EARS = [[2.35, -3.45], [2.35, 3.45], [-3.25, 3.45], [-3.25, -3.45]]; // the 4 bowl screws
 /** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
 export function slabY(pts, y, t, hole = null, r = 0.3) {
@@ -153,16 +153,17 @@ export function buildBody(index) {
   // the starters on the tower's engine face (carb_7): the hot start's vertical boss, 0.20 H tall with its cap
   // (starters.js), a wide foot, a thread collar at the top, a web back to the tower; out of its foot the cold start's
   // cast side arm along +Z (0.15 H to the end of the pull knob)
-  g.push(latheY([[STARTER.y0, 0], [STARTER.y0, 0.78], [STARTER.y0 + 0.15, 0.85], [STARTER.y0 + 0.7, 0.85], [STARTER.y0 + 0.85, 0.64], [STARTER.top - 0.3, 0.6], [STARTER.top - 0.25, 0.7], [STARTER.top, 0.7], [STARTER.top, 0]]).translate(STARTER.x, 0, STARTER.z));
+  g.push(latheY([[STARTER.y0, 0], [STARTER.y0, 0.78], [STARTER.y0 + 0.15, 0.85], [STARTER.y0 + 0.7, 0.85], [STARTER.y0 + 0.85, 0.64], [STARTER.top - 0.3, 0.6], [STARTER.top - 0.25, 0.7], [STARTER.top, 0.7], [STARTER.top, 0.32], [STARTER.top - 1.9, 0.32], [STARTER.top - 1.9, 0]]).translate(STARTER.x, 0, STARTER.z)); // bored for the plunger
   g.push(rbox(0.7, STARTER.top - STARTER.y0 - 0.4, 0.35, 0.12).translate(STARTER.x + 0.35, (STARTER.top + STARTER.y0) / 2, STARTER.z));
   g.push(orient(merge([cylY(0.45, STARTER.z, STARTER.face, 0.06), cylY(0.53, STARTER.face - 0.25, STARTER.face, 0.06)]), [0, 0, 1], [STARTER.x, STARTER.armY, 0]));
-  // pilot screw: a lug under the engine spigot, outside the bowl, with a bored boss; its O-ring (51) shows under it
-  g.push(rbox(1.3, 1.9, 1.6, 0.3).translate(3.0, -3.15 + UY, 0));
-  g.push(tubeY(0.5, 0.17, -4.6 + UY, -3.9 + UY).translate(3.0, 0, 0));
+  // pilot screw: a lug under the engine spigot (-X), outside the bowl's lip, with a bored boss; its O-ring (51)
+  // shows under it
+  g.push(rbox(0.95, 1.9, 1.4, 0.3).translate(-3.95, -3.15 + UY, 0));
+  g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
   g.push(slabY(FLANGE, BOT + 0.2, 0.4));
-  // the projection on the engine spigot that keys into the joint slot
-  g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(3.3, 2.5, 0));
+  // the projection on the engine spigot (-X) that keys into the joint slot
+  g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(-3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
   const nipG = [-1.6, 1.6].map((z) => orient(tubeY(0.22, 0.12, 0, 0.9), [1, 0, 0], [TX1 - 0.05, 6.6, z]));
   // the underside (every fitted jet sits in its own boss): the main jet tower round the needle jet (open below:

@@ -1,5 +1,6 @@
-// Shape helpers for the carburetor, on top of Ironwood's geo.js. Units: cm. Carb space: +X toward the engine
-// (spigot), -X the bell mouth (air box), +Y up, +Z the throttle-sensor side. Visual model, eyeballed from the
+// Shape helpers for the carburetor, on top of Ironwood's geo.js. Units: cm. Carb space: -X toward the engine,
+// +X the air box (run 8: the photos carb_7 and carb_8 settled it; run 7 had them swapped), +Y up, +Z the
+// throttle-sensor side. Visual model, eyeballed from the
 // fiche and the manual's drawings: no real dimensions.
 import * as THREE from 'three';
 import {rbox, extrudeXY, rpoly, circ, spring as springX, smooth, merge, at} from '../lib/geo.js';
