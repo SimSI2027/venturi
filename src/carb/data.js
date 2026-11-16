@@ -237,12 +237,6 @@ export const SPEC_LABELS = {
 };
 export const specValue = (k) => k.split('.').reduce((o, p) => (o == null ? o : o[p]), SPECS);
 
-// --- the ATV photo (ref/atv.jpg), for run 2's prop: front three-quarter from the front left, low and wide.
-// Gloss black plastics, grey seat with pale side panel, silver frame tubes and bumper hoop, pale (silver/white)
-// front shock springs, black wheels, front tires narrow, rear wide; wheelbase about 2.3 x the front tire
-// diameter; overall height (bars) about 1.6 x the rear tire diameter; seat top level with the rear fender tops.
-export const ATV_NOTES = {wheelbaseOverTire: 2.3, heightOverRearTire: 1.6};
-
 // --- lookups
 export const PART = Object.fromEntries(PARTS.map((p) => [String(p.ref), p]));
 /** Card data for a part id ('47', or a reference-1 piece such as '1-top'). */

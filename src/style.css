@@ -276,14 +276,7 @@ html, body { background: var(--iw-bg); }
 .vt-modes .iw-btn.on { background: #c9a24b; }
 .vt-modes .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
 .vt-modes .s { display: none; }
-.vt-modes .vt-replay { font-size: 14px; padding: 5px 12px; color: var(--iw-dim); }
 .iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pills { display: none; }
-/* the intro: the dock, panel and hint fade in when it ends; Skip shows only while it plays */
-.iw-dock, .vt-panel, .vt-pbtn, .iw-hint { transition: opacity .6s cubic-bezier(.65, 0, .35, 1); }
-.vt-intro .iw-dock, .vt-intro .vt-panel, .vt-intro .vt-pbtn, .vt-intro .iw-hint { opacity: 0; pointer-events: none; }
-.vt-skip { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 15px; padding: 6px 20px; background: var(--iw-panel);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity .4s; z-index: 6; }
-.vt-intro .vt-skip { opacity: 1; pointer-events: auto; }
 .vt-step { position: absolute; left: 28px; top: 112px; width: 300px; padding: 14px 16px 12px; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
   font-variant-caps: normal; letter-spacing: 0.03em; opacity: 0; pointer-events: none; transform: translateY(-4px); z-index: 4;
   transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
