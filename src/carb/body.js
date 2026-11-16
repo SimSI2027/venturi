@@ -19,8 +19,15 @@ export const CUPZ = -4.5; // the cable-wheel housing's face (the cover's gasket 
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
 export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 3.6};
 export const SENS = 4.95; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65
-// the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below
-export const SHIELD = [[4.0, 7.7, 0.9], [-2.9, 7.9, 0.6], [-2.9, 4.4, 0.5], [-1.3, 2.7, 0.6], [-1.0, -0.8, 0.6], [0.45, -1.6, 0.7], [1.9, -0.8, 0.6], [2.4, 2.2, 0.8], [4.1, 6.1, 0.8]];
+// the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
+// run 8 (carb_3): 15% smaller and turned 20 degrees about the throttle shaft, its air-box top corner down, the lobe
+// swung toward the engine. shieldXY places anything fixed to the cover (bolts, cable boss, hose nipple, cup plates).
+const SHIELD0 = [[4.0, 7.7, 0.9], [-2.9, 7.9, 0.6], [-2.9, 4.4, 0.5], [-1.3, 2.7, 0.6], [-1.0, -0.8, 0.6], [0.45, -1.6, 0.7], [1.9, -0.8, 0.6], [2.4, 2.2, 0.8], [4.1, 6.1, 0.8]];
+export function shieldXY(x, y, k = 0.85, a = (-20 * Math.PI) / 180) {
+  const dx = x - SHAFT[0], dy = y - SHAFT[1], c = Math.cos(a), s = Math.sin(a);
+  return [SHAFT[0] + k * (dx * c - dy * s), SHAFT[1] + k * (dx * s + dy * c)];
+}
+export const SHIELD = SHIELD0.map(([x, y, r]) => [...shieldXY(x, y), r * 0.85]);
 // the sensor side's flat cover plate outline (59), cut at lower left round the pilot air cover
 export const PLATE59 = [[-1.8, 6.9], [3.6, 6.9], [3.6, -0.2], [1.8, -0.2], [1.8, 2.2], [0.6, 3.1], [-1.8, 3.2]];
 // the body seen along the bore (traced from carb_7: z, y, corner r), right half from the joint up to the top: the
@@ -186,8 +193,8 @@ export function buildBody(index) {
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it
   const shaft = mk(merge([orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), rbox(0.22, 2.4, 0.5, 0.08).translate(0.4, -1.05, -0.9)]), steel, SHX, SHY, 0);
-  const wheel = latheY([[0, 0], [0, 1.55], [0.04, 1.62], [0.08, 1.62], [0.1, 1.42], [0.16, 1.42], [0.18, 1.62], [0.22, 1.62], [0.26, 1.55], [0.26, 0]]);
-  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [1.1, 1.0, 0.0])]), machined, SHX, SHY, CUPZ + 0.28);
+  const wheel = latheY([[0, 0], [0, 1.33], [0.04, 1.39], [0.08, 1.39], [0.1, 1.22], [0.16, 1.22], [0.18, 1.39], [0.22, 1.39], [0.26, 1.33], [0.26, 0]]); // run 8: 14% smaller, inside the smaller cover
+  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, SHX, SHY, CUPZ + 0.28);
   const rspring = mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel, SHX, SHY, CUPZ + 0.55);
   const nips = mk(merge(nipG), brass);
   const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips);

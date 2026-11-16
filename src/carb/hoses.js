@@ -23,8 +23,9 @@ export function buildHoses(index) {
   A.add(part([0, 0, 0], mk(clip(0.32, [1, 0.6, 0], [2.75, 6.8, 1.6]), zinc)), '39', {ex: [5.0, 1.6, 0], order: 0.05, axis: [1, 0, 0]});
   // the cable cover's hose (vinyl, from the photos): from the nipple at the cover's foot down the cable side,
   // out round the pump lobe, to below the bowl
-  A.add(part([0, 0, 0], mk(hose([[0.95, -1.8, -4.83], [0.95, -2.8, -4.95], [1.05, -4.3, -5.5], [1.15, -6.5, -5.6], [1.2, -10.0, -5.5]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
-  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [0.95, -2.15, -4.86]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
+  // (run 8: from the nipple on the smaller, turned cover, linkage.js; clear of the pump cover's ears)
+  A.add(part([0, 0, 0], mk(hose([[-1.27, -0.76, -4.83], [-1.27, -1.76, -4.95], [-1.2, -3.8, -5.55], [-1.1, -6.5, -5.85], [-1.0, -10.0, -5.8]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
+  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [-1.27, -1.1, -4.86]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
   // (run 8: the drain nipple points down out of the belly's engine end, bowl.js DRAIN)
   A.add(part([-3.05, -8.0, 0.3], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
