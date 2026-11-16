@@ -26,6 +26,19 @@ export const PLATE59 = [[-1.8, 6.9], [3.6, 6.9], [3.6, -0.2], [1.8, -0.2], [1.8,
 // the casting is symmetric about the bore's vertical plane, so the left half is its mirror (28 points in all)
 const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.2], [3.6, 2.45, 0.12], [3.6, 2.95, 0.12], [3.3, 3.2, 0.15],
   [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.3]];
+// the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
+// with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
+export const FLANGE = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
+  [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.6, 0.15], [2.85, 3.1, 0.25], [2.85, 3.75, 0.35], [2.35, 3.95, 0.35], [1.75, 3.55, 0.15],
+  [1.3, 3.4, 0.2], [-0.2, 3.45, 0.3], [-2.0, 3.4, 0.2], [-2.6, 3.55, 0.15], [-3.25, 3.95, 0.35], [-3.75, 3.75, 0.35], [-3.75, 3.1, 0.25], [-3.35, 2.6, 0.15],
+  [-3.35, 0.8, 0.2], [-3.55, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
+export const EARS = [[2.35, -3.45], [2.35, 3.45], [-3.25, 3.45], [-3.25, -3.45]]; // the 4 bowl screws
+/** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
+export function slabY(pts, y, t, hole = null, r = 0.3) {
+  const s = rpoly(pts, r);
+  if (hole) s.holes.push(rpoly(hole, 0.5, new THREE.Path()));
+  return extrudeXY(s, t, 0.08, 10, {free: true}).rotateX(Math.PI / 2).translate(0, y, 0);
+}
 const mirror = (h) => h.slice().reverse().map(([z, y, r]) => [-z, y, r]);
 export const OUTLINE = [...HALF, ...mirror(HALF)];
 /** The part of an outline under y = ymax (Sutherland-Hodgman against 1 line); cut corners get a small radius. */
@@ -127,7 +140,7 @@ export function buildBody(index) {
   g.push(rbox(1.3, 1.9, 1.6, 0.3).translate(3.0, -3.15 + UY, 0));
   g.push(tubeY(0.5, 0.17, -4.6 + UY, -3.9 + UY).translate(3.0, 0, 0));
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
-  g.push(rbox(6.1, 0.35, 6.4, 0.12).translate(-0.45, BOT + 0.175, 0));
+  g.push(slabY(FLANGE, BOT + 0.2, 0.4));
   // the projection on the engine spigot that keys into the joint slot
   g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
@@ -142,7 +155,7 @@ export function buildBody(index) {
   for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(1.8, -4.52 + UY, z));
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
-  const bowlFace = mk(rbox(5.8, 0.02, 6.1, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
+  const bowlFace = mk(rbox(5.9, 0.02, 6.6, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
   const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
   // 2 short plain round spigots (outer r 2.4 = 0.25 H across), a thin bead near each lip, machined end faces
   const SP = 4.25;
