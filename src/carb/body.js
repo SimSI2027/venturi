@@ -127,7 +127,7 @@ export function inset(pts, d) {
 export function slabZ(pts, z, dz, holes = [], r = 0.3) {
   const s = rpoly(pts, r);
   for (const h of holes) s.holes.push(h.length === 3 && typeof h[0] === 'number' ? circ(...h) : rpoly(h, r * 0.7, new THREE.Path()));
-  return extrudeXY(s, dz, 0.06, 12, {free: true}).translate(0, 0, z);
+  return extrudeXY(s, dz, 0.06, dz < 0.15 ? 6 : 12, {free: true, bevelSegments: dz < 0.15 ? 1 : 2}).translate(0, 0, z); // run 13: thin gaskets and shims: fewer arc and bevel steps
 }
 
 /** An outline in (z, y), extruded along X from x0 to x1 with rounded edges, the bore cut through. */

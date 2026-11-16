@@ -56,7 +56,7 @@ export const springY = (len, R, wire, turns) => springX(len, R, Math.max(wire, 0
 /** Screw along -Y: pan head on top (y 0..headH), threaded shank down to -len. Slot across the head. */
 export function screwY(len, rHead, rShank, headH = rHead * 0.7) {
   const pts = [[headH, 0], [headH, rHead * 0.7], [headH * 0.75, rHead * 0.95], [headH * 0.3, rHead], [0, rHead], [0, rShank]];
-  const n = Math.max(3, Math.round(len / 0.12));
+  const n = Math.max(3, Math.round(len / (rShank < 0.15 ? 0.2 : 0.12))); // run 13: shanks under 3 mm across: fewer thread rings
   for (let i = 0; i < n; i++) pts.push([-(i / n) * (len - 0.1), rShank], [-((i + 0.5) / n) * (len - 0.1), rShank * 0.86]);
   pts.push([-len + 0.06, rShank * 0.86], [-len, rShank * 0.6], [-len, 0]);
   return latheY(pts.reverse(), segs(rHead)); // bottom to top: outward normals

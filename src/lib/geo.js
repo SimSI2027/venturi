@@ -338,8 +338,9 @@ export function spring(len, R, wire, turns, {endTurns = 1.25} = {}) {
       return out.set(xAt(k), R * Math.cos(a), R * Math.sin(a));
     }
   }
-  // 24 segments per turn, 12 round the wire: no polygonal coil or flat-sided wire at any close-up
-  return new THREE.TubeGeometry(new Helix(), Math.ceil(turns * 24), wire, 12, false);
+  // 24 segments per turn, 12 round the wire; run 13: wire under 0.6 mm (0.06) is under 3 mm across at the default view, so 16 per turn, 6 round
+  const fine = wire < 0.06;
+  return new THREE.TubeGeometry(new Helix(), Math.ceil(turns * (fine ? 16 : 24)), wire, fine ? 6 : 12, false);
 }
 
 /** Knurled cylinder along +X (straight knurl): n ridges. */
