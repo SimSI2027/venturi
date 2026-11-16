@@ -314,9 +314,9 @@ export function makeMaterials() {
     // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the
     // cast faces show no blue or lavender tint at the default view
     cast: std({color: 0x7a7d83, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
-      normalMap: grain, normalScale: new THREE.Vector2(0.35, 0.35)}),
+      normalMap: grain, normalScale: new THREE.Vector2(0.5, 0.5)}), // run 13 (item 9): grain 0.35 -> 0.5 on the rough faces
     machined: std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}),
-    bore: std({color: 0x9a9995, metalness: 0.8, roughness: 0.28, envMapIntensity: 0.45}),
+    bore: std({color: 0xb6b5b1, metalness: 0.8, roughness: 0.26, envMapIntensity: 0.5}), // run 13 (item 9): brighter machined bore
     brass: std({color: 0xc9a24b, metalness: 1, roughness: 0.3}),
     steel: std({color: 0xa7adb5, metalness: 1, roughness: 0.32}),
     steelDark: std({color: 0x5c626b, metalness: 1, roughness: 0.38}),

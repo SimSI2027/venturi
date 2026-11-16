@@ -245,7 +245,7 @@ export function buildBody(index) {
     // run 13 (item 8, lines 21 44 54 71): a 3 mm flange step at the engine spigot's root, as the adapter has
     latheX([[-2.5, RE - 0.1], [-2.5 - mm(2.5), RE - 0.1], [-2.5 - mm(2.5), RE + FL - 0.05], [-2.5 - mm(2.5) + 0.03, RE + FL], [-2.5, RE + FL]]),
     latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),
-  ]), cast);
+  ]), machined); // run 13 (item 9): the spigots are machined faces, brighter than the cast
   // run 12 (item 7, mine_1): about 10 radial windows round the adapter ring's end face (dark slots, 3.4 x 1.6 mm, set in the
   // 5.5 mm annulus between the bore and the ring's rim), and 2 small holes at its foot, in the flange step's air-box face
   const rmid = (BORE_R + RA) / 2;
