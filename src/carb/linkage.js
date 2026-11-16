@@ -21,11 +21,13 @@ export function buildLinkage(index) {
   const pads = merge(BOLTS.map(([x, y]) => orient(cylY(0.55, 0, 0.12), [0, 0, -1], [x, y, -0.27])));
   const nip = tubeY(0.2, 0.1, -0.7, 0.1).translate(NX, NY, 0); // the hose 68 nipple at the lobe's foot
   // the cable bracket (carb_7, carb_3): a thick lug behind the cover's top edge at its engine end, from the body out
-  // to the cover's face, its top level with the cover's (0 slabs above the body), the hole for the cable adjuster;
-  // outline in (-z, y), extruded 0.6 along X
-  const ls = rpoly([[5.0, 5.0, 0.2], [3.45, 5.0, 0.2], [3.45, 7.55, 0.4], [3.75, 8.05, 0.3], [4.75, 8.05, 0.3], [5.0, 7.6, 0.35]], 0.3);
-  ls.holes.push(circ(4.35, 6.75, 0.42));
-  const lug = extrudeXY(ls, 0.6, 0.1, 12, {free: true}).rotateY(Math.PI / 2).translate(-2.95, 0, -(CUPZ - 0.33)); // shape x -> -z
+  // to the cover's face, the hole for the cable adjuster; outline in (-z, y), extruded along X
+  // run 10 (correction 18, carb_3 / carb_7 landmarks): its top at 9.02, level with the raised cover's and about 10 mm
+  // above the top cover; the hole stays 73 mm above the bore (6.6), nearer the face; 0.95 along X, out past the
+  // cover's engine edge
+  const ls = rpoly([[5.15, 5.0, 0.2], [3.45, 5.0, 0.2], [3.45, 8.5, 0.4], [3.75, 9.02, 0.3], [4.85, 9.02, 0.3], [5.15, 8.55, 0.35]], 0.3);
+  ls.holes.push(circ(4.55, 6.6, 0.42));
+  const lug = extrudeXY(ls, 0.95, 0.1, 12, {free: true}).rotateY(Math.PI / 2).translate(-3.12, 0, -(CUPZ - 0.33)); // shape x -> -z
   A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads, lug]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
   // 66 gasket under it, its rim a little proud of the cover so the black edge shows
   A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35)], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});

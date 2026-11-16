@@ -18,7 +18,7 @@ export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower alo
 export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
 export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 3.4, face: 5.2}; // run 9 landmarks (carb_7): the knob 70 out, 30 above the bore
-export const SENS = 4.4; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 9: 0.55 in, for the 120.8 width)
+export const SENS = 5.25; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 10: 0.85 out, so the pump cover (-58.0) to plate 59 is the table's 120.8 at MM 10.66)
 export const HOUSE_X = 3.6; // run 9: the sensor housing's air-box face (PLATE59's +X edge), where the star knob sits
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
 // run 8 (carb_3): 15% smaller and turned 20 degrees about the throttle shaft, its air-box top corner down, the lobe
@@ -34,8 +34,11 @@ export function shieldXY(x, y, k = 0.85, a = (-20 * Math.PI) / 180) {
 const C3 = [[250, 190], [252, 160], [258, 130], [270, 108], [288, 92], [310, 83], [340, 78], [380, 74], [420, 71], [460, 68], [488, 70], [508, 80], [522, 98],
   [533, 122], [542, 150], [548, 182], [549, 212], [540, 240], [522, 262], [498, 283], [476, 300], [468, 320], [470, 350], [472, 385], [471, 420], [466, 447],
   [452, 463], [430, 470], [400, 472], [372, 470], [350, 462], [332, 452], [320, 435], [316, 410], [308, 385], [296, 355], [282, 322], [268, 290], [258, 255], [252, 222]];
-/** carb_3 px -> carb (x, y) on the cover's plane. */
-export const c3 = (px, py) => [-(px - 410) / 48.8, 8.1 - (py - 68) / 48.8];
+/** carb_3 px -> carb (x, y) on the cover's plane. Run 10 (corrections 17-19): fitted to the overlay's carb_3 frame frozen
+ * at run 9 (scratch/c3fit.mjs: the camera ray through each px onto the plane z -5.0, affine within 0.07), so the cover is
+ * 9% larger than run 9's 48.8 px per unit and its top edge stands at 9.12, about 11 mm above the top cover: from there
+ * to the hex plug's foot (-8.87) is the table's 191.8 */
+export const c3 = (px, py) => [9.4352 - 0.0222245 * px, 10.6865 - 0.000132878 * px - 0.0223022 * py];
 const area = (pts) => pts.reduce((s, p, i) => { const q = pts[(i + 1) % pts.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0);
 const SH = C3.map(([px, py]) => [...c3(px, py), 0.2]);
 export const SHIELD = area(SH) > 0 ? SH : SH.reverse(); // counter-clockwise, as inset() wants
@@ -101,8 +104,11 @@ export function inset(pts, d) {
     const [ax, ay, adx, ady] = line((i - 1 + n) % n);
     const [bx, by, bdx, bdy] = line(i);
     const den = adx * bdy - ady * bdx;
+    const r = Math.max(0.1, (p[2] ?? 0.3) - d);
+    // run 10: collinear neighbours (carb_3's px 380 / 420 / 460) gave 0 / 0 here: the offset point itself
+    if (Math.abs(den) < 1e-6 * Math.hypot(adx, ady) * Math.hypot(bdx, bdy)) return [bx, by, r];
     const t = ((bx - ax) * bdy - (by - ay) * bdx) / den;
-    return [ax + adx * t, ay + ady * t, Math.max(0.1, (p[2] ?? 0.3) - d)];
+    return [ax + adx * t, ay + ady * t, r];
   });
 }
 /** An outline (x, y) extruded along Z, centred at z, depth dz, with optional holes (outlines or [x, y, r] circles). */

@@ -20,8 +20,9 @@ export function buildHoses(index) {
   // as carb_7, carb_8 and carb_3 show, not down the air-box end)
   // (overlay round 2: taped together over the top, one on the other, down the air-box face of the cable housing to
   // the cable side, ending a little under the bowl)
-  const v1 = hose([[NX, NY, 1.6], [2.9, 7.2, 1.7], [2.2, 9.4, 1.3], [1.2, 10.1, -0.4], [2.2, 9.5, -2.4], [3.1, 7.6, -4.4], [2.6, 5.0, -5.65], [2.0, 1.0, -5.65], [2.0, -4.0, -5.65], [2.0, -9.2, -5.65]], 0.32, 0.17);
-  const v2 = hose([[NX, NY, -1.6], [2.9, 7.2, -1.5], [2.1, 8.9, -0.9], [1.4, 9.47, -0.5], [2.4, 8.9, -2.5], [3.3, 7.1, -4.6], [3.0, 4.6, -6.3], [2.7, 1.0, -6.3], [2.7, -4.0, -6.3], [2.7, -9.8, -6.3]], 0.32, 0.17);
+  // (run 10: round the air-box face of the larger, raised cable housing, which reaches x 3.9)
+  const v1 = hose([[NX, NY, 1.6], [2.9, 7.2, 1.7], [2.4, 9.6, 1.3], [1.6, 10.3, -0.4], [2.9, 9.9, -2.4], [4.3, 7.9, -4.4], [4.0, 5.0, -5.75], [2.6, 1.0, -5.75], [2.0, -4.0, -5.7], [2.0, -9.2, -5.7]], 0.32, 0.17);
+  const v2 = hose([[NX, NY, -1.6], [2.9, 7.2, -1.5], [2.3, 9.1, -0.9], [1.7, 9.7, -0.5], [3.1, 9.3, -2.5], [4.5, 7.3, -4.6], [4.3, 4.6, -6.4], [3.1, 1.0, -6.4], [2.7, -4.0, -6.3], [2.7, -9.8, -6.3]], 0.32, 0.17);
   A.add(part([0, 0, 0], mk(v1, hm)), '57', {ex: [6.0, 1.0, 0], order: 0.1, axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(v2, hm)), '58', {ex: [8.0, 1.0, 0], order: 0.15, axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(clip(0.32, [1, 0.6, 0], [2.75, 6.8, 1.6]), zinc)), '39', {ex: [5.0, 1.6, 0], order: 0.05, axis: [1, 0, 0]});
