@@ -173,7 +173,7 @@ export function buildAtv() {
   // --- tyres (front narrow, rear wide), all four outside the bodywork, on black wheels
   for (const [x, y, z, R, w] of [[FX, FY, FZ, FR, FW], [RX, RY, RZ, RR, RW]]) {
     for (const s of S) {
-      add(tyre(R, w).translate(x, y, s * z), M.tyre, 'body', {name: 'tyre'});
+      add(tyre(R - 1.45, w).translate(x, y, s * z), M.tyre, 'body', {name: 'tyre'}); // knobs reach R
       add(wheel(R, w, s).translate(x, y, s * z), M.wheel, 'body', {name: 'wheel'});
     }
   }
@@ -185,7 +185,74 @@ export function buildAtv() {
   add(merge([tubeY(3.9, 3.2, 0, 11.6, 0.2, 36).rotateZ(Math.PI / 2).translate(-4.4, 0, 0), ringX(3.95, 0.35, -9), ringX(3.95, 0.35, -11), ringX(3.95, 0.35, -13)]), M.rubber, 'piece', {name: 'air intake duct', piece: 'duct'});
   add(merge([ringX(4.0, 0.3, -5.6), rbox(1.4, 1.2, 1.6, 0.3).translate(-5.6, 4.2, 0)]), M.steel, 'piece', {name: 'duct clamp', piece: 'ductClamp'});
 
-  // @bodywork
+  // --- bodywork: curved shells T thick, no flat slabs. Each fender covers only the inner top half of its tyre
+  // (outer edge at the tyre's centre line) and is raised or lowered until its closest point clears the tread by 0.03 L.
+  const clearance = (f, ax, ay, R, zc, w) => {
+    let lo = Infinity;
+    for (let i = 0; i <= 80; i++) {
+      for (let j = 0; j <= 20; j++) {
+        const [x, y, z] = f(i / 80, j / 20);
+        if (Math.abs(z) >= zc - w / 2 && Math.abs(z) <= zc + w / 2) lo = Math.min(lo, Math.hypot(x - ax, y - ay) - R - T / 2);
+      }
+    }
+    return lo;
+  };
+  const raise = (f, dy) => (u, v) => {
+    const p = f(u, v);
+    p[1] += dy;
+    return p;
+  };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  // front fenders: sharp blades from the narrow nose, arching over the tyre, then up and back to the shrouds
+  const ffen0 = (u, v) => {
+    const yo = spl([0, 5, 9.5, 11.2, 11.6, 14, 19], u);
+    return [spl([85, 79, 71, 62, 52, 43, 36], u), lerp(yo + spl([1, 3, 5, 5.5, 5, 4, 2], u), yo, v) + 1.5 * Math.sin(Math.PI * v), lerp(spl([2.5, 6, 11, 14, 16, 17, 17.5], u), spl([3.5, 24, 39, FZ, 44, 31, 19.5], u), v)];
+  };
+  const ffen = raise(ffen0, 0.03 * L - clearance(ffen0, FX, FY, FR, FZ, FW));
+  add(merge(S.map((s) => shell(sided(ffen, s), 48, 10))), M.gloss, 'body', {name: 'front fenders'});
+  // the nose: narrow and pointed, sides falling away under the fenders
+  const nose = (u, v) => {
+    const c = 2 * v - 1;
+    return [spl([87, 81, 74, 64, 52], u) - 2.5 * c * c, spl([2, 6.5, 11, 15.5, 20], u) - spl([5, 11, 13, 13, 11], u) * c * c, c * spl([2, 8.5, 12.5, 14.5, 14], u)];
+  };
+  add(shell(nose, 24, 16), M.gloss, 'body', {name: 'nose'});
+  // two almond headlight lenses 0.08 L long, set into the nose's front faces and swept back along them
+  const almond = new THREE.Shape();
+  const la = 0.04 * L;
+  almond.moveTo(-la, 0);
+  almond.quadraticCurveTo(0, la * 0.46, la, 0);
+  almond.quadraticCurveTo(0, -la * 0.46, -la, 0);
+  const lensG = new THREE.ExtrudeGeometry(almond, {depth: 0.8, bevelEnabled: true, bevelThickness: 0.25, bevelSize: 0.25, bevelSegments: 2, curveSegments: 14}).translate(0, 0, -0.4);
+  const lenses = S.map((s) => {
+    const u = 0.24, v = 0.5 + s * 0.31;
+    const p = V(...nose(u, v));
+    const n = V(...nose(u + 0.01, v)).sub(V(...nose(u - 0.01, v))).cross(V(...nose(u, v + 0.01)).sub(V(...nose(u, v - 0.01)))).normalize();
+    const ax = V(...nose(u + 0.1, v + s * 0.12)).sub(V(...nose(u - 0.1, v - s * 0.12)));
+    ax.addScaledVector(n, -ax.dot(n)).normalize();
+    const m = new THREE.Matrix4().makeBasis(ax, n.clone().cross(ax), n).setPosition(p.addScaledVector(n, T * 0.7));
+    return lensG.clone().applyMatrix4(m);
+  });
+  add(merge(lenses), M.lens, 'body', {name: 'headlights'});
+  // the tank cover: narrow, crowned, between the shrouds
+  const tank = (u, v) => {
+    const c = 2 * v - 1;
+    return [spl([50, 40, 28, 16, 5], u), spl([31, 34, 35, 33.5, 30.5], u) - spl([7, 9, 10, 10, 9], u) * c * c, c * spl([7.5, 10.5, 12, 11.5, 10], u)];
+  };
+  add(shell(tank, 24, 14), M.gloss, 'plastic', {name: 'tank cover', lift: [12, 62, 0], t0: 1.6});
+  // two side shrouds beside the tank, pointing forward and down to a tip over the front fender
+  const shroud = (u, v) => [spl([66, 54, 42, 28, 12], u), lerp(spl([17, 23, 29, 32.5, 30], u), spl([17, 12, 6, 2, 4], u), v), spl([21, 20.5, 19, 17, 15], u) + 1.5 * Math.sin(Math.PI * v)];
+  add(merge(S.map((s) => shell(sided(shroud, s), 28, 10))), M.gloss, 'body', {name: 'side shrouds'});
+  // two side covers under the front of the seat (off first, with the seat and tank cover)
+  const sideCover = (u, v) => [spl([2, -12, -26, -36], u), lerp(spl([24, 26, 25, 21], u), spl([6, 1, 1, 6], u), v), spl([16.5, 17, 17.5, 17.5], u) + 1.2 * Math.sin(Math.PI * v)];
+  for (const s of S) add(shell(sided(sideCover, s), 16, 8), M.gloss, 'plastic', {name: 'side cover', lift: [-6, 22, s * 60], t0: 2.0});
+  // rear fenders: wings rising 20 deg toward the tail, their outer corners pointed behind the rear axle
+  const rise = Math.tan(THREE.MathUtils.degToRad(20));
+  const rfen0 = (u, v) => {
+    const x = spl([-30, -44, -58, -72, -84, -88], u);
+    return [x, -rise * x + 7 * v + 1.2 * Math.sin(Math.PI * v), lerp(spl([17, 17, 18, 22, 30, 37], u), spl([24, 38, RZ, RZ, 42, 38.5], u), v)];
+  };
+  const rfen = raise(rfen0, 0.03 * L - clearance(rfen0, RX, RY, RR, RZ, RW));
+  add(merge(S.map((s) => shell(sided(rfen, s), 48, 12))), M.gloss, 'body', {name: 'rear fenders'});
 
   // @seat
 
