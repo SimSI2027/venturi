@@ -244,6 +244,13 @@ export function buildBody(index) {
     latheX([[AF - 0.05, BORE_R + 0.05], [AF - 0.05, RA + FL - 0.03], [AF, RA + FL], [AF + mm(2.5), RA + FL], [AF + mm(2.5) + 0.03, RA + FL - 0.05], [AF + mm(2.5) + 0.05, RA], [AD - 0.3, RA], [AD - 0.25, RA + BD], [AD - 0.08, RA + BD], [AD - 0.03, RA], [AD, RA - 0.04], [AD, BORE_R + 0.05], [AF - 0.05, BORE_R + 0.05]]),
     latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),
   ]), cast);
+  // run 12 (item 7, mine_1): about 10 radial windows round the adapter ring's end face (dark slots, 3.4 x 1.6 mm, set in the
+  // 5.5 mm annulus between the bore and the ring's rim), and 2 small holes at its foot, in the flange step's air-box face
+  const rmid = (BORE_R + RA) / 2;
+  const wins = merge(Array.from({length: 10}, (_, i) => rbox(0.05, mm(4.0), mm(2.6), 0.02).translate(AD + 0.005, rmid, 0).rotateX(((i + 0.5) * Math.PI * 2) / 10)));
+  const fx = AF + mm(2.5) + 0.04, fr = RA + FL * 0.55;
+  const holes = merge([-1, 1].map((k) => cylY(mm(1.1), 0, 0.03, 0.005).rotateZ(-Math.PI / 2).translate(fx, -fr * Math.cos(k * 0.2), -fr * Math.sin(k * 0.2) * 1)));
+  const adapterMarks = mk(merge([wins, holes]), A.M.rubber);
   // the bore itself: machined, brighter than the casting, open to the slide cavity between SX0 and SX1
   const ring = (x0, x1) => latheX([[x0, BORE_R + 0.002], [x1, BORE_R + 0.002], [x1, BORE_R - 0.03], [x0, BORE_R - 0.03]], 64);
   // inside: the cavity's 2 guide faces (machined strips on its engine-side wall, where the 4 rollers run), the needle jet bore in the bore floor
@@ -296,7 +303,7 @@ export function buildBody(index) {
   const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
   // run 11: its washer (Keihin 69), E-clip (70) and the 2 torsion springs (66, 67) are linkage.js pieces now
   const link = mk(orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), steel);
-  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, nozzle, nips, pboss, link);
+  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, nozzle, nips, pboss, link, adapterMarks);
   A.add(body, '1');
   return A;
 }
