@@ -16,9 +16,10 @@ find it, see where it sits, and follow the order it comes off and goes back.
 - **Hover** a part for its name; **click** it to bring it forward (the rest fades to 10%), **drag** to turn it a full 360 degrees on both axes and use the **wheel** to zoom it. Esc or click away puts it back.
 - **Parts** panel: search all 79 references by number or name; **Specs** lists the specifications; **Steps** lists the
   current guided mode; **Notes** keeps your own numbers (pilot screw turns, jets found) in this browser.
-- **Off the ATV / Tear down / Rebuild**: guided steps with **Back / Next / Done** (or the arrow keys), the camera on the
-  current part, a one-line note, brass callouts on the rebuild and a checkbox per step, saved in this browser. Off the ATV
-  (9 steps) outlines in brass the carburetor part each step names; tear down and rebuild have 27 steps each.
+- **Tear down / Rebuild**: guided steps with **Back / Next / Done** (or the arrow keys), the camera on the current
+  part, a one-line note, brass callouts on the rebuild and a checkbox per step, saved in this browser. 29 steps each:
+  the manual's 27 plus 2 marked "added step, not in the manual's list" (throttle cable cover and fuel hose first,
+  the pilot screw set last), so every reference but the body comes off in exactly 1 step.
 - **?** (button or key) shows these controls on the page.
 - **High / Med / Low** sets the render quality; `?perf=1` shows a performance overlay.
 

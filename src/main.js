@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm} from './lib/asm.js';
-import {PARTS, GROUPS, SPEC_LABELS, CONFLICT_20, info, specValue, groupIndex} from './carb/data.js';
+import {PARTS, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, specValue, groupIndex} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -98,7 +98,7 @@ async function main() {
   const helpBtn = el('button', 'iw-help', '?', head);
   helpBtn.setAttribute('aria-label', 'Controls');
   helpBtn.setAttribute('aria-expanded', 'false');
-  const HELP = [['Drag', 'orbit'], ['Wheel / pinch', 'zoom'], ['Hover a part', 'its name and group'], ['Click a part', 'bring it forward, drag to spin it'], ['Esc / click away', 'put it back, leave a group'], ['Explode', 'groups, then their parts, come apart'], ['01 to 13', 'fly to a group, dim the rest'], ['Off the ATV · Tear down · Rebuild', 'guided steps: Back / Next or ← →'], ['Parts', 'search, specs, steps and your notes'], ['High · Med · Low', 'render quality'], ['?', 'this card']];
+  const HELP = [['Drag', 'orbit'], ['Wheel / pinch', 'zoom'], ['Hover a part', 'its name and group'], ['Click a part', 'bring it forward, drag to spin it'], ['Esc / click away', 'put it back, leave a group'], ['Explode', 'groups, then their parts, come apart'], ['01 to 13', 'fly to a group, dim the rest'], ['Tear down · Rebuild', 'guided steps: Back / Next or ← →'], ['Parts', 'search, specs, steps and your notes'], ['High · Med · Low', 'render quality'], ['?', 'this card']];
   const helpCard = el('div', 'iw-helpcard', HELP.map(([k, v]) => `<div><b>${k}</b><span>${v}</span></div>`).join(''), ui);
   const setHelp = (on) => (helpCard.classList.toggle('on', on), helpBtn.setAttribute('aria-expanded', String(on)));
   helpBtn.onclick = () => setHelp(!helpCard.classList.contains('on'));
@@ -150,7 +150,7 @@ async function main() {
 
   const dock = el('div', 'iw-dock', null, ui);
   // the mode bar: free exploring, or one of the guided modes (each button shows its steps done)
-  const MODE_KEYS = ['explore', 'atv', 'teardown', 'rebuild'];
+  const MODE_KEYS = ['explore', 'teardown', 'rebuild'];
   const modeBar = el('div', 'vt-modes', MODE_KEYS.map((k) => `<button class="iw-btn" data-m="${k}">${k === 'explore' ? 'Explore' : `<span class="l">${MODES[k].label}</span><span class="s">${MODES[k].short}</span><i></i>`}</button>`).join(''), dock);
   const ctl = el('div', 'iw-ctl', '<label>Explode</label>', dock);
   const range = el('input', 'iw-range', null, ctl);
@@ -252,7 +252,6 @@ async function main() {
   const wT = parts.map(() => tween(0, 1.1));
   const mixT = tween(0, 0.9);
   const gRim = parts.map(() => 0);
-  const offA = (id) => typeof info(id).step === 'string'; // comes off in section A, on the ATV
   // guided "off": half a body-length out along the way the part really comes off (its group's offset + its own)
   const bodyBox = new THREE.Box3().setFromObject(partOf['1'].obj).getSize(new THREE.Vector3());
   const HALF = 0.5 * Math.max(bodyBox.x, bodyBox.y, bodyBox.z);
@@ -278,28 +277,22 @@ async function main() {
     const s = guide.step();
     const cur = new Set(s ? s.parts : []);
     const n = guide.n;
-    const carbMode = guide.mode === 'teardown' || guide.mode === 'rebuild';
     parts.forEach((p, i) => {
       let w = 0;
       let h = 0;
       if (guide.mode === 'teardown') {
-        const r = REMOVED_AT[p.id] ?? (offA(p.id) ? 0 : Infinity);
+        const r = REMOVED_AT[p.id] ?? Infinity; // the body (reference 1) never comes off
         w = cur.has(p.id) || r < n ? 1 : 0;
         h = !cur.has(p.id) && r < n ? 1 : 0;
       } else if (guide.mode === 'rebuild') {
-        const f = FITTED_AT[p.id] ?? (offA(p.id) ? Infinity : 0);
+        const f = FITTED_AT[p.id] ?? 0;
         w = cur.has(p.id) || f > n ? 1 : 0;
         h = !cur.has(p.id) && f > n ? 1 : 0;
       }
-      gRim[i] = cur.has(p.id) ? 1 : 0; // OFF THE ATV: the carburetor alone, the parts the step names outlined in brass
+      gRim[i] = cur.has(p.id) ? 1 : 0;
       const wasHidden = hT[i].v > 0.5;
       aim(hT[i], guide.mode ? h : 0, now);
       if (!guide.mode) return;
-      if (!carbMode) {
-        if (enter) hold(wT[i], 0);
-        else aim(wT[i], 0, now, quick ? QUICK : 0.6);
-        return;
-      }
       if (h) {
         if (enter) hold(wT[i], 0); // fades out where it is
       } else if (wasHidden) hold(wT[i], w); // fades in where it belongs
@@ -459,23 +452,12 @@ async function main() {
   // guided: the current step's parts with the body they come off, seen from the side they come off
   const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
   const guideDir = () => {
-    if (guide.mode === 'atv') {
-      // from the side the step's parts are on (the shifter side, -Z, when it is the whole carburetor)
-      const ps = curParts().filter((p) => p.id !== '1');
-      let side = -1;
-      if (ps.length) {
-        const pts = subjectPts(ps.map((p) => p.obj));
-        const z = pts.reduce((s, v) => s + v.z, 0) / pts.length;
-        if (Math.abs(z) > 1) side = Math.sign(z);
-      }
-      return new THREE.Vector3(-0.3, 0.62, side);
-    }
     const p = curParts()[0];
     if (!p) return HERO_DIR;
     const gi = asms.indexOf(p.asm);
     return GROUPS[gi].dir[1] < -0.5 ? new THREE.Vector3(-0.55, 0.16, 1) : groupDir(gi);
   };
-  const autoSubject = () => (guide.mode === 'atv' ? [carb] : guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
+  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : carb);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
   const followFrom = (dur = 0.9) => (view.follow = {from: {t: controls.target.clone(), p: camera.position.clone()}, t0: performance.now(), dur: dur * 1000});
@@ -542,7 +524,8 @@ async function main() {
     const i = info(id);
     const gi = groupIndex(i.group);
     const role = i.ref === 20 ? CONFLICT_20 : i.likely ? `likely: ${i.role}` : i.role;
-    const step = typeof i.step === 'number' ? `Tear down ${i.step} of 27 · rebuild ${28 - i.step}` : typeof i.step === 'string' ? `Off the ATV, step ${i.step.slice(1)}` : i.group === 'mixture' ? 'Not in the manual’s list: count the pilot screw turns first' : 'Stays: everything else comes off it';
+    const sB = STEPS_B[i.step - 1];
+    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added ? ' (added step, not in the manual’s list)' : ''}` : 'Stays: everything else comes off it';
     const fits = i.fits ? label(i.fits) : 'the carburetor joint (engine) and the air intake duct';
     const sp = i.specs.map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('');
     detail.innerHTML =

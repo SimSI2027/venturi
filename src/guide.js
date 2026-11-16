@@ -1,7 +1,7 @@
-// The three guided modes (OFF THE ATV, TEAR DOWN, REBUILD): their numbered steps from data.js, the saved
-// checkboxes, the step card (Back / Next, the one-line note, the brass callouts, the progress line), the Steps
-// list and the owner's Notes field. Everything saved goes to local storage only.
-import {STEPS_A, STEPS_B, NOTES_C, info} from './carb/data.js';
+// The two guided modes (TEAR DOWN, REBUILD): their numbered steps from data.js, the saved checkboxes, the step
+// card (Back / Next, the one-line note, the brass callouts, the progress line), the Steps list and the owner's
+// Notes field. Everything saved goes to local storage only.
+import {STEPS_B, N_B, ADDED_STEP, NOTES_C, info} from './carb/data.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const nn = (n) => String(n).padStart(2, '0');
@@ -11,42 +11,29 @@ const partLine = (ids) => ids.map((id) => {
   return `${i.ref} ${i.name}${i.piece ? ` (${i.piece})` : ''}`;
 });
 
-// section A steps that name no carburetor part are done on the ATV: nothing is outlined for them
-const OFF_PART = 'Not on the carburetor: nothing is outlined for this step.';
-
 export const MODES = {
-  atv: {
-    label: 'Off the ATV',
-    short: 'Off ATV',
-    steps: STEPS_A.list.map((s) => ({
-      n: s.n,
-      title: s.text,
-      parts: s.parts,
-      note: s.n === 1 ? STEPS_A.before : s.n === 8 ? STEPS_A.owner : s.parts.length ? null : OFF_PART,
-      calls: callouts('atv', s.n),
-    })),
-  },
   teardown: {
     label: 'Tear down',
     short: 'Tear down',
-    steps: STEPS_B.map((s) => ({n: s.n, title: `Remove: ${s.text}`, parts: s.parts, note: s.note || null, calls: callouts('teardown', s.n)})),
+    steps: STEPS_B.map((s) => ({n: s.n, title: `Remove: ${s.text}`, parts: s.parts, added: !!s.added, note: s.note || null, calls: callouts('teardown', s.n)})),
   },
   rebuild: {
     label: 'Rebuild',
     short: 'Rebuild',
-    steps: STEPS_B.slice().reverse().map((s, i) => ({n: i + 1, title: `Fit: ${s.text}`, parts: s.parts, td: s.n, note: s.note || null, calls: callouts('rebuild', i + 1)})),
+    steps: STEPS_B.slice().reverse().map((s, i) => ({n: i + 1, title: `Fit: ${s.text}`, parts: s.parts, td: s.n, added: !!s.added, note: s.note || null, calls: callouts('rebuild', i + 1)})),
   },
 };
 
-// tear-down step that first takes each part off; rebuild step that first puts it back (reference 20 is in two)
+// tear-down step that takes each part off; rebuild step that puts it back (each part is in exactly 1 step)
 export const REMOVED_AT = {};
 export const FITTED_AT = {};
 for (const s of STEPS_B) for (const id of s.parts) {
-  REMOVED_AT[id] = Math.min(REMOVED_AT[id] ?? Infinity, s.n);
-  FITTED_AT[id] = Math.min(FITTED_AT[id] ?? Infinity, 28 - s.n);
+  REMOVED_AT[id] = s.n;
+  FITTED_AT[id] = N_B + 1 - s.n;
 }
 
-const KEY = {done: 'venturi.done.v1', notes: 'venturi.notes.v1', step: 'venturi.step.v1'};
+// v2: the steps were renumbered in run 6 (2 added steps), so the run-5 ticks would land on the wrong steps
+const KEY = {done: 'venturi.done.v2', notes: 'venturi.notes.v1', step: 'venturi.step.v2'};
 function load(k, fallback) {
   try {
     const v = JSON.parse(localStorage.getItem(k));
@@ -109,10 +96,10 @@ export function createGuide({el, ui, body, go, onPart}) {
 
   function renderList() {
     const M = MODES[G.mode];
-    if (!M) return (steps.innerHTML = '<p class="vt-src">Pick OFF THE ATV, TEAR DOWN or REBUILD below to see its steps.</p>');
+    if (!M) return (steps.innerHTML = '<p class="vt-src">Pick TEAR DOWN or REBUILD below to see its steps.</p>');
     steps.innerHTML =
       `<div class="vt-lh">${esc(M.label)} · ${count(G.mode)} of ${M.steps.length} done</div>` +
-      M.steps.map((s) => `<div class="vt-srow${s.n === G.n ? ' on' : ''}${isDone(G.mode, s.n) ? ' done' : ''}" data-n="${s.n}"><input type="checkbox" aria-label="Step ${s.n} done"${isDone(G.mode, s.n) ? ' checked' : ''}><b>${nn(s.n)}</b><span>${esc(s.title)}</span>${s.calls.length ? '<i title="has a note">!</i>' : ''}</div>`).join('');
+      M.steps.map((s) => `<div class="vt-srow${s.n === G.n ? ' on' : ''}${isDone(G.mode, s.n) ? ' done' : ''}" data-n="${s.n}"><input type="checkbox" aria-label="Step ${s.n} done"${isDone(G.mode, s.n) ? ' checked' : ''}><b>${nn(s.n)}</b><span>${esc(s.title)}${s.added ? ' <em>· added step, not in the manual’s list</em>' : ''}</span>${s.calls.length ? '<i title="has a note">!</i>' : ''}</div>`).join('');
     steps.querySelector('.vt-srow.on')?.scrollIntoView({block: 'nearest'});
   }
   steps.addEventListener('click', (e) => {
@@ -132,6 +119,7 @@ export function createGuide({el, ui, body, go, onPart}) {
     card.innerHTML =
       `<div class="vt-sh"><span>${esc(M.label)}</span><b>${nn(s.n)}</b><i>/ ${N}</i></div>` +
       `<div class="vt-st">${esc(s.title)}</div>` +
+      (s.added ? `<div class="vt-add">${esc(ADDED_STEP)}</div>` : '') +
       (names.length ? `<div class="vt-sp">${s.parts.map((id, k) => `<button data-id="${esc(id)}">${esc(names[k])}</button>`).join('')}</div>` : '') +
       (s.note ? `<div class="vt-note">${esc(s.note)}</div>` : '') +
       s.calls.map((c) => `<div class="vt-call">${esc(c)}</div>`).join('') +

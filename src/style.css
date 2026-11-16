@@ -293,6 +293,8 @@ html, body { background: var(--iw-bg); }
   border-radius: 6px; padding: 2px 7px; cursor: pointer; text-align: left; }
 .vt-sp button:hover { border-color: #c9a24b; }
 .vt-note { font-size: 15px; line-height: 1.3; color: var(--iw-dim); margin-bottom: 8px; }
+.vt-add { display: inline-block; margin: 0 0 8px; padding: 2px 8px; font-size: 13px; letter-spacing: 0.04em; color: var(--iw-brass); border: 1px dashed var(--iw-brass-dim); border-radius: 3px; }
+.vt-srow em { font-style: normal; font-size: 13px; color: var(--iw-brass); }
 .vt-call { position: relative; margin: 0 0 8px; padding: 7px 10px 7px 30px; font-size: 15px; line-height: 1.3; color: #f0e2bd;
   background: rgba(201, 162, 75, 0.12); border: 1px solid var(--iw-brass-dim); border-radius: 4px; }
 .vt-call::before { content: '!'; position: absolute; left: 9px; top: 7px; width: 14px; height: 14px; border-radius: 50%; background: #c9a24b; color: #111;

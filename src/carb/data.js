@@ -4,8 +4,8 @@
 
 // --- the 79 fiche references, names exactly as in parts.txt. role: parts.txt's plain-language role;
 // likely: the line was marked "?" (shown as "likely: ..."). group: one of GROUPS. fits: the part it mounts on
-// (a part id). step: tear-down step in section B (1-27), 'A<n>' for a step of section A (off the ATV), null when
-// the manual's lists do not name it. specs: keys into SPECS (dotted for torque).
+// (a part id). step: as written in run 1 (section B 1-27, 'A<n>' section A, null unnamed); replaced below
+// STEPS_B by the page's tear-down step 1-29. specs: keys into SPECS (dotted for torque).
 export const PARTS = [
   {ref: 1, name: 'CARBURETOR ASSY 1', role: 'complete carburetor (body is not sold separately)', group: 'body', fits: null, step: null, specs: ['carburetor.manufacturer', 'carburetor.id_mark', 'main_air_jet', 'pilot_outlet', 'bypass_1', 'torque.joint_clamp_screw_carb_side_M5', 'torque.clamp_screw_air_duct_side_M6']},
   {ref: 2, name: 'GASKET', role: 'top cover gasket', likely: true, group: 'top', fits: '1', step: 7},
@@ -140,7 +140,7 @@ export const STEPS_A = {
 };
 
 // Section B, manual order; reassembly (REBUILD) is the reverse. parts: the part ids the step takes off.
-export const STEPS_B = [
+const MANUAL_B = [
   {n: 1, text: 'Drain hose', parts: ['72', '75', '71']},
   {n: 2, text: 'Air vent hoses (2)', parts: ['57', '58', '39', '68', '69']},
   {n: 3, text: 'Throttle position sensor', parts: ['47', '36', '62']},
@@ -169,17 +169,28 @@ export const STEPS_B = [
   {n: 26, text: 'Starter jet', parts: ['19']},
   {n: 27, text: 'Pilot air jet', parts: ['20'], note: 'Reference 20, the #100 jet: check the number stamped on your jet.'},
 ];
+// The page's tear-down: the manual's 27 steps (m: the manual's number) between 2 added steps, so that every
+// reference but 1 (the base) comes off in exactly 1 step. added: shown as "added step, not in the manual's list".
+export const ADDED_STEP = 'Added step, not in the manual’s list.';
+export const STEPS_B = [
+  {n: 1, m: null, added: true, text: 'Throttle cable cover and fuel hose', parts: ['70', '65', '66', '67', '73', '74', '76'], note: 'These come off on the ATV, before the carburetor (section A: fuel hose, then the throttle cable cover, 2 bolts, 4 Nm).'},
+  ...MANUAL_B.map((s) => ({...s, m: s.n, n: s.n + 1})),
+  {n: 29, m: null, added: true, text: 'Pilot screw set', parts: ['49', '50', '52', '51'], note: 'Turn the pilot screw in until it seats, counting the turns, before it comes out.'},
+];
+export const N_B = STEPS_B.length;
+// each part's tear-down step on the page (reference 1, the body, has none: everything comes off it)
+for (const s of STEPS_B) for (const id of s.parts) (PIECES[id] || PARTS.find((p) => String(p.ref) === id)).step = s.n;
 
-// Section C: the notes the page shows at the matching step. at: {mode: 'teardown'|'rebuild'|'atv', step}
-// (rebuild steps are numbered in rebuild order: rebuild n = tear-down step 28 - n).
+// Section C: the notes the page shows at the matching step. at: {mode: 'teardown'|'rebuild', step}
+// (rebuild steps are numbered in rebuild order: rebuild n = tear-down step 30 - n).
 export const NOTES_C = [
   {key: 'pilot-turns', at: [{mode: 'teardown', step: 1}], text: 'Before disassembly: count and write down the pilot screw turns from seated.'},
   {key: 'clean', at: [{mode: 'rebuild', step: 1}], text: 'Clean in petroleum-based solvent only, no caustic cleaner; blow out all passages and jets with compressed air.'},
-  {key: 'clip', at: [{mode: 'rebuild', step: 16}], text: 'Jet needle clip: groove 4.'},
-  {key: 'float', at: [{mode: 'rebuild', step: 8}], text: 'Float height 8.0 mm, carburetor upside down, gasket removed, float arm resting on the needle valve without compressing it; adjust by bending the tang.'},
-  {key: 'pump', at: [{mode: 'rebuild', step: 19}], text: 'Accelerator pump timing: rod of 3.40 mm under the throttle valve plate; turn the adjusting screw in fully, then out until the link lever has no free play.'},
-  {key: 'joint', at: [{mode: 'atv', step: 9}, {mode: 'atv', step: 8}], text: 'Joint: projection on the joint into the clamp slot; projection on the cylinder head into the joint slot. Carburetor: its projections into the joint slot and the air duct slot.'},
-  {key: 'final', at: [{mode: 'rebuild', step: 27}, {mode: 'atv', step: 9}], text: 'After fitting: throttle lever free play 2-4 mm, idle 1,750-1,850 r/min, then check the throttle position sensor (0.58-0.78 V output).'},
+  {key: 'clip', at: [{mode: 'rebuild', step: 17}], text: 'Jet needle clip: groove 4.'},
+  {key: 'float', at: [{mode: 'rebuild', step: 9}], text: 'Float height 8.0 mm, carburetor upside down, gasket removed, float arm resting on the needle valve without compressing it; adjust by bending the tang.'},
+  {key: 'pump', at: [{mode: 'rebuild', step: 20}], text: 'Accelerator pump timing: rod of 3.40 mm under the throttle valve plate; turn the adjusting screw in fully, then out until the link lever has no free play.'},
+  {key: 'joint', at: [{mode: 'rebuild', step: 29}], text: 'Joint: projection on the joint into the clamp slot; projection on the cylinder head into the joint slot. Carburetor: its projections into the joint slot and the air duct slot.'},
+  {key: 'final', at: [{mode: 'rebuild', step: 29}], text: 'After fitting: throttle lever free play 2-4 mm, idle 1,750-1,850 r/min, then check the throttle position sensor (0.58-0.78 V output).'},
 ];
 
 // --- specs.json, verbatim (never rounded)
