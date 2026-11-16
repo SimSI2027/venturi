@@ -23,7 +23,7 @@ import {setEnvironment} from './lib/materials.js';
 // exploded parts.
 // Run 9: the world is in mm (1 unit = 1 mm). The carburetor's parts are still sketched in their old units and
 // baked into mm at build time (kit.js toMM); every stage size below is written in those old units times MM.
-export const MM = 10.66;
+export const MM = 11.22; // top cover's bolts (8.22) to the drain pipe's end (-8.87) = 191.8 (run 9, item 5: nothing above the top cover)
 export const FLOOR_Y = -12.5 * MM;
 
 const Vignette = {

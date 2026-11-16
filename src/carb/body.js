@@ -27,7 +27,17 @@ export function shieldXY(x, y, k = 0.85, a = (-20 * Math.PI) / 180) {
   const dx = x - SHAFT[0], dy = y - SHAFT[1], c = Math.cos(a), s = Math.sin(a);
   return [SHAFT[0] + k * (dx * c - dy * s), SHAFT[1] + k * (dx * s + dy * c)];
 }
-export const SHIELD = SHIELD0.map(([x, y, r]) => [...shieldXY(x, y), r * 0.85]);
+// run 9: retraced from carb_3 (40 points, photo px; carb_3 looks from -Z, so +X is to the left): a wide rounded shoulder
+// at the top, the engine-side edge stepping in under the bracket, narrowing to the lobe round the lower bolt; 48.8 px
+// per sketch unit, its top level with the top cover's (y 8.1), so nothing stands above the body
+const C3 = [[250, 190], [252, 160], [258, 130], [270, 108], [288, 92], [310, 83], [340, 78], [380, 74], [420, 71], [460, 68], [488, 70], [508, 80], [522, 98],
+  [533, 122], [542, 150], [548, 182], [549, 212], [540, 240], [522, 262], [498, 283], [476, 300], [468, 320], [470, 350], [472, 385], [471, 420], [466, 447],
+  [452, 463], [430, 470], [400, 472], [372, 470], [350, 462], [332, 452], [320, 435], [316, 410], [308, 385], [296, 355], [282, 322], [268, 290], [258, 255], [252, 222]];
+/** carb_3 px -> carb (x, y) on the cover's plane. */
+export const c3 = (px, py) => [-(px - 410) / 48.8, 8.1 - (py - 68) / 48.8];
+const area = (pts) => pts.reduce((s, p, i) => { const q = pts[(i + 1) % pts.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0);
+const SH = C3.map(([px, py]) => [...c3(px, py), 0.2]);
+export const SHIELD = area(SH) > 0 ? SH : SH.reverse(); // counter-clockwise, as inset() wants
 // the sensor side's flat cover plate outline (59), cut at lower left round the pilot air cover
 export const PLATE59 = [[-1.8, 6.9], [3.6, 6.9], [3.6, -0.2], [1.8, -0.2], [1.8, 2.2], [0.6, 3.1], [-1.8, 3.2]];
 // the body seen along the bore (traced from carb_7: z, y, corner r), right half from the joint up to the top: the
@@ -37,8 +47,9 @@ const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.
   [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.3]];
 // the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
-// run 9: 63.5 long along the bore (Sudco table B), so the run 8 trace is pressed to 0.903 along X about x -0.45
-const FX = (x) => -0.45 + (x + 0.45) * 0.903;
+// run 9: 63.5 long along the bore (Sudco table B, 5.66 sketch units at MM 11.22), so the run 8 trace is pressed to 0.857
+// along X about x -0.45
+const FX = (x) => -0.45 + (x + 0.45) * 0.857;
 const FLANGE0 = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
   [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.95, 0.15], [2.85, 3.45, 0.25], [2.85, 4.1, 0.35], [2.35, 4.3, 0.35], [1.75, 3.9, 0.15],
   [1.3, 3.75, 0.2], [-0.2, 3.8, 0.3], [-2.0, 3.75, 0.2], [-2.6, 3.9, 0.15], [-3.25, 4.3, 0.35], [-3.75, 4.1, 0.35], [-3.75, 3.45, 0.25], [-3.35, 2.95, 0.15],
@@ -61,14 +72,18 @@ export function slabY(pts, y, t, hole = null, r = 0.3) {
 const mirror = (h) => h.slice().reverse().map(([z, y, r]) => [-z, y, r]);
 export const OUTLINE = [...HALF, ...mirror(HALF)];
 /** The part of an outline under y = ymax (Sutherland-Hodgman against 1 line); cut corners get a small radius. */
-function clipY(pts, ymax) {
-  const out = [];
-  pts.forEach((p, i) => {
-    const q = pts[(i + 1) % pts.length];
-    if (p[1] <= ymax) out.push(p);
-    if ((p[1] <= ymax) !== (q[1] <= ymax)) out.push([p[0] + ((q[0] - p[0]) * (ymax - p[1])) / (q[1] - p[1]), ymax, 0.05]);
-  });
-  return out;
+export function clipY(pts, ymax, ymin = -Infinity) {
+  const cut = (pts, keep, yc) => {
+    const out = [];
+    pts.forEach((p, i) => {
+      const q = pts[(i + 1) % pts.length];
+      if (keep(p[1])) out.push(p);
+      if (keep(p[1]) !== keep(q[1])) out.push([p[0] + ((q[0] - p[0]) * (yc - p[1])) / (q[1] - p[1]), yc, 0.05]);
+    });
+    return out;
+  };
+  const top = cut(pts, (y) => y <= ymax, ymax);
+  return ymin > -Infinity ? cut(top, (y) => y >= ymin, ymin) : top; // run 9: and above ymin
 }
 /** A counter-clockwise outline moved inward by d (outward if d < 0), corners kept. */
 export function inset(pts, d) {

@@ -1,5 +1,5 @@
 // Shape helpers for the carburetor, on top of Ironwood's geo.js. Run 9: the world is in mm (1 unit = 1 mm). The parts are
-// sketched in sketch units u (the old cm sketch, 6.6% small) and baked into mm by toMM at build: 1 u = MM mm. Real sizes
+// sketched in sketch units u (the old cm sketch, about 11% small) and baked into mm by toMM at build: 1 u = MM mm. Real sizes
 // are written in mm through mm(). Carb space: -X toward the engine,
 // +X the air box (run 8: the photos carb_7 and carb_8 settled it; run 7 had them swapped), +Y up, +Z the
 // throttle-sensor side. Visual model, eyeballed from the
