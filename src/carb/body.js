@@ -88,9 +88,9 @@ export function buildBody(index) {
   const spigot = mk(latheX([[2.5, 2.4], [4.2, 2.4], [4.25, 2.55], [4.6, 2.55], [4.65, 2.35], [4.9, 2.3], [4.9, BORE_R + 0.05], [2.5, BORE_R + 0.05]]), cast);
   // the bore itself: machined, brighter than the casting, open to the slide cavity between SX0 and SX1
   const ring = (x0, x1) => latheX([[x0, BORE_R + 0.002], [x1, BORE_R + 0.002], [x1, BORE_R - 0.03], [x0, BORE_R - 0.03]], 64);
-  // inside: the cavity's 2 guide faces (machined, where the rollers run), the needle jet bore in the bore floor
+  // inside: the cavity's 2 guide faces (machined strips on its engine-side wall, where the 4 rollers run), the needle jet bore in the bore floor
   // (a machined ring round the nozzle's top), the accelerator pump nozzle aimed into the bore toward the engine
-  const guides = [-1, 1].map((sz) => rbox(SX1 - SX0 - 0.1, 4.0, 0.02, 0.008).translate((SX0 + SX1) / 2, 2.4, sz * (SZ - 0.012)));
+  const guides = [-1, 1].map((sz) => rbox(0.02, 4.4, 0.5, 0.008).translate(SX1 - 0.012, 2.2, sz * 2.5));
   const boreM = mk(merge([ring(-5.8, SX0), ring(SX1, 4.9), ...guides, tubeY(0.45, 0.29, -2.02, -1.9).translate(-0.2, 0, 0)]), bore);
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.7, -1.93, 0]), brass);
   // throttle shaft through the body, and the cable pulley on it (-Z, under the cable cover)
