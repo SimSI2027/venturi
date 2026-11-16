@@ -1,100 +1,96 @@
-// 9 bowl: the float chamber (piece of reference 1), a shallow casting from the photos, with the pump lobe, the pump
-// rod's guide and the fuel inlet fitting, its gasket (25),
-// screws (5), drain plug (26), bottom plug (38) with O-ring (37). Comes off downward.
+// 9 bowl: the float chamber (piece of reference 1), its gasket (25), screws (5), drain plug (26), bottom plug (38) with
+// O-ring (37). Comes off downward.
+// Run 9, rebuilt from carb_7, carb_12, carb_bottom and the Keihin FCR-MX diagram (its float chamber 49: a box with the
+// screws at its lower corners): no cylinder or lofted pillow; every casting piece is a traced outline extruded with
+// rounded edges. From the joint down (carb_7, mm under the bore centre): an upper box (-26..-47) in the joint's outline,
+// the flange band stepping out (-47..-54) with an ear at each corner for the 4 M4 x 12 screws (heads at -56), a
+// shallow flat-bottomed belly (-54..-73) stepped twice (a shallow end toward the air box, a deeper floor under the
+// jets), the round hex-plug boss with its curled passage (-73..-80), the drain nipple at the engine end, the pump
+// housing lobe on the cable side under the round 3-screw pump cover (pump.js). Built in carb space (sketch units).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, orient, oring, screwY, gasketXZ, extrudeXY, rpoly, hose, lift, mk, part, mm} from './kit.js';
-import {HT, UY, FLANGE, EARS, slabY} from './body.js';
+import {THREE, merge, tubeY, hexY, orient, oring, screwY, extrudeXY, rpoly, hose, rbox, mk, part, mm} from './kit.js';
+import {HT, FLANGE, RIM, EARS, inset} from './body.js';
 
-// run 8, from the 2 underside photos: the lip in the flange's outline (4 corner screw ears), a rounded belly under it
-// (0.35 H tall to the plug boss), the big hex plug near the centre, the drain nipple at the engine (-X) end, the round
-// pump cover overhanging the cable-side corner by half its width. Built at y local, then lifted by UY.
-export const BOWL = {x0: -3.3, x1: 2.4, y0: HT.bottom - UY, yb: HT.bottom - UY + 0.35, y1: -4.1, z: 3.75, lift: UY}; // z: the belly's sensor side
-export const PUMP = [-1.5, -4.0]; // the pump's axis (x, z): under the belly's cable-side edge, over half of it outside (overlay round 2)
-export const DRAIN = [-3.05, 0.3]; // the drain nipple (x, z), pointing down out of the belly's engine end
-export const PY0 = BOWL.y0 + 0.75; // the pump housing's face (local y): the cover under it ends level with the plug boss
+// heights (carb space): the joint, the top lip under the gasket, the flange band, the belly's 2 floors, the boss
+export const BY = {lip: HT.joint - 0.1, band: -4.45, ear: -5.05, shallow: -6.4, deep: -6.85, boss: -7.5};
+export const PUMP = [-0.9, -3.4]; // the pump's axis (x, z): its housing lobe out of the belly's cable side (carb_12)
+export const PYW = -6.6; // the pump housing's face (carb space): the cover (pump.js) sits under it
+export const DRAIN = [-2.95, 0.3]; // the drain nipple (x, z), pointing down out of the belly's engine end
+const PLUG = [-0.2, 0]; // the bottom plug under the main jet
+const DSCR = [0.75, 1.05]; // the drain screw (26) in its boss on the shallow end (carb_12, carb_bottom)
 
-/** A hollow rounded belly: a plan outline (32 points of a rounded square fitted to carb_12) lofted down through
- * rings [y, scale] that bulge, then curl in to a flat floor; the inner wall an inset copy with a floor 0.35 thick. */
-function belly(cx, a, b, rings, wall) {
-  const N = 32, pos = [], idx = [];
-  const plan = Array.from({length: N}, (_, i) => {
-    const t = (2 * Math.PI * i) / N, c = Math.cos(t), s = Math.sin(t);
-    return [Math.sign(c) * Math.abs(c) ** 0.5 * a, Math.sign(s) * Math.abs(s) ** 0.5 * b]; // superellipse n = 4
-  });
-  const ring = (y, k) => {
-    const o = pos.length / 3;
-    for (const [x, z] of plan) pos.push(cx + x * k, y, z * k);
-    return o;
-  };
-  const P = (i) => new THREE.Vector3(pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]);
-  const tri = (i, j, l, want) => {
-    const n = P(j).sub(P(i)).cross(P(l).sub(P(i)));
-    idx.push(...(n.dot(want(P(i))) >= 0 ? [i, j, l] : [i, l, j]));
-  };
-  const out = (p) => new THREE.Vector3(p.x - cx, 0, p.z);
-  const inn = (p) => new THREE.Vector3(cx - p.x, 0, -p.z);
-  const up = () => new THREE.Vector3(0, 1, 0), down = () => new THREE.Vector3(0, -1, 0);
-  const band = (r0, r1, want) => {
-    for (let i = 0; i < N; i++) {
-      const j = (i + 1) % N;
-      tri(r0 + i, r1 + i, r0 + j, want);
-      tri(r0 + j, r1 + i, r1 + j, want);
-    }
-  };
-  const cap = (r, y, want) => {
-    const c = pos.length / 3;
-    pos.push(cx, y, 0);
-    for (let i = 0; i < N; i++) tri(c, r + i, r + ((i + 1) % N), want);
-  };
-  const yb = rings[rings.length - 1][0], kin = 1 - wall / Math.min(a, b);
-  const O = rings.map(([y, k]) => ring(y, k));
-  const I = rings.map(([y, k]) => ring(Math.max(y, yb + 0.35), k * kin));
-  for (let r = 0; r + 1 < rings.length; r++) band(O[r], O[r + 1], out), band(I[r], I[r + 1], inn);
-  band(O[0], I[0], up); // the rim under the lip
-  cap(O[O.length - 1], yb, down);
-  cap(I[I.length - 1], yb + 0.35, up);
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setIndex(idx);
-  g.computeVertexNormals();
-  return g.toNonIndexed();
+/** An outline in (x, z) extruded from y0 down to y1 with rounded edges (bevel b), an optional hole outline. */
+function tier(pts, y0, y1, b = 0.12, hole = null, r = 0.25) {
+  const s = rpoly(pts, r);
+  if (hole) s.holes.push(rpoly(hole, Math.max(0.1, r - 0.15), new THREE.Path()));
+  return extrudeXY(s, y0 - y1, b, 12, {free: true}).rotateX(Math.PI / 2).translate(0, (y0 + y1) / 2, 0);
 }
+/** n points of an arc round (cx, cz), radius r, from angle a0 to a1 (radians), corner radius cr. */
+const arc = (cx, cz, r, a0, a1, n, cr = 0.1) => Array.from({length: n}, (_, i) => {
+  const a = a0 + ((a1 - a0) * i) / (n - 1);
+  return [cx + Math.cos(a) * r, cz + Math.sin(a) * r, cr];
+});
+
+// the belly's plan (24 points, carb_12: a rounded rectangle inside the band, its engine end bulged round the drain)
+const BELLY = [[-2.4, -2.95], [-1.5, -2.98], [-0.5, -3.0], [0.2, -2.98], [0.9, -2.95], [1.3, -2.8, 0.35], [1.45, -2.4], [1.5, -1.0], [1.55, 0, 0.4], [1.5, 1.0],
+  [1.45, 2.9], [1.3, 3.3, 0.35], [0.9, 3.4], [0.2, 3.42], [-0.5, 3.45], [-1.5, 3.42], [-2.4, 3.4], [-2.75, 3.25, 0.35], [-2.85, 2.9], [-2.85, 1.0],
+  [-2.95, 0.3, 0.45], [-2.85, -0.4], [-2.85, -2.4], [-2.75, -2.8, 0.35]];
+// the deeper step under the jets and the plug (the shallow end toward the air box stays up at BY.shallow)
+const DEEP = [[-2.45, -2.7], [-1.0, -2.75], [0.3, -2.7], [0.6, -2.4, 0.35], [0.65, -1.0], [0.68, 0, 0.3], [0.65, 1.0], [0.6, 2.9, 0.35], [0.3, 3.15], [-1.0, 3.2],
+  [-2.45, 3.15], [-2.65, 2.9, 0.35], [-2.7, 1.0], [-2.75, 0.3, 0.35], [-2.7, -1.0], [-2.65, -2.4, 0.35]];
 
 export function buildBowl(index) {
   const A = new Asm('bowl', 'Bowl', {offset: [0, -11.0, 0], index});
-  const {cast, machined, rubber, steel, zinc, brass} = A.M;
-  const {y0, yb, y1, z} = BOWL;
-  const cx = -0.45, yt = y1 - 0.3, hb = yt - yb;
-  // the lip: the flange outline, 0.4 thick, open over the belly; the belly: straight sides bulging a little, then
-  // curling in under a rounded lower edge to a flat floor
-  const OPEN = [[-2.95, -3.0], [2.05, -3.0], [2.05, 3.35], [-2.95, 3.35]];
-  const lip = slabY(FLANGE, y1 - 0.2, 0.4, OPEN);
-  // (run 8 overlays: the belly wider toward the sensor side, z -3.35..4.05, as carb_7 and carb_8 show)
-  const body = belly(cx, 2.75, 3.7, [[yt, 1.0], [yt - 0.3 * hb, 1.02], [yt - 0.6 * hb, 1.0], [yt - 0.8 * hb, 0.96], [yt - 0.9 * hb, 0.9], [yt - 0.96 * hb, 0.82], [yb, 0.72]], 0.3).translate(0, 0, 0.35);
-  const [PX, PZ] = PUMP, [DX, DZ] = DRAIN;
+  const {cast, machined, rubber, steel, zinc} = A.M;
+  const BOX = inset(RIM, 0.1);
+  const [PX, PZ] = PUMP, [DX, DZ] = DRAIN, [QX, QZ] = PLUG, [SX, SZ] = DSCR;
+  // the plug boss: round under the hex plug; the cast passage curls round it from the pump side past the air-box
+  // side to the drain screw's boss (carb_12, carb_bottom)
+  const BOSS = arc(QX, QZ, 1.3, 0, Math.PI * 2 * (23 / 24), 24, 0.1);
+  const PASS = [...arc(QX, QZ, 1.68, -Math.PI * 0.62, Math.PI * 0.3, 10, 0.1), [SX + 0.35, SZ + 0.15, 0.2], ...arc(QX, QZ, 1.18, Math.PI * 0.3, -Math.PI * 0.62, 10, 0.1)];
+  const DSB = arc(SX, SZ, 0.5, 0, Math.PI * 2 * (11 / 12), 12, 0.05);
+  // the pump housing: a D-shaped lobe out of the belly's cable side (its round edge outboard)
+  const LOBE = [...arc(PX, PZ, 1.6, Math.PI * 1.02, Math.PI * 1.98, 14, 0.1), [PX + 1.55, -2.6, 0.3], [PX - 1.55, -2.6, 0.3]];
+  // the drain nipple's boss on the engine end wall and the pump rod's guide up the cable side wall
+  const NIPB = [...arc(DX, DZ, 0.55, Math.PI * 0.5, Math.PI * 1.5, 9, 0.05), [DX + 0.5, DZ - 0.55, 0.1], [DX + 0.5, DZ + 0.55, 0.1]];
+  const RG = [[-0.4, -3.35], [0.2, -3.35], [0.25, -3.75, 0.2], [0.0, -4.05, 0.15], [-0.35, -3.75, 0.2]];
   const g = merge([
-    lip, body,
-    cylY(1.25, y0, yb + 0.25, 0.12).translate(-0.2, 0, 0), // the plug boss in the floor's centre (the bowl's lowest point)
-    cylY(1.55, PY0, yb + 1.3, 0.12).translate(PX, 0, PZ), // pump housing: its face (PY0) sits on the diaphragm (pump.js)
-    cylY(0.36, PY0 + 0.3, y1 - 0.45).translate(PX + 0.9, 0, PZ + 0.3), // pump rod guide, up the cable side
-    cylY(0.5, yb - 0.1, yb + 0.9).translate(DX, 0, DZ), // drain nipple boss at the engine end (pipe 71 in it)
-    cylY(0.38, yb + 0.4, -4.55).translate(-2.7, 0, 2.4), // accelerator jet boss up the corner (jet 77 on top)
-    orient(cylY(0.45, 0, 0.5), [0, 0, 1], [-0.6, yb + 0.75, 2.55]), // drain plug boss, sensor side, low
-    orient(cylY(0.4, 0, 0.5), [0, 0, 1], [1.0, -4.7, 3.3]), // fuel inlet boss
+    tier(RIM, BY.lip, BY.lip - 0.3, 0.08, BOX), // the top lip in the joint's outline, open
+    tier(BOX, BY.lip - 0.25, BY.band, 0.1, inset(BOX, 0.32)), // the upper box: straight walls
+    tier(FLANGE, BY.band, BY.ear, 0.15, inset(BOX, 0.32)), // the flange band stepping out, the 4 screw ears at its corners
+    tier(BELLY, BY.ear, BY.shallow, 0.12, inset(BELLY, 0.3)), // the belly's walls
+    tier(BELLY, BY.shallow + 0.32, BY.shallow, 0.25), // its floor at the shallow end
+    tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3), // the deeper step under the jets
+    tier(BOSS, BY.deep + 0.1, BY.boss, 0.2, null, 0.1), // the plug boss
+    tier(PASS, BY.deep + 0.05, BY.deep - 0.38, 0.12, null, 0.1), // the curled passage
+    tier(DSB, BY.shallow + 0.05, BY.shallow - 0.45, 0.12, null, 0.05), // the drain screw's boss
+    tier(LOBE, BY.ear - 0.25, PYW, 0.2, null, 0.1), // the pump housing lobe
+    tier(NIPB, BY.ear - 0.2, BY.deep, 0.12, null, 0.05), // the drain nipple's boss
+    tier(RG, BY.lip - 0.4, BY.ear - 0.3, 0.06, null, 0.1), // the pump rod's guide
   ]);
-  // fuel inlet fitting (carb_7): a steel elbow straight out of the sensor side just under the joint, turned up, 0.10 H
-  // tall above the bend, a hex at its foot, a bead near its top (hose 73 goes on it)
-  const IZ = z + 1.85, IT = -4.7 + 1.65;
-  const inlet = merge([hose([[1.0, -4.7, z - 0.3], [1.0, -4.7, IZ - 0.45], [1.0, -4.42, IZ - 0.05], [1.0, -3.9, IZ], [1.0, IT, IZ]], 0.22, 0.12), orient(hexY(0.34, 0, 0.22), [0, 0, 1], [1.0, -4.7, z - 0.1]), tubeY(0.27, 0.12, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]);
-  const face = slabY(OPEN.map(([x, zz]) => [x + (x < 0 ? -0.3 : 0.3), zz + (zz < 0 ? -0.3 : 0.3)]), y1 - 0.02, 0.06, OPEN, 0.5); // machined mating face
-  A.add(part([0, 0, 0], mk(g, cast), mk(inlet, steel), mk(face, machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
-  A.add(part([0, y1 + 0.05, 0], mk(slabY(FLANGE, 0, 0.1, OPEN), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
-  // 5 screws: 4 Phillips pan heads from below through the corner ears
+  // the drain nipple (pipe 71 goes in it), the machined mating face round the top lip
+  const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep + 0.05).translate(DX, 0, DZ);
+  const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.04, BOX);
+  // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
+  const rod = orient(tubeY(0.12, 0.001, 0, -0.9 - PYW - 0.4), [0, 1, 0], [-0.1, PYW + 0.4, -3.75]);
+  // fuel inlet fitting (carb_7): a steel elbow out of the upper box's sensor side, turned up, a hex at its foot, a
+  // bead near its top (hose 73 goes on it)
+  const IY = -3.18, IZ = 5.6, IT = IY + 1.65, z0 = RIM[13][1];
+  const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.45], [1.0, IY + 0.28, IZ - 0.05], [1.0, IY + 0.8, IZ], [1.0, IT, IZ]], 0.22, 0.12), orient(hexY(0.34, 0, 0.22), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.27, 0.12, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]);
+  A.add(part([0, 0, 0], mk(g, cast), mk(merge([inlet, rod]), steel), mk(merge([face, nipple]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  A.add(part([0, HT.joint - 0.05, 0], mk(tier(RIM, 0.05, -0.05, 0.03, inset(RIM, 0.3)), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
+  // 5 screws: 4 Phillips pan heads, M4 x 12, up through the corner ears of the flange band
   const sc = screwY(mm(12), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)
-  A.add(part([0, y1 - 0.42, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
-  A.add(part([-0.6, yb + 0.75, 3.05], mk(orient(merge([hexY(0.34, 0, 0.25), screwY(0.6, 0.18, 0.18, 0.01)]), [0, 0, 1]), steel)), '26', {ex: [0, 0, 2.4], order: 0.1, axis: [0, 0, 1]});
-  // 38 the big hex bottom plug (main jet access) under the boss, 37 its O-ring, wider than the hex so its edge shows
-  A.add(part([-0.2, y0 - 0.03, 0], mk(merge([hexY(1.05, -0.4, 0), screwY(0.4, 0.62, 0.62, 0.01).rotateX(Math.PI)]), machined)), '38', {ex: [0, -3.4, 0], order: 0.1});
-  A.add(part([-0.2, y0 - 0.0, 0], mk(oring(1.08, 0.06), rubber)), '37', {ex: [0, -2.4, 0], order: 0.15});
-  return lift(A, BOWL.lift);
+  A.add(part([0, BY.ear - 0.02, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
+  // 26 drain screw: a slotted screw up into its boss on the shallow end
+  A.add(part([SX, BY.shallow - 0.45, SZ], mk(screwY(mm(9), mm(3.2), mm(2.5), mm(2.2)).rotateX(Math.PI), steel)), '26', {ex: [0, -2.4, 0], order: 0.1, axis: [0, -1, 0]});
+  // 38 the big hex bottom plug (main jet access) under the boss: a recessed face with 6 spokes (carb_12), 37 its
+  // O-ring between it and the boss, a little wider than the hex so its edge shows
+  const HB = -0.55, hex = hexY(1.0, HB, 0); // 19 across the flats
+  const recess = hexY(0.78, HB - 0.01, HB + 0.12);
+  const spokes = merge(Array.from({length: 6}, (_, i) => rbox(0.62, 0.13, 0.13, 0.04).translate(0.34, HB + 0.05, 0).rotateY((i * Math.PI) / 3 + Math.PI / 6)));
+  const hub = tubeY(0.2, 0.08, HB - 0.02, HB + 0.1);
+  A.add(part([QX, BY.boss - 0.02, QZ], mk(merge([hex, screwY(0.4, 0.62, 0.62, 0.01).rotateX(Math.PI)]), machined), mk(recess, rubber), mk(merge([spokes, hub]), machined)), '38', {ex: [0, -3.4, 0], order: 0.1});
+  A.add(part([QX, BY.boss, QZ], mk(oring(1.08, 0.06), rubber)), '37', {ex: [0, -2.4, 0], order: 0.15});
+  return A;
 }

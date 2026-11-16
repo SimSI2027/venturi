@@ -1,37 +1,50 @@
-// 8 pump: accelerator pump on the float chamber's underside, cable side (from the photos). Cover (27) with screws
-// (4) and gasket (29), spring (30), diaphragm (28), O-ring (31); the link lever plate (45) with the pump rod running
-// up the cable side to it, the timing adjusting screw (8) and its washers (6, 7) on the plate.
+// 8 pump: accelerator pump under the float chamber's cable-side lobe (from the photos). Cover (27) with screws (4) and
+// gasket (29), spring (30), diaphragm (28), O-ring (31).
+// Run 9: 45 PLATE is the stamped guard plate of carb_12, a shield-shaped plate under the pump cover's ears that
+// reaches out past the bowl's cable-side edge; the adjusting screw (8, fits 45) goes up through its far ear with its
+// washers (6, 7). The pump rod now rides with the bowl and its lever with the body. Built in carb space.
 import {Asm} from '../lib/asm.js';
-import {merge, cylY, tubeY, hexY, latheY, orient, oring, springY, screwY, plateXY, rbox, lift, mk, part, mm} from './kit.js';
-import {BOWL, PUMP, PY0} from './bowl.js';
+import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
+import {PUMP, PYW} from './bowl.js';
 
-const [PX, PZ] = PUMP, PY = PY0 - 0.2; // pump axis under the bowl's cable-side edge (the housing's face at PY + 0.2)
+const [PX, PZ] = PUMP, PY = PYW - 0.2; // the cover's top: gasket and diaphragm fill the 0.2 up to the housing's face
+// the guard plate's outline (x, z), traced from carb_12: round the cover's engine-side half, out past the cable side
+const PLATE45 = [[-1.3, -2.45], [-2.4, -2.75], [-3.1, -3.3, 0.4], [-3.3, -4.3, 0.45], [-2.9, -5.2, 0.4], [-1.8, -5.6, 0.35], [-0.6, -5.5, 0.4], [0.1, -4.7, 0.3], [0.3, -3.6, 0.3], [-0.2, -2.7, 0.3]];
+const ADJ = [-2.85, -4.4]; // the adjusting screw (8) in the plate's far ear
 
 export function buildPump(index) {
   const A = new Asm('pump', 'Pump', {offset: [0, -9.0, -3.0], index, axis: [0, -1, 0]});
-  const {cast, rubber, steel, zinc, machined} = A.M;
+  const {cast, rubber, steel, zinc} = A.M;
   // 27 cover: a shallow round cover with three screw ears and the rod boss
-  const ER = 1.75; // run 8: a round cover 3.2 across (carb_12, carb_bottom), screw ears at r 1.75
-  const ears = merge([0, 2.1, 4.2].map((a) => cylY(0.34, -0.4, 0).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER)));
+  const ER = 1.75; // a round cover 3.2 across (carb_12, carb_bottom), screw ears at r 1.75
+  const EA = [0.55, 2.85, 4.95]; // the ears clear of the plate's ear and the lobe's root
+  const ears = merge(EA.map((a) => cylY(0.34, -0.4, 0).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER)));
   const cov = merge([latheY([[-0.55, 0], [-0.55, 1.25], [-0.4, 1.5], [0, 1.6], [0, 0]].reverse().map(([y, r]) => [y, r]).reverse()), ears, cylY(0.35, -0.85, -0.5)]);
   A.add(part([PX, PY, PZ], mk(cov, cast)), '27', {ex: [0, -3.4, 0], order: 0.15});
   const scr = screwY(mm(8), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 8 (Keihin list)
-  A.add(part([PX, PY - 0.42, PZ], ...[0, 2.1, 4.2].map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
-  // the stack under the bowl's pump housing (its face at PY + 0.2): gasket 29 on the cover, diaphragm 28 on the
-  // gasket; both a little wider than the cover and housing, so their black edges show between them
+  const PT = mm(1.2); // the plate's thickness
+  A.add(part([PX, PY - 0.4 - PT, PZ], ...EA.map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
+  // the stack under the bowl's pump housing: gasket 29 on the cover, diaphragm 28 on the gasket; both a little
+  // wider than the cover and housing, so their black edges show between them
   A.add(part([PX, PY, PZ], mk(tubeY(1.72, 1.3, 0, 0.1), rubber)), '29', {ex: [0, -2.5, 0], order: 0.3});
   A.add(part([PX, PY - 0.5, PZ], mk(springY(0.75, 0.55, 0.06, 4), steel)), '30', {ex: [0, -1.7, 0], order: 0.35});
   A.add(part([PX, PY + 0.1, PZ], mk(merge([tubeY(1.72, 0.2, 0, 0.1), cylY(0.32, -0.2, 0.15)]), rubber)), '28', {ex: [0, -0.9, 0], order: 0.45});
   // 31 O-ring: round the rod boss under the cover
   A.add(part([PX, PY - 0.6, PZ], mk(oring(0.4, 0.06), rubber)), '31', {ex: [0.8, -0.3, 0.8], order: 0.5});
-  // 45 link lever plate at the foot of the cable cover, with the pump rod running down the cable side through the
-  // bowl's guide to the diaphragm; 8 adjusting screw through the plate's end with washers 6, 7
-  const RX = PX + 0.9, RZ = PZ + 0.3, RY = -0.9;
-  A.add(part([RX, RY, RZ], mk(merge([rbox(1.9, 0.7, 0.18, 0.06).translate(0.55, 0, -0.35), cylY(0.12, PY + BOWL.lift + 0.05 - RY, 0.1)]), machined)), '45', {ex: [0, 1.2, -2.4], order: 0.55, axis: [0, 0, -1]});
-  const sx = RX + 1.0, sy = RY + 0.55, sz = RZ - 0.35; // the head 0.2 above the plate, the 2 washers under it
-  const adj = merge([screwY(1.2, 0.13, 0.13, 0.01), cylY(0.3, 0, 0.32)]);
-  A.add(part([sx, sy, sz], mk(adj, steel)), '8', {ex: [0, 3.6, -3.0], order: 0.6, axis: [0, 1, 0]});
-  A.add(part([sx, sy, sz], mk(tubeY(0.3, 0.14, -0.08, 0), steel)), '6', {ex: [0, 2.8, -3.0], order: 0.65, axis: [0, 1, 0]});
-  A.add(part([sx, sy - 0.08, sz], mk(tubeY(0.26, 0.14, -0.08, 0), steel)), '7', {ex: [0, 2.2, -3.0], order: 0.7, axis: [0, 1, 0]});
-  return lift(A, BOWL.lift, ['45', '8', '6', '7']);
+  // 45 the stamped guard plate: flat, a raised pressed panel inside its edge and a pressed rib, a hole the cover's
+  // dome shows through, under the cover's ears (the 3 cover screws go through it)
+  const ps = rpoly(PLATE45.slice().reverse(), 0.3);
+  ps.holes.push(circ(PX, PZ, 1.55));
+  const flat = extrudeXY(ps, PT, 0.03, 10, {free: true});
+  const inner = rpoly([[-2.75, -4.2, 0.3], [-2.45, -5.05, 0.3], [-1.6, -5.3, 0.3], [-0.75, -5.2, 0.3], [-1.2, -4.85, 0.2], [-2.05, -4.55, 0.2]].reverse(), 0.2);
+  const pressed = extrudeXY(inner, mm(1.0), 0.03, 8, {free: true}).translate(0, 0, PT / 2 + mm(0.4));
+  const plate = merge([flat, pressed]).rotateX(Math.PI / 2); // shape y -> z, pressed side down
+  A.add(part([0, PY - 0.4 - PT / 2, 0], mk(plate, steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});
+  // 8 adjusting screw up through the plate's ear into the lobe, a knurled head under it, washers 6 and 7 between
+  const yb = PY - 0.4 - PT; // the plate's underside
+  const adj = merge([screwY(1.0, 0.13, 0.13, 0.01).rotateX(Math.PI), cylY(0.3, -0.32, 0)]);
+  A.add(part([ADJ[0], yb - 0.16, ADJ[1]], mk(adj, steel)), '8', {ex: [0, -3.6, 0], order: 0.1, axis: [0, -1, 0]});
+  A.add(part([ADJ[0], yb, ADJ[1]], mk(tubeY(0.3, 0.14, -0.08, 0), steel)), '6', {ex: [0, -2.8, 0], order: 0.12, axis: [0, -1, 0]});
+  A.add(part([ADJ[0], yb - 0.08, ADJ[1]], mk(tubeY(0.26, 0.14, -0.08, 0), steel)), '7', {ex: [0, -2.2, 0], order: 0.14, axis: [0, -1, 0]});
+  return A;
 }

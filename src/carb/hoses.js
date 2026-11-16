@@ -32,8 +32,8 @@ export function buildHoses(index) {
   A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [-1.27, -1.1, -4.86]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
   // (run 8: the drain nipple points down out of the belly's engine end, bowl.js DRAIN)
-  A.add(part([-3.05, -8.0, 0.3], mk(tubeY(0.16, 0.09, -1.3, 0.2), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
-  A.add(part([0, 0, 0], mk(hose([[-3.05, -8.7, 0.3], [-3.05, -9.9, 0.35], [-3.2, -11.5, 0.5]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
+  A.add(part([-2.95, -7.2, 0.3], mk(tubeY(0.16, 0.09, -1.67, 0.2), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
+  A.add(part([0, 0, 0], mk(hose([[-2.95, -8.55, 0.3], [-3.0, -9.9, 0.35], [-3.2, -11.5, 0.5]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
   A.add(part([-3.07, -9.9, 0.33], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
   // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank
   // (run 8: the inlet's top at y -1.53, z 5.6, bowl.js)

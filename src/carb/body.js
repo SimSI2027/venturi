@@ -37,11 +37,21 @@ const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.
   [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.3]];
 // the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
-export const FLANGE = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
+// run 9: 63.5 long along the bore (Sudco table B), so the run 8 trace is pressed to 0.903 along X about x -0.45
+const FX = (x) => -0.45 + (x + 0.45) * 0.903;
+const FLANGE0 = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
   [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.95, 0.15], [2.85, 3.45, 0.25], [2.85, 4.1, 0.35], [2.35, 4.3, 0.35], [1.75, 3.9, 0.15],
   [1.3, 3.75, 0.2], [-0.2, 3.8, 0.3], [-2.0, 3.75, 0.2], [-2.6, 3.9, 0.15], [-3.25, 4.3, 0.35], [-3.75, 4.1, 0.35], [-3.75, 3.45, 0.25], [-3.35, 2.95, 0.15],
   [-3.35, 0.8, 0.2], [-3.45, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
-export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]]; // the 4 bowl screws (run 8 overlays: the sensor side 0.35 wider)
+export const FLANGE = FLANGE0.map(([x, z, r]) => [FX(x), z, r]);
+// the 4 bowl screws (run 8 overlays: the sensor side 0.35 wider); run 9 (carb_7): their ears are on the bowl's lower
+// flange band, under its upper box, so the joint itself has no ears
+export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]].map(([x, z]) => [FX(x), z]);
+// run 9: the joint's outline without the ears (24 points: the flange trace with its corner ears cut back), shared by
+// the body's flange face, the gasket (25) and the bowl's top lip
+export const RIM = [[-2.0, -3.45], [-0.2, -3.5], [1.3, -3.45], [2.0, -3.45], [2.35, -3.3, 0.3], [2.45, -2.9], [2.45, -0.8], [2.6, 0, 0.4], [2.45, 0.8], [2.45, 3.3],
+  [2.35, 3.7, 0.3], [2.0, 3.8], [1.3, 3.8], [-0.2, 3.85], [-2.0, 3.8], [-2.9, 3.8], [-3.25, 3.7, 0.3], [-3.35, 3.3], [-3.35, 0.8], [-3.45, 0, 0.4], [-3.35, -0.8],
+  [-3.35, -2.9], [-3.25, -3.3, 0.3], [-2.9, -3.45]].map(([x, z, r = 0.2]) => [FX(x), z, r]);
 /** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
 export function slabY(pts, y, t, hole = null, r = 0.3) {
   const s = rpoly(pts, r);
@@ -161,7 +171,7 @@ export function buildBody(index) {
   g.push(rbox(0.95, 1.9, 1.4, 0.3).translate(-3.95, -3.15 + UY, 0));
   g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
-  g.push(slabY(FLANGE, BOT + 0.2, 0.4));
+  g.push(slabY(RIM, BOT + 0.2, 0.4));
   // the projection on the engine spigot (-X) that keys into the joint slot
   g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(-3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
@@ -176,7 +186,7 @@ export function buildBody(index) {
   for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(1.8, -4.52 + UY, z));
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
-  const bowlFace = mk(rbox(5.9, 0.02, 6.6, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
+  const bowlFace = mk(rbox(5.3, 0.02, 6.6, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
   const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
@@ -199,7 +209,9 @@ export function buildBody(index) {
   const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, SHX, SHY, CUPZ + 0.28);
   const rspring = mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel, SHX, SHY, CUPZ + 0.55);
   const nips = mk(merge(nipG), brass);
-  const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips);
+  // run 9: the accelerator pump's link lever (was drawn in 45), at the foot of the cable cup over the pump rod's top
+  const lever = mk(rbox(1.9, 0.5, 0.18, 0.06).translate(0.6, -0.75, -3.85), steel);
+  const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips, lever);
   A.add(body, '1');
   return A;
 }
