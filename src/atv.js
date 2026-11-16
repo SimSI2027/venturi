@@ -133,9 +133,9 @@ function wheel(R, w, s) {
 function materials() {
   const P = (o) => noBloom(new THREE.MeshPhysicalMaterial({transparent: true, ...o}));
   return {
-    gloss: P({color: 0x09090a, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08}),
+    gloss: P({color: 0x050506, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.16, envMapIntensity: 0.4}),
     seat: P({color: 0x55585d, roughness: 0.85, sheen: 0.4, sheenRoughness: 0.7, sheenColor: new THREE.Color(0x6a6d73)}),
-    alu: P({color: 0xb7bbc0, metalness: 1, roughness: 0.32}),
+    alu: P({color: 0x8c9197, metalness: 1, roughness: 0.4, envMapIntensity: 0.7}),
     tyre: P({color: 0x111112, roughness: 0.92}),
     wheel: P({color: 0x131416, metalness: 0.4, roughness: 0.45}),
     spring: P({color: 0xdcd6c6, metalness: 0.5, roughness: 0.38}),

@@ -251,6 +251,15 @@ export function createStage(canvas) {
   outline.edgeStrength = 4.5;
   outline.edgeThickness = 1.0;
   outline.edgeGlow = 0.0;
+  // noOutline: left out of the outline's depth pass (main.js: the ATV prop; the outline then draws over it)
+  const noOutline = [];
+  const olRender = outline.render.bind(outline);
+  outline.render = (...args) => {
+    const vis = noOutline.map((o) => o.visible);
+    noOutline.forEach((o) => (o.visible = false));
+    olRender(...args);
+    noOutline.forEach((o, i) => (o.visible = vis[i]));
+  };
   composer.addPass(outline);
   const vig = new ShaderPass(Vignette);
   composer.addPass(vig);
@@ -378,7 +387,7 @@ export function createStage(canvas) {
     }
     return null;
   };
-  const S = {THREE, renderer, scene, camera, composer, outline, size, resize, project, select, setTier, degrade, crossfade, key, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
+  const S = {THREE, renderer, scene, camera, composer, outline, noOutline, size, resize, project, select, setTier, degrade, crossfade, key, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
   S.render = () => composer.render();
   return S;
 }

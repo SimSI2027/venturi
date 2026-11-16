@@ -88,6 +88,7 @@ async function main() {
   compile(atv.group);
   S.noAO.push(atv.group);
   S.noReflect.push(atv.group);
+  S.noOutline.push(atv.group);
   scene.children.filter((o) => o !== carb && o !== atv.group && o.isMesh).forEach((o) => compile(o));
   const quad = new THREE.PlaneGeometry(1, 1).deleteAttribute('normal');
   S.composer.passes.forEach((p, i, all) => {
@@ -704,6 +705,9 @@ async function main() {
   let pointer = null;
   let hovered = null;
   let lastOl = '';
+  let carbShadowOff = false;
+  let guideLab = false; // the name card is the guided step's label, not a pointer hover
+  let bodyC = null;
   let pickDirty = true;
   let lastPick = null;
   const anchor = new THREE.Vector3();
@@ -814,7 +818,14 @@ async function main() {
     const lift = W < 720 ? 20 : 32;
     const fits = {r: B.x1 + G + cw <= W - E, l: B.x0 - G - cw >= E, t: B.y0 - G - ch >= E, b: B.y1 + G + ch <= H - E};
     const room = {r: W - E - B.x1 - cw, l: B.x0 - E - cw, t: B.y0 - E - ch, b: H - E - B.y1 - ch};
-    const side = fits[cardPos.side] ? cardPos.side : ['r', 'l', 't', 'b'].find((k) => fits[k]) || Object.keys(room).sort((p, q) => room[q] - room[p])[0];
+    // a guided step's card goes on the side away from the carburetor body, else above or below, never across it
+    let order = ['r', 'l', 't', 'b'];
+    if (guideLab) {
+      bodyC ??= new THREE.Box3().setFromObject(partOf['1'].obj).getCenter(new THREE.Vector3());
+      const away = (B.x0 + B.x1) / 2 >= S.project(bodyC).x ? 'r' : 'l';
+      order = [away, 't', 'b'];
+    }
+    const side = fits[cardPos.side] && order.includes(cardPos.side) ? cardPos.side : order.find((k) => fits[k]) || Object.keys(room).sort((p, q) => room[q] - room[p])[0];
     cardPos.side = side;
     const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
     let x, y, pts;
@@ -985,8 +996,16 @@ async function main() {
     placeAtv();
     // with the quad round it the carburetor is 45 cm off the floor and its mirror image is lost in the fade:
     // left out of the mirror pass (one pass fewer of its triangles while the ATV is shown)
+    // the same while it sits inside the quad: no AO and no shadow for it either (the 350k triangle budget)
     S.noReflect.length = 1;
-    if (atvAT.v > 0.3) S.noReflect.push(carb);
+    S.noAO.length = 1;
+    const inQuad = atvAT.v > 0.3;
+    if (inQuad) S.noReflect.push(carb), S.noAO.push(carb);
+    if (inQuad !== carbShadowOff) {
+      carbShadowOff = inQuad;
+      meshes.forEach((m) => (m.castShadow = !inQuad));
+      S.renderer.shadowMap.needsUpdate = true;
+    }
 
     // solo: the selected part flies forward; once home again it is released
     stepT(solo.T, now);
@@ -1060,6 +1079,7 @@ async function main() {
     const gLab = guide.mode === 'atv' ? null : gOut[0] || null;
     if (!ph && gLab && hovered !== gLab) anchor.copy(gLab.worldToLocal(new THREE.Box3().setFromObject(gLab).getCenter(new THREE.Vector3())));
     setHover(sel ? null : ph || gLab);
+    guideLab = !ph && !!gLab && hovered === gLab;
     const olKey = [hovered, ...gOut].map((o) => o?.id).join();
     if (olKey !== lastOl) S.select([hovered, ...gOut].filter((o, k, a) => o && a.indexOf(o) === k)), (lastOl = olKey);
     canvas.style.cursor = solo.drag ? 'grabbing' : sel && ph ? 'grab' : ph ? 'pointer' : '';
