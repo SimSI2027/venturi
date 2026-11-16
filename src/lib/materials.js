@@ -313,7 +313,7 @@ export function makeMaterials() {
   return {
     // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the
     // cast faces show no blue or lavender tint at the default view
-    cast: std({color: 0xa2a29e, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 9: 12% darker (default view 55-65%)
+    cast: std({color: 0x7a7d83, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
       normalMap: grain, normalScale: new THREE.Vector2(0.35, 0.35)}),
     machined: std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}),
     bore: std({color: 0x9a9995, metalness: 0.8, roughness: 0.28, envMapIntensity: 0.45}),
