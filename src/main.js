@@ -308,13 +308,47 @@ async function main() {
     dashGeo.attributes.position.needsUpdate = true;
     dashes.visible = k > 0;
   }
-  const hT = parts.map(() => tween(0, 0.45)); // guided: the part hidden (1) or shown (0)
+  const hT = parts.map(() => tween(0, 0.45)); // guided: the part hidden (1) or shown (0) (since run 13 nothing is hidden: see the tray)
+  // run 13 (item 12): the bench tray. A part taken off in a guided mode goes to a slot in a tray below the carburetor, in the order it came
+  // off (rows of the parts' own sizes, 8 mm apart, left to right, wrapping at 2.2 body widths), instead of vanishing. trT: 0 on the carburetor
+  // (or hovering at its step), 1 in its slot; p.tray: the slot as a position of the part's object. TEAR DOWN: the parts of steps before n
+  // are in the tray; REBUILD: the parts not yet fitted are (their slots stay by removal order, so the fitted ones leave gaps).
+  const trT = parts.map(() => tween(0, 0.8));
+  {
+    const order = parts.filter((p) => Number.isFinite(REMOVED_AT[p.id])).sort((a, b) => REMOVED_AT[a.id] - REMOVED_AT[b.id] || a.k - b.k);
+    const bb = new THREE.Box3().setFromObject(partOf['1'].obj).union(new THREE.Box3().setFromObject(partOf['1-bowl'].obj));
+    const GAP = 8, cx = (bb.min.x + bb.max.x) / 2, zc = (bb.min.z + bb.max.z) / 2;
+    const sizes = order.map((p) => new THREE.Box3().setFromObject(p.obj).getSize(new THREE.Vector3()));
+    // the row width that makes the whole tray about 2.4 times wider than tall (rows of mixed heights waste about a third)
+    const WT = Math.max(2.2 * (bb.max.x - bb.min.x), Math.sqrt(2.4 * 1.35 * sizes.reduce((a, s) => a + (s.x + GAP) * (Math.min(s.y, 40) + GAP), 0)));
+    const rows = [];
+    let row = null, x = 0;
+    for (const [oi, p] of order.entries()) {
+      const s = sizes[oi];
+      if (!row || (x > 0 && x + s.x > WT)) rows.push((row = {items: [], h: 0})), (x = 0);
+      row.items.push({p, x, s});
+      row.h = Math.max(row.h, s.y);
+      x += s.x + GAP;
+    }
+    let top = bb.min.y - 25;
+    for (const r of rows) {
+      for (const {p, x: ix, s} of r.items) {
+        const slot = new THREE.Vector3(cx - WT / 2 + ix + s.x / 2, top - s.y / 2, zc);
+        p.tray = p.rest.clone().add(slot.sub(p.seat));
+      }
+      top -= r.h + GAP + 2;
+    }
+  }
   function poseAll(e, useTo = false) {
     const m = useTo ? mixT.to : mixT.v;
     for (const a of asms) {
       const g = a.groupAmt(e) * (1 - m);
       a.poseEach((p) => [g, Asm.partAmt(p, e) * (1 - m)]);
-      for (const p of a.parts) p.obj.position.addScaledVector(p.gOff, (useTo ? wT[p.k].to : wT[p.k].v) * m);
+      for (const p of a.parts) {
+        p.obj.position.addScaledVector(p.gOff, (useTo ? wT[p.k].to : wT[p.k].v) * m);
+        const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
+        if (tw > 0) p.obj.position.lerp(p.tray, tw);
+      }
     }
   }
   /**
@@ -339,11 +373,15 @@ async function main() {
         h = !cur.has(p.id) && f > n ? 1 : 0;
       }
       gRim[i] = cur.has(p.id) ? 1 : 0;
+      const tray = h; // run 13: what was hidden now goes to the tray
+      h = 0;
       const wasHidden = hT[i].v > 0.5;
-      aim(hT[i], guide.mode ? h : 0, now);
+      aim(hT[i], 0, now);
+      if (enter || !guide.mode) hold(trT[i], guide.mode ? tray : 0);
+      else aim(trT[i], tray, now, quick ? QUICK : 0.8);
       if (!guide.mode) return;
-      if (h) {
-        if (enter) hold(wT[i], 0); // fades out where it is
+      if (tray) {
+        if (enter) hold(wT[i], 0); // straight to its slot
       } else if (wasHidden) hold(wT[i], w); // fades in where it belongs
       else if (cur.has(p.id)) {
         if (enter) hold(wT[i], 0);
@@ -556,7 +594,7 @@ async function main() {
   // stay inside the usable area as loose points), so the castings fill 70-85% on load, not the hoses' ends
   const hoseAsm = asms.find((a) => a.key === 'hoses');
   const bare = () => !guide.mode && focus < 0 && st.explode < 0.02;
-  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
+  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
   const autoLoose = () => (bare() ? subjectPts(hoseAsm.group) : []);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
@@ -973,7 +1011,7 @@ async function main() {
     aim(selT, sel ? 1 : 0, now);
     const floor = 0.5 - 0.4 * stepT(selT, now); // the rest of the carburetor fades to 10% opacity
     parts.forEach((p, i) => {
-      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
+      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? (trT[i].to > 0.5 ? 0.12 : 0) : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
       aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
