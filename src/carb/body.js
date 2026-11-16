@@ -251,14 +251,31 @@ export function buildBody(index) {
   // run 11 (item 3): the shaft (Keihin 12) with its wheel, the link arm (16) with its stop screw (18), the return
   // spring (14) and a washer (15) are pieces of reference 1 with their own meshes, each clickable
   const shaft = mk(orient(cylY(0.22, -4.0, 4.0), [0, 0, 1]), steel);
-  const wheel = latheY([[0, 0], [0, 1.33], [0.04, 1.39], [0.08, 1.39], [0.1, 1.22], [0.16, 1.22], [0.18, 1.39], [0.22, 1.39], [0.26, 1.33], [0.26, 0]]); // run 8: 14% smaller, inside the smaller cover
-  const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, 0, 0, CUPZ + 0.28);
-  A.add(part([SHX, SHY, 0], shaft, pulley), 'K12');
+  // run 11 (item 8, mine_4 with the cover off): 1 round wheel 40 across (68 px at 3.12 px/mm, 8% off for the wheel
+  // standing nearer that camera), 6 thick, 2 cable grooves round its rim and 2 cable slots, each with its barrel
+  // pocket; an arm off the hub, down toward the engine, its pin holding the return spring (Keihin 14) under the wheel
+  const WR = mm(20), WT = mm(6), WZ = -3.8; // radius, thickness, the wheel's inner face
+  const prof = [[0, 0], [0, WR - 0.05], [0.04, WR], [0.1, WR], [0.12, WR - 0.12], [0.22, WR - 0.12], [0.24, WR], [0.32, WR], [0.34, WR - 0.12], [0.44, WR - 0.12], [0.46, WR], [WT - 0.04, WR], [WT, WR - 0.05], [WT, 0]];
+  const wheel = merge([latheY(prof, 64), cylY(0.48, WT, WT + 0.05), cylY(0.48, -0.12, 0)]);
+  const SLOTS = [0.38, -0.84]; // the 2 cable slots (rad, from +X): mine_4 shows one at the air-box side, a little up
+  const slots = merge(SLOTS.flatMap((a) => [
+    rbox(0.5, WT + 0.02, 0.2, 0.04).translate(WR - 0.2, WT / 2, 0).rotateY(-a),
+    cylY(0.17, -0.01, WT + 0.01).translate(WR - 0.5, 0, 0).rotateY(-a),
+  ]));
+  const ARM = [-0.54, 3.34]; // the arm's pin (x, y): mine_4's spring's upper end
+  const aL = Math.hypot(ARM[0] - SHX, ARM[1] - SHY), aA = Math.atan2(ARM[1] - SHY, ARM[0] - SHX);
+  const arm = merge([rbox(aL, 0.42, 0.12, 0.05).translate(aL / 2, 0, 0), cylY(0.4, -0.06, 0.06).rotateX(Math.PI / 2)]).rotateZ(aA).translate(0, 0, WZ + 0.07);
+  const apin = orient(cylY(0.09, 0, 0.32), [0, 0, -1], [ARM[0] - SHX, ARM[1] - SHY, WZ + 0.07]);
+  const pulley = mk(orient(wheel, [0, 0, -1], [0, 0, WZ]), brass);
+  A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(merge([arm, apin]), steel)), 'K12');
+  // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
+  const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
+  const rsp = merge([orient(springY(sL, 0.26, 0.045, 8), [sd[0], sd[1], 0], [POST[0], POST[1], SZW]), orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6])]);
   // the link arm from the shaft down to the slide's lug (run 11: angled, the shaft now stands 0.7 toward the air box of it)
   const [LGX, LGY] = SLIDE_LUG, LA = Math.atan2(LGX - SHX, SHY - LGY), LL = Math.hypot(LGX - SHX, SHY - LGY) + 0.3;
   A.add(part([SHX, SHY, 0], mk(rbox(0.22, LL, 0.5, 0.08).translate(0, -LL / 2 + 0.15, -0.9).rotateZ(LA), steel)), 'K16');
   A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(screwY(0.45, 0.13, 0.08, 0.09), [1, 0, 0]), steel)), 'K18');
-  A.add(part([SHX, SHY, CUPZ + 0.55], mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel)), 'K14');
+  A.add(part([0, 0, 0], mk(rsp, steel)), 'K14');
   A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15');
   const nips = mk(merge(nipG), brass);
   // run 10 (item 7): the accelerator pump linkage as the Keihin FCR-MX diagram draws it (its 64-67, 72), replacing
