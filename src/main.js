@@ -7,7 +7,7 @@ import fontMed from '@fontsource/barlow-condensed/files/barlow-condensed-latin-5
 import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2';
 import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
-import {Asm} from './lib/asm.js';
+import {Asm, SEC, CLIP} from './lib/asm.js';
 import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, nameOf, specValue, groupIndex} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
@@ -58,6 +58,7 @@ async function main() {
   canvas.id = 'gl';
   const S = createStage(canvas);
   const {scene, camera} = S;
+  S.renderer.localClippingEnabled = true; // run 13 (item 11): SECTION's plane
 
   // --- the carburetor: each group's programs compile in parallel as soon as it is built; a brass line shows progress
   const load = el('div', 'iw-load', '<i></i>', app);
@@ -160,6 +161,10 @@ async function main() {
   Object.assign(range, {type: 'range', min: 0, max: 1, step: 0.001, value: 0});
   range.setAttribute('aria-label', 'Explode');
   const out = el('output', null, '0.00', ctl);
+  let secOn = false; // run 13 (item 11): SECTION on
+  const secBtn = el('button', 'iw-btn iw-section', 'Section', ctl);
+  secBtn.setAttribute('aria-pressed', 'false');
+  secBtn.setAttribute('aria-label', 'Section: cut the body along the bore');
   const pills = el('div', 'iw-pills', null, dock);
   const pillBtns = asms.map((a, i) => {
     const b = el('button', 'iw-btn', `<i>${nn(i)}</i>${a.label}`, pills);
@@ -346,8 +351,39 @@ async function main() {
       } else aim(wT[i], 0, now, quick ? QUICK : 0.6);
     });
   }
+  /** SECTION (run 13, item 11): the body cut along the bore (the +Z half away, z 0 of the carburetor), seen from the cut side; the cut
+   * faces are the inside faces, drawn a flat brass tint by the part shader (asm.js). Needs the assembled carburetor: any explode, focus,
+   * selection or guided mode ends it. */
+  function setSection(on, quiet = false) {
+    if (on === secOn) return;
+    if (on) {
+      if (solo.part) deselect();
+      if (guide.mode) setMode(null);
+      if (focus >= 0) focusOn(-1);
+    }
+    secOn = on;
+    SEC.value = on ? 1 : 0;
+    secBtn.classList.toggle('on', on);
+    secBtn.setAttribute('aria-pressed', String(on));
+    if (on) {
+      range.value = st.target = 0;
+      carb.updateMatrixWorld(true);
+      CLIP.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 0, -1).transformDirection(carb.matrixWorld), new THREE.Vector3().applyMatrix4(carb.matrixWorld));
+      view.user = false;
+      view.base = new THREE.Vector3(-0.14, 0.2, 1).normalize();
+      followFrom(1.1);
+    } else {
+      CLIP.constant = 1e5;
+      view.base = null;
+      if (!quiet) flyTo(1.1);
+    }
+    S.renderer.shadowMap.needsUpdate = true;
+    lastInput = performance.now();
+  }
+  secBtn.onclick = () => setSection(!secOn);
   /** Go to a guided mode (null: explore) at step n (default: the last step seen there). */
   function setMode(m, n) {
+    if (secOn) setSection(false, true);
     const enter = m !== guide.mode;
     if (solo.part) deselect();
     if (m && focus >= 0) focusOn(-1);
@@ -531,6 +567,7 @@ async function main() {
     followFrom(dur);
   }
   function focusOn(i, dur = 1.2) {
+    if (secOn) setSection(false, true);
     focus = i;
     pillBtns.forEach((b, k) => b.classList.toggle('on', k === i));
     if (i >= 0) pillBtns[i].scrollIntoView({block: 'nearest', inline: 'center'});
@@ -543,6 +580,7 @@ async function main() {
   range.addEventListener('change', () => (exDrag = false));
   range.addEventListener('input', () => {
     st.target = Number(range.value);
+    if (secOn && st.target > 0.02) setSection(false, true);
     lastInput = performance.now();
   });
 
@@ -554,6 +592,7 @@ async function main() {
   function select(id) {
     const p = partOf[id];
     if (!p) return;
+    if (secOn) setSection(false, true);
     if (solo.part && solo.part !== p) hold(solo.T, 0);
     solo.part = p;
     solo.spin.identity();
@@ -603,6 +642,7 @@ async function main() {
   }
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && solo.part && solo.T.to > 0) return e.target.blur?.(), deselect(); // also from the search box
+    if (e.key === 'Escape' && secOn) return setSection(false);
     if (e.target.closest?.('input, textarea')) return;
     if (e.key === '?') return setHelp(!helpCard.classList.contains('on'));
     if (e.key === 'Escape' && helpCard.classList.contains('on')) return setHelp(false);
@@ -645,7 +685,7 @@ async function main() {
         if (p === solo.part) return root;
         continue;
       }
-      if (dim[parts.indexOf(p)] > 0.4 || !root.visible) continue;
+      if (dim[parts.indexOf(p)] > 0.4 || !root.visible || (secOn && CLIP.distanceToPoint(h.point) < 0)) continue;
       anchor.copy(root.worldToLocal(h.point.clone()));
       return root;
     }
@@ -902,7 +942,7 @@ async function main() {
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
   const settled = () => !view.follow && [mixT, ...wT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
+  const sigOf = () => [st.explode, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 

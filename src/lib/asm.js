@@ -20,6 +20,13 @@ function crease(g) {
 const ease = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * t * (t * (t * 6 - 15) + 10));
 const clamp01 = (t) => Math.min(1, Math.max(0, t));
 
+// run 13 (item 11): SECTION. CLIP is the one clipping plane every part material carries (normal (0, 0, -1): the +Z half is cut
+// away; constant 1e5 = nothing clipped). SEC.value 1 = on: the inside faces seen through the cut are drawn a flat brass tint
+// (a cap without a stencil buffer); at 0 they are discarded, so the page looks as before.
+export const SEC = {value: 0};
+export const CLIP = new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e5);
+const capTint = (id) => new THREE.Color(0xb98f3c).multiplyScalar(0.88 + 0.06 * ([...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % 3));
+
 /** Clone a material with its shader hook (Material.copy drops onBeforeCompile). */
 function cloneMat(m) {
   const c = m.clone();
@@ -38,9 +45,11 @@ function look(m, U) {
     base.call(m, sh, r);
     sh.uniforms.uDim = U.dim;
     sh.uniforms.uRim = U.rim;
+    sh.uniforms.uSec = SEC;
+    sh.uniforms.uCap = U.cap;
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uDim;\nuniform float uRim;')
-      .replace('#include <opaque_fragment>', 'outgoingLight = outgoingLight * uDim * (1.0 + 0.15 * uRim);\n' + NO_BLOOM + '\n#include <opaque_fragment>');
+      .replace('#include <common>', '#include <common>\nuniform float uDim;\nuniform float uRim;\nuniform float uSec;\nuniform vec3 uCap;')
+      .replace('#include <opaque_fragment>', 'outgoingLight = outgoingLight * uDim * (1.0 + 0.15 * uRim);\n' + NO_BLOOM + '\nif (!gl_FrontFacing) { if (uSec < 0.5) discard; outgoingLight = uCap; diffuseColor.a = 1.0; }\n#include <opaque_fragment>');
   };
   m.customProgramCacheKey = () => key + '|look';
 }
@@ -81,7 +90,7 @@ export class Asm {
       rot: rot ? new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)) : null,
       order,
       axis: axis ? new THREE.Vector3(...axis).normalize() : null, // its real fitting axis, off its seat (null: the group's)
-      U: {dim: {value: 1}, rim: {value: 0}},
+      U: {dim: {value: 1}, rim: {value: 0}, cap: {value: capTint(id)}},
       mats: new Set(),
     };
     this.parts.push(part);
@@ -143,7 +152,12 @@ export class Asm {
           if (t && t.anisotropy !== 8) Object.assign(t, {anisotropy: 8, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, needsUpdate: true});
         }
       });
-      map.forEach((m) => (look(m, part.U), part.mats.add(m)));
+      map.forEach((m) => {
+        look(m, part.U);
+        // run 13 (item 11): both sides drawn (the inside faces are what the cut shows), the back faces discarded unless SECTION is on
+        Object.assign(m, {side: THREE.DoubleSide, shadowSide: THREE.BackSide, forceSinglePass: true, clippingPlanes: [CLIP]});
+        part.mats.add(m);
+      });
     }
   }
 
