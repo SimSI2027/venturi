@@ -32,7 +32,12 @@ export function buildLinkage(index) {
   // run 11 (item 3): the bracket is Keihin 10, its own piece of 65, held by Keihin 11 (M5 x 8) from the engine side
   // item 7 round 2: 0.45 (4.8 mm) further out toward the cable side, where mine_3 (3.7) and mine_5 (6.2) both put it
   const KZ = -0.45;
-  A.add(part([0, 0, CUPZ - 0.33 + KZ], mk(lug, cast)), 'K10', {ex: [0, 0, -1.8], order: 0.25});
+  // run 12 (item 3, cmp_5): the bracket runs along the cable side: a flange out of the lug's top, 2 holes through it
+  // (the lug's world z span is -3.9 to -5.6; the part sits at z -5.18)
+  const fl = rpoly([[-3.6, -3.95, 0.3], [-0.9, -3.95, 0.3], [-0.9, -5.55, 0.3], [-3.6, -5.55, 0.3]], 0.3);
+  fl.holes.push(circ(-3.05, -4.75, 0.24), circ(-1.45, -4.75, 0.24));
+  const flange = extrudeXY(fl, 0.3, 0.05, 8, {free: true}).rotateX(Math.PI / 2).translate(0, 8.85, -(CUPZ - 0.33 + KZ));
+  A.add(part([0, 0, CUPZ - 0.33 + KZ], mk(merge([lug, flange]), cast)), 'K10', {ex: [0, 0, -1.8], order: 0.25});
   A.add(part([-3.12, 5.6, -4.3 + KZ], mk(orient(merge([cylY(mm(4), 0, mm(4.5), 0.03), screwY(mm(8), mm(2.5), mm(2.5), 0.01)]), [-1, 0, 0]), steel), mk(orient(hexY(mm(2), mm(3.6), mm(4.6)), [-1, 0, 0]), rubber)), 'K11', {ex: [-1.6, 0, -1.8], order: 0.2, axis: [-1, 0, 0]});
   // 66 gasket under it, its rim a little proud of the cover so the black edge shows
   A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35)], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});

@@ -21,7 +21,10 @@ export function buildTop(index) {
   const E = [[-2.35, 0], [2.35, 0]];
   const lid = merge([
     slabY(COVER, 0.21, 0.42, null, 0.3),
-    rbox(3.0, 0.32, 3.4, 0.22).translate(0, 0.52, 0),
+    // run 12 (item 3, cmp_5): a raised centre casting with rounded corners (radius 0.85), and 1 bolt ear at each end
+    slabY([[-2.0, -2.2], [2.0, -2.2], [2.0, 2.2], [-2.0, 2.2]], 0.62, 0.42, null, 0.85),
+    slabY([[-3.15, -0.62], [-1.85, -0.62], [-1.85, 0.62], [-3.15, 0.62]], 0.46, 0.34, null, 0.6),
+    slabY([[1.85, -0.62], [3.2, -0.62], [3.2, 0.62], [1.85, 0.62]], 0.46, 0.34, null, 0.6),
     cylY(0.3, 0.4, 0.75).translate(1.25, 0, 1.5),
     cylY(0.45, 0, 0.55).translate(E[0][0], 0, 0),
     // run 9 landmarks (carb_8): the air-box bolt sits on a lug 1.25 down the tower's face, under the cover's tab
