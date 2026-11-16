@@ -18,7 +18,7 @@ export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower alo
 export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
 export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 3.4, face: 5.2}; // run 9 landmarks (carb_7): the knob 70 out, 30 above the bore
-export const SENS = 5.25; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 10: 0.85 out, so the pump cover (-58.0) to plate 59 is the table's 120.8 at MM 10.66)
+export const SENS = 4.75; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 10: 0.35 out, so the pump cover (-61.2) to the pilot air cover is the table's 120.8 at MM 10.66)
 export const HOUSE_X = 3.6; // run 9: the sensor housing's air-box face (PLATE59's +X edge), where the star knob sits
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
 // run 8 (carb_3): 15% smaller and turned 20 degrees about the throttle shaft, its air-box top corner down, the lobe
@@ -53,22 +53,27 @@ const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
 // run 9: the trace stays as run 8 drew it from carb_12 / carb_bottom (74 long along the bore): pressing it to the
 // Sudco table's 63.5 (B) put the bowl screws 54 apart where the underside landmarks measure about 84, so B is not this
-const FX = (x) => x;
+// run 10 (item 5): the plan rebuilt from views 1 and 3, not carb_12: the 4 screws 63 apart along the bore and 72 across
+// (true mm), centred where carb_3 and carb_7 put them (scratch/bowlplan.mjs); 1 affine map of the old trace onto them
+const FX = (x) => 1.05518 * x + 0.01333;
+const ZM = (z) => 1.0313 * z - 0.0832;
+/** The same map for the bowl's own plan outlines ([x, z, r?]). */
+export const PLAN = (p) => [FX(p[0]), ZM(p[1]), ...p.slice(2)];
 const FLANGE0 = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
   [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.95, 0.15], [2.85, 3.45, 0.25], [2.85, 4.1, 0.35], [2.35, 4.3, 0.35], [1.75, 3.9, 0.15],
   [1.3, 3.75, 0.2], [-0.2, 3.8, 0.3], [-2.0, 3.75, 0.2], [-2.6, 3.9, 0.15], [-3.25, 4.3, 0.35], [-3.75, 4.1, 0.35], [-3.75, 3.45, 0.25], [-3.35, 2.95, 0.15],
   [-3.35, 0.8, 0.2], [-3.45, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
 // run 9 landmarks (carb_7, carb_12): the sensor side of the joint and its 2 screws 0.7 in
 const ZS = (z) => (z > 2.5 ? z - 0.7 : z);
-export const FLANGE = FLANGE0.map(([x, z, r]) => [FX(x), ZS(z), r]);
+export const FLANGE = FLANGE0.map(([x, z, r]) => [FX(x), ZM(ZS(z)), r]);
 // the 4 bowl screws (run 8 overlays: the sensor side 0.35 wider); run 9 (carb_7): their ears are on the bowl's lower
 // flange band, under its upper box, so the joint itself has no ears
-export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]].map(([x, z]) => [FX(x), ZS(z)]);
+export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]].map(([x, z]) => [FX(x), ZM(ZS(z))]);
 // run 9: the joint's outline without the ears (24 points: the flange trace with its corner ears cut back), shared by
 // the body's flange face, the gasket (25) and the bowl's top lip
 export const RIM = [[-2.0, -3.45], [-0.2, -3.5], [1.3, -3.45], [2.0, -3.45], [2.35, -3.3, 0.3], [2.45, -2.9], [2.45, -0.8], [2.6, 0, 0.4], [2.45, 0.8], [2.45, 3.3],
   [2.35, 3.7, 0.3], [2.0, 3.8], [1.3, 3.8], [-0.2, 3.85], [-2.0, 3.8], [-2.9, 3.8], [-3.25, 3.7, 0.3], [-3.35, 3.3], [-3.35, 0.8], [-3.45, 0, 0.4], [-3.35, -0.8],
-  [-3.35, -2.9], [-3.25, -3.3, 0.3], [-2.9, -3.45]].map(([x, z, r = 0.2]) => [FX(x), ZS(z), r]);
+  [-3.35, -2.9], [-3.25, -3.3, 0.3], [-2.9, -3.45]].map(([x, z, r = 0.2]) => [FX(x), ZM(ZS(z)), r]);
 /** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
 export function slabY(pts, y, t, hole = null, r = 0.3) {
   const s = rpoly(pts, r);

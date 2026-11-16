@@ -9,8 +9,8 @@ import {PUMP, PYW} from './bowl.js';
 
 const [PX, PZ] = PUMP, PY = PYW - 0.2; // the cover's top: gasket and diaphragm fill the 0.2 up to the housing's face
 // the guard plate's outline (x, z), traced from carb_12: round the cover's engine-side half, out past the cable side
-const PLATE45 = [[-1.3, -2.45], [-2.4, -2.75], [-3.1, -3.3, 0.4], [-3.3, -4.3, 0.45], [-2.9, -5.1, 0.4], [-1.8, -5.45, 0.35], [-0.6, -5.38, 0.4], [0.1, -4.7, 0.3], [0.3, -3.6, 0.3], [-0.2, -2.7, 0.3]].map(([x, z, r]) => [x + 0.9, z, r]); // (landmarks: with the pump, 0.9 toward the air box)
-const ADJ = [0.95, -4.6]; // the adjusting screw (8) in the plate's ear at its air-box corner (carb_12)
+const PLATE45 = [[-1.3, -2.45], [-2.4, -2.75], [-3.1, -3.3, 0.4], [-3.3, -4.3, 0.45], [-2.9, -5.1, 0.4], [-1.8, -5.45, 0.35], [-0.6, -5.38, 0.4], [0.1, -4.7, 0.3], [0.3, -3.6, 0.3], [-0.2, -2.7, 0.3]].map(([x, z, r]) => [x + 1.67, z - 0.3, r]); // (landmarks: with the pump, 0.9 toward the air box)
+const ADJ = [1.72, -4.9]; // the adjusting screw (8) in the plate's ear at its air-box corner (carb_12; run 10: with the pump)
 
 export function buildPump(index) {
   const A = new Asm('pump', 'Pump', {offset: [0, -9.0, -3.0], index, axis: [0, -1, 0]});
@@ -36,7 +36,7 @@ export function buildPump(index) {
   const ps = rpoly(PLATE45.slice().reverse(), 0.3);
   ps.holes.push(circ(PX, PZ, 1.55));
   const flat = extrudeXY(ps, PT, 0.03, 10, {free: true});
-  const inner = rpoly([[-2.75, -4.2, 0.3], [-2.45, -5.05, 0.3], [-1.6, -5.3, 0.3], [-0.75, -5.2, 0.3], [-1.2, -4.85, 0.2], [-2.05, -4.55, 0.2]].map(([x, z, r]) => [x + 0.9, z, r]).reverse(), 0.2);
+  const inner = rpoly([[-2.75, -4.2, 0.3], [-2.45, -5.05, 0.3], [-1.6, -5.3, 0.3], [-0.75, -5.2, 0.3], [-1.2, -4.85, 0.2], [-2.05, -4.55, 0.2]].map(([x, z, r]) => [x + 1.52, z - 0.3, r]).reverse(), 0.2);
   const pressed = extrudeXY(inner, mm(1.0), 0.03, 8, {free: true}).translate(0, 0, PT / 2 + mm(0.4));
   const plate = merge([flat, pressed]).rotateX(Math.PI / 2); // shape y -> z, pressed side down
   A.add(part([0, PY - 0.4 - PT / 2, 0], mk(plate, steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});

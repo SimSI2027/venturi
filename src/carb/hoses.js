@@ -2,6 +2,7 @@
 // the cable-cover hose (68) with clip (69); fuel hose (73) with clips (74, 76). Each comes away from its fitting.
 import {Asm} from '../lib/asm.js';
 import {THREE, merge, cylY, tubeY, orient, hose, rbox, mk, part} from './kit.js';
+import {BY, DRAIN, DRAIN_END} from './bowl.js';
 
 /** A spring hose clip: a band round the hose (axis dir) with two tabs. */
 function clip(r, dir, p) {
@@ -33,10 +34,12 @@ export function buildHoses(index) {
   A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [-0.1, -0.85, -4.76]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
   // (run 8: the drain nipple points down out of the belly's engine end, bowl.js DRAIN)
-  // (run 10, carb_7 landmarks: the nipple 0.46 toward the sensor side, the pipe's end at -8.66)
-  A.add(part([-3.37, -7.4, 0.76], mk(tubeY(0.16, 0.09, -1.26, 0.2), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
-  A.add(part([0, 0, 0], mk(hose([[-3.37, -8.34, 0.76], [-3.37, -9.7, 0.8], [-3.2, -11.3, 0.95]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
-  A.add(part([-3.39, -9.7, 0.79], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
+  // (run 10: the nipple under the deep floor, placed from the screws (item 5); the pipe angles out of it to its end
+  // where carb_7 shows it (item 4), 16 long as the scale table has it)
+  const p0 = [DRAIN[0], BY.deep - 0.3, DRAIN[1]], dv = DRAIN_END.map((v, i) => v - p0[i]), dl = Math.hypot(...dv);
+  A.add(part(p0, mk(orient(tubeY(0.16, 0.09, 0, dl), dv), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
+  A.add(part([0, 0, 0], mk(hose([[-3.14, -8.48, 0.57], [-3.55, -8.86, 0.96], [-3.65, -9.9, 1.05], [-3.45, -11.3, 1.15]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
+  A.add(part([-3.64, -9.65, 1.04], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
   // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank
   // (run 8: the inlet's top at y -1.53, z 5.6, bowl.js)
   // (overlay round 2: a short stub, the photos show the inlet bare)
