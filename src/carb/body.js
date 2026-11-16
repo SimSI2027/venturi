@@ -17,7 +17,7 @@ export const UY = 1.52; // the underside's bosses and every part under them, bui
 export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
 export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
-export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 4.25, face: 3.9}; // (run 9: the arm 0.7 shorter, inside the 120.8 width)
+export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 3.4, face: 5.2}; // run 9 landmarks (carb_7): the knob 70 out, 30 above the bore
 export const SENS = 4.4; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 9: 0.55 in, for the 120.8 width)
 export const HOUSE_X = 3.6; // run 9: the sensor housing's air-box face (PLATE59's +X edge), where the star knob sits
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
@@ -48,22 +48,24 @@ const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.
   [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.3]];
 // the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
-// run 9: 63.5 long along the bore (Sudco table B, 5.66 sketch units at MM 11.22), so the run 8 trace is pressed to 0.857
-// along X about x -0.45
-const FX = (x) => -0.45 + (x + 0.45) * 0.857;
+// run 9: the trace stays as run 8 drew it from carb_12 / carb_bottom (74 long along the bore): pressing it to the
+// Sudco table's 63.5 (B) put the bowl screws 54 apart where the underside landmarks measure about 84, so B is not this
+const FX = (x) => x;
 const FLANGE0 = [[-2.0, -3.4, 0.2], [-0.2, -3.45, 0.3], [1.3, -3.4, 0.2], [1.75, -3.55, 0.15], [2.35, -3.95, 0.35], [2.85, -3.75, 0.35], [2.85, -3.1, 0.25], [2.45, -2.6, 0.15],
   [2.45, -0.8, 0.2], [2.6, 0, 0.4], [2.45, 0.8, 0.2], [2.45, 2.95, 0.15], [2.85, 3.45, 0.25], [2.85, 4.1, 0.35], [2.35, 4.3, 0.35], [1.75, 3.9, 0.15],
   [1.3, 3.75, 0.2], [-0.2, 3.8, 0.3], [-2.0, 3.75, 0.2], [-2.6, 3.9, 0.15], [-3.25, 4.3, 0.35], [-3.75, 4.1, 0.35], [-3.75, 3.45, 0.25], [-3.35, 2.95, 0.15],
   [-3.35, 0.8, 0.2], [-3.45, 0, 0.4], [-3.35, -0.8, 0.2], [-3.35, -2.6, 0.15], [-3.75, -3.1, 0.25], [-3.75, -3.75, 0.35], [-3.25, -3.95, 0.35], [-2.6, -3.55, 0.15]];
-export const FLANGE = FLANGE0.map(([x, z, r]) => [FX(x), z, r]);
+// run 9 landmarks (carb_7, carb_12): the sensor side of the joint and its 2 screws 0.7 in
+const ZS = (z) => (z > 2.5 ? z - 0.7 : z);
+export const FLANGE = FLANGE0.map(([x, z, r]) => [FX(x), ZS(z), r]);
 // the 4 bowl screws (run 8 overlays: the sensor side 0.35 wider); run 9 (carb_7): their ears are on the bowl's lower
 // flange band, under its upper box, so the joint itself has no ears
-export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]].map(([x, z]) => [FX(x), z]);
+export const EARS = [[2.35, -3.45], [2.35, 3.8], [-3.25, 3.8], [-3.25, -3.45]].map(([x, z]) => [FX(x), ZS(z)]);
 // run 9: the joint's outline without the ears (24 points: the flange trace with its corner ears cut back), shared by
 // the body's flange face, the gasket (25) and the bowl's top lip
 export const RIM = [[-2.0, -3.45], [-0.2, -3.5], [1.3, -3.45], [2.0, -3.45], [2.35, -3.3, 0.3], [2.45, -2.9], [2.45, -0.8], [2.6, 0, 0.4], [2.45, 0.8], [2.45, 3.3],
   [2.35, 3.7, 0.3], [2.0, 3.8], [1.3, 3.8], [-0.2, 3.85], [-2.0, 3.8], [-2.9, 3.8], [-3.25, 3.7, 0.3], [-3.35, 3.3], [-3.35, 0.8], [-3.45, 0, 0.4], [-3.35, -0.8],
-  [-3.35, -2.9], [-3.25, -3.3, 0.3], [-2.9, -3.45]].map(([x, z, r = 0.2]) => [FX(x), z, r]);
+  [-3.35, -2.9], [-3.25, -3.3, 0.3], [-2.9, -3.45]].map(([x, z, r = 0.2]) => [FX(x), ZS(z), r]);
 /** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
 export function slabY(pts, y, t, hole = null, r = 0.3) {
   const s = rpoly(pts, r);
@@ -162,10 +164,11 @@ export function buildBody(index) {
   const CX = (TX0 + TX1) / 2;
   for (const sx of [-1, 1]) g.push(cylY(0.5, 4.9, TT, 0.1).translate(CX + sx * 2.35, 0, 0));
   for (const z of [-1.4, -2.5]) g.push(rbox(0.5, 3.6, 0.36, 0.12).translate(TX0 - 0.1, 4.6, z));
-  for (const z of [-1.9, 1.9]) g.push(orient(tubeY(0.45, 0.2, 0, 0.35), [1, 0, 0], [TX1 - 0.05, 5.2, z]));
+  for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.45, 0.2, 0, 0.35), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up
   for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
   // run 9 (carb_8): the top cover's bolt lug on the tower's air-box face, a tapered block under the cover's tab
-  g.push(rbox(0.75, 1.3, 1.5, 0.3).translate(CX + 2.15, TT - 0.65, 0), rbox(0.5, 0.8, 1.1, 0.2).translate(CX + 2.45, TT - 0.4, 0));
+  // (run 9 landmarks: under the top cover's lowered air-box bolt, top.js)
+  g.push(rbox(0.75, 1.3, 1.5, 0.3).translate(CX + 2.15, TT - 1.95, 0), rbox(0.5, 0.8, 1.1, 0.2).translate(CX + 2.45, TT - 1.7, 0));
   // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
   // the cover (65) closes it
   // run 9 (carb_8): the wheel housing reads curved from the air-box end: its outer rim rounded off (bevel 0.3)
@@ -207,7 +210,7 @@ export function buildBody(index) {
   for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(1.8, -4.52 + UY, z));
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
-  const bowlFace = mk(rbox(5.3, 0.02, 6.6, 0.008).translate(-0.45, BOT - 0.005, 0), machined);
+  const bowlFace = mk(rbox(5.9, 0.02, 6.0, 0.008).translate(-0.45, BOT - 0.005, -0.2), machined);
   const seat = mk(tubeY(0.22, 0.1, -4.49 + UY, -4.15 + UY).translate(1.2, 0, 0), brass);
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
