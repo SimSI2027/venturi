@@ -77,7 +77,7 @@ export function buildSensor(index) {
   A.add(part([KX - 0.34, KY, KZ], mk(orient(tubeY(0.27, 0.15, 0, 0.04), [1, 0, 0]), steel)), 'K91', {...SOPT, order: 0.62});
   A.add(part([KX - 0.3, KY, KZ], mk(orient(springY(0.3, 0.22, 0.035, 4), [1, 0, 0]), steel)), 'K92', {...SOPT, order: 0.61});
   A.add(part([KX + 0.15, KY + 2.0, KZ - 0.3], mk(orient(screwY(0.5, 0.15, 0.08, 0.09), [1, 0, 0]), zinc)), 'K177', {...SOPT, order: 0.65});
-  A.add(part([KX + 0.15, KY + 0.9, KZ - 0.9], mk(orient(screwY(0.45, 0.13, 0.07, 0.08), [1, 0, 0]), zinc)), 'K140', {...SOPT, order: 0.66});
+  A.add(part([HOUSE_X + 0.47, KY + 0.9, KZ - 0.9], mk(orient(screwY(0.45, 0.13, 0.07, 0.08), [1, 0, 0]), zinc)), 'K140', {...SOPT, order: 0.66});
   A.add(part([HOUSE_X + 0.06, KY + 2.3, KZ], mk(plateXY(1.3, 1.5, 0.12, 0.2, [[0.3, 0.4, 0.15]]).rotateY(Math.PI / 2), machined)), '63', {ex: [1.4, -0.6, 0.6], order: 0.7, axis: [1, 0, 0]});
   return A;
 }
