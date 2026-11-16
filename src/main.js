@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm, SEC, CLIP} from './lib/asm.js';
-import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, info, nameOf, specValue, groupIndex} from './carb/data.js';
+import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, info, nameOf, specValue, groupIndex} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -174,7 +174,7 @@ async function main() {
 
   // parts panel: search + 79 rows; SPECS: specs.json as a table
   const panel = el('div', 'vt-panel', null, ui);
-  const pTabs = el('div', 'vt-tabs', '<button data-k="parts" class="on">Parts</button><button data-k="specs">Specs</button><button data-k="steps">Steps</button><button data-k="notes">Notes</button><button class="vt-x" aria-label="Close">×</button>', panel);
+  const pTabs = el('div', 'vt-tabs', '<button data-k="parts" class="on">Parts</button><button data-k="specs">Specs</button><button data-k="steps">Steps</button><button data-k="kit">Kit</button><button data-k="notes">Notes</button><button class="vt-x" aria-label="Close">×</button>', panel);
   const pBody = el('div', 'vt-pbody', null, panel);
   const search = el('input', 'vt-search', null, pBody);
   Object.assign(search, {type: 'search', placeholder: 'Search number or name'});
@@ -198,6 +198,17 @@ async function main() {
   const specs = el('div', 'vt-specs', null, pBody);
   specs.innerHTML = `<table>${Object.keys(SPEC_LABELS).map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('')}</table><p class="vt-src">${esc('Source: YFZ450 service manual, chapter 2 specifications and chapter 6')}</p><p class="vt-src">${esc('Model scale: ' + SCALE_NOTE + '.')}</p>`;
   specs.hidden = true;
+  // run 13 (item 13): the KIT tab: every seal, O-ring, gasket and diaphragm, with quantities and the total
+  const kit = el('div', 'vt-specs vt-kit-tab', null, pBody);
+  kit.innerHTML = `<p class="vt-src">Usually replaced at a rebuild: seals, O-rings, gaskets and diaphragms.</p>` +
+    `<table>${KIT.map((k) => `<tr data-id="${k.id}" tabindex="0"><th>${esc(k.id.startsWith('K') ? `${k.id} · ${PIECES[k.id].piece[0].toUpperCase()}${PIECES[k.id].piece.slice(1)}` : nameOf(k.id))}<small>${k.kind}${k.id.startsWith('K') ? ' · part of ' + esc(info(k.id).ref) : ''}</small></th><td>${k.qty}${k.known ? '' : '*'}</td></tr>`).join('')}` +
+    `<tr class="tot"><th>Total</th><td>${KIT_TOTAL} pieces in ${KIT.length} lines</td></tr></table>` +
+    `<p class="vt-src">* the sources give no quantity for this line: counted once. Quantities come from the fiche table (refs 61-79) and the Keihin diagram.</p>`;
+  kit.hidden = true;
+  kit.onclick = (e) => {
+    const r = e.target.closest('tr[data-id]');
+    if (r) select(r.dataset.id);
+  };
   search.addEventListener('input', () => {
     const s = search.value.trim().toLowerCase();
     rows.forEach((r) => (r.hidden = !!s && !(/^\d+$/.test(s) ? r.dataset.id === s || r.dataset.id.startsWith(s) : r.dataset.q.includes(s))));
@@ -215,6 +226,7 @@ async function main() {
     [...pTabs.children].forEach((c) => c.classList.toggle('on', c.dataset.k === k));
     list.hidden = search.hidden = k !== 'parts';
     specs.hidden = k !== 'specs';
+    kit.hidden = k !== 'kit';
     guide.views.steps.hidden = k !== 'steps';
     guide.views.notes.hidden = k !== 'notes';
   }
@@ -671,7 +683,7 @@ async function main() {
       (i.piece
         ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">${i.k ? `Keihin ${i.k} · ` : ''}part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
         : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
-      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` +
+      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` + (inKit(id) ? '<div class="vt-kitnote">Usually replaced at rebuild</div>' : '') +
       `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd>${!i.piece && i.kk.length ? `<dt>Keihin</dt><dd>${esc(i.kk.map((k) => `K${k}`).join(', '))}</dd>` : ''}${i.qty ? `<dt>Qty</dt><dd>${i.qty}</dd>` : ''}</dl>` +
       (sp ? `<table>${sp}</table>` : '') +
       '<div class="vt-hint">Drag to turn it · Esc or click away to put it back</div>';

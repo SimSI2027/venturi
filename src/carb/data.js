@@ -139,6 +139,19 @@ export const KPIECES = Object.keys(PIECES).filter((id) => PIECES[id].k);
 export const KEIHIN = {'2': [6], '3': [7], '4': [8], '5': [7], '6': [249], '9': [19], '10': [20], '11': [21], '12': [22], '13': [24], '14': [25], '15': [243], '16': [244], '17': [26], '18': [28], '19': [29], '20': [30], '21': [39], '22': [40], '23': [42], '24': [43], '25': [45], '26': [46], '27': [47], '28': [51], '30': [53], '31': [54], '32': [55], '36': [100], '37': [122], '38': [123], '39': [152], '40': [64], '41': [65], '43': [251], '44': [250], '45': [209], '46': [90], '47': [96], '48': [23], '49': [32], '50': [33], '51': [34], '52': [35], '53': [245], '57': [148], '58': [206], '62': [180], '65': [264], '68': [207], '70': [265], '75': [205], '78': [211], '79': [213]};
 export const QTY = {61: 1, 62: 1, 64: 1, 65: 1, 66: 1, 67: 1, 68: 1, 69: 1, 70: 2, 71: 1, 73: 1, 74: 1, 75: 1, 76: 1, 77: 1, 78: 1, 79: 1};
 
+// run 13 (item 13): the seals, O-rings, gaskets and diaphragms (by their fiche names, and the Keihin pieces that are rings), which are
+// usually replaced at a rebuild. qty: the fiche table's quantity where it gives one (refs 61-79) or what the diagram draws (K85: 3
+// rings); known: false = the sources give none and the line counts once (1 per carburetor, as the model has it).
+const KIT_KIND = (n) => (/^GASKET/.test(n) ? 'gasket' : /^O-RING/.test(n) ? 'O-ring' : /^SEAL/.test(n) ? 'seal' : /^DIAPHRAGM/.test(n) ? 'diaphragm' : null);
+export const KIT = [
+  ...PARTS.filter((p) => KIT_KIND(p.name)).map((p) => ({id: String(p.ref), kind: KIT_KIND(p.name), qty: QTY[p.ref] ?? 1, known: p.ref in QTY})),
+  {id: 'K37', kind: 'O-ring', qty: 1, known: false},
+  {id: 'K52', kind: 'seal', qty: 1, known: false},
+  {id: 'K85', kind: 'O-ring', qty: 3, known: true},
+].sort((a, b) => (parseInt(a.id.replace('K', '1000')) || 0) - (parseInt(b.id.replace('K', '1000')) || 0));
+export const KIT_TOTAL = KIT.reduce((s, k) => s + k.qty, 0);
+export const inKit = (id) => KIT.some((k) => k.id === id);
+
 export const CONFLICT_20 = 'Fiche: JET, MAIN (#100). Manual: main jet #158, pilot air jet #100. Shown here as the pilot air jet (#100, in the air-box spigot); the #158 main jet has no reference of its own on this fiche. Check the number stamped on your jet.';
 
 // --- the 13 groups, in the manual's disassembly order. dir: the way the group really comes off, carb space
