@@ -30,8 +30,9 @@ export function buildHoses(index) {
   // the cable cover's hose (vinyl, from the photos): from the nipple at the cover's foot down the cable side,
   // out round the pump lobe, to below the bowl
   // (run 8: from the nipple on the smaller, turned cover, linkage.js; clear of the pump cover's ears)
-  A.add(part([0, 0, 0], mk(hose([[-0.1, -0.45, -4.73], [-0.1, -1.6, -4.88], [-0.6, -3.8, -5.55], [-1.1, -6.5, -5.85], [-1.0, -10.0, -5.8]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
-  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [-0.1, -0.85, -4.76]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
+  // (run 10: from the nipple where item 3's larger cover puts it, past the pump linkage, round the guard plate's fan)
+  A.add(part([0, 0, 0], mk(hose([[0.21, -0.15, -4.73], [0.15, -1.3, -4.86], [-0.6, -3.8, -5.5], [-1.6, -6.5, -5.75], [-1.8, -10.0, -5.7]], 0.24, 0.12), vinyl)), '68', {ex: [2.5, -2.0, -6.0], order: 0.2});
+  A.add(part([0, 0, 0], mk(clip(0.24, [0, -1, -0.1], [0.2, -0.55, -4.76]), zinc)), '69', {ex: [2.5, -1.2, -6.4], order: 0.15});
   // drain: steel pipe in the bowl's floor, the clear vinyl hose on it, a clamp holding the hose
   // (run 8: the drain nipple points down out of the belly's engine end, bowl.js DRAIN)
   // (run 10: the nipple under the deep floor, placed from the screws (item 5); the pipe angles out of it to its end

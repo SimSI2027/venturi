@@ -15,6 +15,7 @@ export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; 
 export const BOT = HT.joint; // the body's underside: the float chamber gasket face
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
 export const SHAFT = [-0.2, 5.6]; // throttle shaft (x, y), across the tower along Z
+export const LINK = [0.75, -1.7]; // run 10: the pump linkage's pivot (x, y), along Z on the cable side under the cable cup
 export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
 export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 3.4, face: 5.2}; // run 9 landmarks (carb_7): the knob 70 out, 30 above the bore
@@ -244,9 +245,20 @@ export function buildBody(index) {
   const pulley = mk(merge([orient(wheel, [0, 0, -1]), orient(cylY(0.3, 0, 0.3), [0, 0, -1], [0.9, 0.8, 0.0])]), machined, SHX, SHY, CUPZ + 0.28);
   const rspring = mk(orient(springY(0.26, 0.75, 0.04, 2.5), [0, 0, -1]), steel, SHX, SHY, CUPZ + 0.55);
   const nips = mk(merge(nipG), brass);
-  // run 9: the accelerator pump's link lever (was drawn in 45), at the foot of the cable cup over the pump rod's top
-  const lever = mk(rbox(1.9, 0.5, 0.18, 0.06).translate(0.6, -0.75, -3.85), steel);
-  const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips, lever);
+  // run 10 (item 7): the accelerator pump linkage as the Keihin FCR-MX diagram draws it (its 64-67, 72), replacing
+  // run 9's T-bar: a cast boss on the body's cable side under the cable cup, a pivot pin out of it with a washer at its
+  // end, and the 2 torsion springs on the pin (pieces of reference 1, as the T-bar was), one behind each link lever
+  // (40 and 41, linkage.js); the thin rod rides with the bowl (bowl.js)
+  const [LX, LY] = LINK;
+  const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
+  const pin = merge([orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), orient(tubeY(0.26, 0.11, 0, 0.05), [0, 0, -1], [LX, LY, -4.48])]);
+  const leg = (z, a, len) => orient(cylY(0.04, 0, len, 0.01), [Math.cos(a), Math.sin(a), 0], [LX + Math.cos(a) * 0.25, LY + Math.sin(a) * 0.25, z]);
+  const tsprings = merge([
+    orient(springY(0.24, 0.25, 0.045, 3), [0, 0, -1], [LX, LY, -3.22]), leg(-3.24, Math.PI * 1.25, 0.4), leg(-3.44, Math.PI * 0.75, 0.45),
+    orient(springY(0.3, 0.25, 0.045, 3.5), [0, 0, -1], [LX, LY, -3.68]), leg(-3.7, Math.PI * 0.8, 0.45), leg(-3.96, Math.PI * 0.12, 0.5),
+  ]);
+  const link = mk(merge([pin, tsprings]), steel);
+  const body = part([0, 0, 0], casting, bowlFace, seat, spigots, boreM, nozzle, shaft, pulley, rspring, nips, pboss, link);
   A.add(body, '1');
   return A;
 }

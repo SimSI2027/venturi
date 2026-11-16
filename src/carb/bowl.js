@@ -76,7 +76,8 @@ export function buildBowl(index) {
   const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep - 0.2).translate(DX, 0, DZ);
   const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.04, BOX);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
-  const rod = orient(tubeY(0.12, 0.001, 0, -0.9 - PYW - 0.4), [0, 1, 0], [0.8 + 0.77, PYW + 0.4, -3.75 - 0.3]);
+  // run 10 (item 7): the Keihin diagram's thin pump rod (its 72), 2 mm, a ball end up in link lever 41's arm (linkage.js)
+  const RT = -1.35, rod = merge([tubeY(mm(1.0), 0.001, PYW + 0.4, RT - 0.1, 0.01), new THREE.SphereGeometry(mm(2.2), 12, 8).translate(0, RT, 0)]).translate(1.57, 0, -4.09);
   // fuel inlet fitting (carb_7): a steel elbow out of the upper box's sensor side, turned up, a hex at its foot, a
   // bead near its top (hose 73 goes on it)
   const IY = -3.18, IZ = 6.6, IT = IY + 2.675, z0 = RIM[13][1]; // run 10 landmarks (carb_7): 0.4 further out, its top 0.22 higher

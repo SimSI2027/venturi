@@ -1,8 +1,8 @@
 // 6 linkage, on the cable side (-Z), from the photo: the flat shield-shaped throttle cable cover (65) with gasket (66), seal (67) and 2 bolts (70);
 // throttle shaft screw (42, under the top cover); plates (40, 41); adjusting screw (44) and its spring (43).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, orient, springY, screwY, plateXY, rpoly, circ, extrudeXY, mk, part} from './kit.js';
-import {SHIELD, CUPZ, inset, slabZ, shieldXY, c3, clipY} from './body.js';
+import {THREE, rbox, merge, cylY, tubeY, hexY, orient, springY, screwY, rpoly, circ, extrudeXY, mk, part, mm} from './kit.js';
+import {SHIELD, CUPZ, LINK, inset, slabZ, c3, clipY} from './body.js';
 
 export function buildLinkage(index) {
   const A = new Asm('linkage', 'Linkage', {offset: [0, 1.0, -7.5], index, axis: [0, 0, -1]});
@@ -40,11 +40,22 @@ export function buildLinkage(index) {
   A.add(part([0, 0, CUPZ - 0.73], ...BOLTS.flatMap(([x, y]) => [mk(bolt.clone(), steel, x, y, 0), mk(recess.clone(), rubber, x, y, 0)])), '70', {ex: [0, 0, -3.4], order: 0});
   // 42 throttle shaft screw: holds the lift lever on the shaft, reached from the top
   A.add(part([0.2, 6.05, -1.6], mk(screwY(0.9, 0.24, 0.13, 0.18), steel)), '42', {ex: [0, 5.5, 4.5], order: 0.6, axis: [0, 1, 0]});
-  // 40, 41 plates in the cable-side cup, under the cover
-  A.add(part([...shieldXY(0.6, 1.2), CUPZ + 0.45], mk(plateXY(1.7, 0.9, 0.14, 0.2, [[-0.5, 0, 0.15]]), machined)), '40', {ex: [0, -1.6, -1.2], order: 0.7});
-  A.add(part([...shieldXY(-0.9, 3.0), CUPZ + 0.45], mk(plateXY(1.0, 1.4, 0.14, 0.2, [[0, 0.3, 0.15]]), machined)), '41', {ex: [1.2, 1.2, -1.2], order: 0.7});
-  // 44 adjusting screw (up into plate 40) and its spring 43, in the cup's lobe
-  A.add(part([...shieldXY(1.1, -0.3), CUPZ + 0.3], mk(merge([cylY(0.28, -0.35, 0), screwY(1.5, 0.13, 0.13, 0.01).rotateX(Math.PI)]), steel)), '44', {ex: [0, -3.6, -0.6], order: 0.5, axis: [0, -1, 0]});
-  A.add(part([...shieldXY(1.1, -0.1), CUPZ + 0.3], mk(springY(0.9, 0.22, 0.04, 6), steel)), '43', {ex: [0, -2.2, -0.6], order: 0.55, axis: [0, -1, 0]});
+  // run 10 (item 7): 40 and 41 are the accelerator pump's 2 link levers as the Keihin FCR-MX diagram draws them (its 64
+  // and 65), stamped steel on the pivot pin under the cable cup (body.js LINK, its 2 torsion springs there): 40 with a
+  // tab bent out toward the cover holding the timing adjusting screw 44 (Keihin 250) and its spring 43 (251), the
+  // screw's tip up against the cup lobe's foot over the throttle cam; 41 with its arm out to the thin rod's ball end
+  const [LX, LY] = LINK, LT = mm(1.6);
+  const lever = (ax, ay) => {
+    const L = Math.hypot(ax, ay);
+    return merge([orient(cylY(0.36, -LT / 2, LT / 2, 0.03), [0, 0, 1]), rbox(L, 0.3, LT, 0.05).translate(L / 2, 0, 0).rotateZ(Math.atan2(ay, ax)), orient(cylY(0.2, -LT / 2, LT / 2, 0.03), [0, 0, 1], [ax, ay, 0])]);
+  };
+  const T40 = [-0.65, 0.34], A41 = [0.82, 0.35];
+  const tab = rbox(0.5, 0.1, 0.6, 0.04).translate(T40[0], T40[1], -0.27);
+  A.add(part([LX, LY, -3.56], mk(merge([lever(...T40), tab]), steel)), '40', {ex: [0, -0.8, -1.6], order: 0.7});
+  A.add(part([LX, LY, -4.09], mk(lever(...A41), steel)), '41', {ex: [0.8, -0.8, -2.4], order: 0.65});
+  // 44 the timing adjusting screw up through 40's tab (its head under the tab), 43 its spring on the shank above it
+  const SX = LX + T40[0], SY = LY + T40[1] - 0.05, SZ = -3.83;
+  A.add(part([SX, SY, SZ], mk(merge([cylY(0.24, -0.3, 0), screwY(1.5, 0.13, 0.13, 0.01).rotateX(Math.PI)]), steel)), '44', {ex: [0, -3.6, -0.6], order: 0.5, axis: [0, -1, 0]});
+  A.add(part([SX, SY + 0.11, SZ], mk(springY(0.7, 0.22, 0.04, 5), steel)), '43', {ex: [0, -2.2, -0.6], order: 0.55, axis: [0, -1, 0]});
   return A;
 }
