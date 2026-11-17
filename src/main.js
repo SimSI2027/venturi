@@ -165,12 +165,25 @@ async function main() {
   const secBtn = el('button', 'iw-btn iw-section', 'Section', ctl);
   secBtn.setAttribute('aria-pressed', 'false');
   secBtn.setAttribute('aria-label', 'Section: cut the body along the bore');
-  const pills = el('div', 'iw-pills', null, dock);
+  const pillWrap = el('div', 'iw-pw', null, dock); // run 23 (item 8): a strip too narrow for all 13 pills scrolls, with a fade and an arrow at each cut edge
+  const pills = el('div', 'iw-pills', null, pillWrap);
   const pillBtns = asms.map((a, i) => {
     const b = el('button', 'iw-btn', `<i>${nn(i)}</i>${a.label}`, pills);
     b.onclick = () => focusOn(focus === i ? -1 : i);
     return b;
   });
+  const pillEdge = () => {
+    const room = pills.scrollWidth - pills.clientWidth;
+    pillWrap.classList.toggle('more-l', pills.scrollLeft > 2);
+    pillWrap.classList.toggle('more-r', pills.scrollLeft < room - 2);
+  };
+  [-1, 1].forEach((d) => {
+    const b = el('button', `iw-pa ${d < 0 ? 'l' : 'r'}`, d < 0 ? '‹' : '›', pillWrap);
+    b.setAttribute('aria-label', d < 0 ? 'Earlier groups' : 'More groups');
+    b.onclick = () => pills.scrollBy({left: d * pills.clientWidth * 0.6, behavior: 'smooth'});
+  });
+  pills.addEventListener('scroll', pillEdge, {passive: true});
+  new ResizeObserver(pillEdge).observe(pills);
 
   // parts panel: search + 79 rows; SPECS: specs.json as a table
   const panel = el('div', 'vt-panel', null, ui);
@@ -467,7 +480,7 @@ async function main() {
   /** The tray's step numbers and the brass outline of the current step's group, placed from the layout the parts were laid by (run 16, item 5). */
   function drawTrayUI() {
     const L = guide.mode ? trayLay.v : null;
-    trayUI.classList.toggle('on', !!L);
+    trayUI.classList.toggle('on', !!L && !(solo.part && solo.T.to > 0)); // run 23 (item 6): 0% while a part is clicked alone
     if (!L) return;
     camera.updateMatrixWorld();
     const cur = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
@@ -595,7 +608,7 @@ async function main() {
   function usable() {
     const W = S.size.w;
     const H = S.size.h;
-    const r = {l: 0, r: W, t: Math.max(head.getBoundingClientRect().bottom, hint.offsetParent ? hint.getBoundingClientRect().bottom : 0) + 6, b: dock.getBoundingClientRect().top - 6};
+    const r = {l: 0, r: W, t: Math.max(head.getBoundingClientRect().bottom, hint.offsetParent ? hint.getBoundingClientRect().bottom : 0) + 6, b: dock.getBoundingClientRect().top - (guide.mode ? 22 : 6)}; // run 23 (item 6): in a guided mode 16 px more, so the tray's outline stays 16 px clear of the mode buttons
     if (docked()) r.r = panel.getBoundingClientRect().left - 8;
     const side = detail.classList.contains('show') ? detail : guide.card.classList.contains('show') ? guide.card : null;
     if (side) {
@@ -755,7 +768,12 @@ async function main() {
     }
     return pts;
   });
-  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), ...flightPts(), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
+  // run 23 (item 6): the current step's tray group (the 4 corners of its brass outline, label row included) is framed too, also on a step whose parts are not in the tray yet
+  const trayCur = () => {
+    const cur = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
+    return (guide.mode && trayLay.to?.boxes.find((b) => b.n === cur)?.pts) || [];
+  };
+  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), ...flightPts(), ...trayCur(), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
   const autoLoose = () => (bare() ? subjectPts(hoseAsm.group) : []);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
@@ -1070,7 +1088,9 @@ async function main() {
     const a = S.project(hovered.localToWorld(anchor.clone()));
     const B = partBounds();
     if (!(B.x1 > B.x0)) Object.assign(B, {x0: a.x, x1: a.x, y0: a.y, y1: a.y});
-    const cw = card.offsetWidth, ch = card.offsetHeight, W = S.size.w, H = S.size.h, G = 42, E = 8;
+    // run 23 (item 7): the name card keeps clear of the open side panel (docked beside the view, or opened over it when wide enough to matter)
+    const pr = panel.offsetParent ? panel.getBoundingClientRect() : null;
+    const cw = card.offsetWidth, ch = card.offsetHeight, W = pr && pr.left > 0.5 * S.size.w ? pr.left : S.size.w, H = S.size.h, G = 42, E = 8;
     if (guideLab) {
       const spot = freeSpot(cw, ch, a, usable());
       if (spot) {
@@ -1267,13 +1287,16 @@ async function main() {
     // dimming: a selection dims every other part; a pill dims every other group
     const sel = solo.part && solo.T.to > 0 ? solo.part : null;
     aim(selT, sel ? 1 : 0, now);
-    const floor = 0.5 - 0.4 * stepT(selT, now); // the rest of the carburetor fades to 10% opacity
+    const selV = stepT(selT, now);
+    const floor = 0.5 - 0.4 * selV; // the rest of the carburetor fades to 10% opacity
     parts.forEach((p, i) => {
       aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
       aim(rimT[i], sel ? (p === sel ? SOLO_TRIM : 0) : guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus] ? 1 : 0, now); // run 16 (item 4, correction 35): a clicked part gets no +15% lift but a trim: with no neighbours to shade it the casting read 56-59% against 40-43% in the assembly, now 47-51% on HIGH (blown 0%)
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
-      const hd = stepT(hT[i], now);
+      let hd = stepT(hT[i], now);
+      // run 23 (item 6): a part in the bench tray fades to 0% while another part is clicked alone (the other parts stay at 10%)
+      if (sel && p !== sel && p.tray) hd = 1 - (1 - hd) * (1 - selV * trT[p.k].v);
       Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], Math.abs(r) < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd, floor);
     });
     const fl = 1 + 0.3 * THREE.MathUtils.smoothstep(st.explode, 0.5, 0.8);

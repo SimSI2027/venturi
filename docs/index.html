@@ -279,6 +279,23 @@ html, body { background: var(--iw-bg); }
 .iw-pills .iw-btn { background: var(--iw-panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .iw-pills .iw-btn i { font-style: normal; color: var(--iw-mute); margin-right: clamp(3px, 0.4vw, 6px); font-size: 0.82em; }
 .iw-pills .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
+/* run 23 (item 8): beside the open panel the 13 pills are sized to the dock (all whole at 1366 px); when the strip still overflows it scrolls with a fade and an arrow at each cut edge */
+.iw-pw { position: relative; min-width: 0; }
+.iw-pw.more-r .iw-pills { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 52px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 52px), transparent); }
+.iw-pw.more-l .iw-pills { -webkit-mask-image: linear-gradient(270deg, #000 calc(100% - 52px), transparent); mask-image: linear-gradient(270deg, #000 calc(100% - 52px), transparent); }
+.iw-pw.more-l.more-r .iw-pills { -webkit-mask-image: linear-gradient(90deg, transparent, #000 52px, #000 calc(100% - 52px), transparent); mask-image: linear-gradient(90deg, transparent, #000 52px, #000 calc(100% - 52px), transparent); }
+.iw-pa { display: none; position: absolute; top: 0; bottom: 0; width: 30px; padding: 0; align-items: center; justify-content: center; font: inherit; font-size: 22px; line-height: 1; color: var(--iw-brass); cursor: pointer;
+  background: var(--iw-panel); border: 1px solid var(--iw-brass-dim); border-radius: 999px; }
+.iw-pa.l { left: 0; }
+.iw-pa.r { right: 0; }
+.iw-pw.more-l .iw-pa.l, .iw-pw.more-r .iw-pa.r { display: flex; }
+.iw-pa:hover { border-color: #c9a24b; }
+@media (min-width: 1000px) {
+  .iw-dock { container-type: inline-size; }
+  .iw-pills { --pf: clamp(12px, 1.46cqw, 17px); gap: calc(var(--pf) * 0.36); }
+  .iw-pills .iw-btn { font-size: var(--pf); letter-spacing: 0.1em; padding: 6px calc(var(--pf) * 0.68); }
+  .iw-pills .iw-btn i { margin-right: calc(var(--pf) * 0.35); }
+}
 
 .iw-lead { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; opacity: 0; transition: opacity .22s cubic-bezier(.65, 0, .35, 1); }
 .iw-lead.show { opacity: 1; }
@@ -335,8 +352,7 @@ html, body { background: var(--iw-bg); }
   .iw-sec { margin-left: auto; font-size: 13px; }
   .iw-ctl { padding: 2px 6px 2px 14px; }
   /* a horizontal scroll strip: one row, never an orphan */
-  .iw-pills { justify-content: flex-start; padding-bottom: 2px; gap: 6px;
-    -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .iw-pills { justify-content: flex-start; padding-bottom: 2px; gap: 6px; }
   .iw-pills .iw-btn { font-size: 15px; letter-spacing: 0.12em; padding: 5px 14px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
@@ -453,7 +469,7 @@ html, body { background: var(--iw-bg); }
 .vt-modes .iw-btn.on { background: #c9a24b; }
 .vt-modes .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
 .vt-modes .s { display: none; }
-.iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pills { display: none; }
+.iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pw { display: none; }
 .vt-step { position: absolute; left: 28px; top: 104px; width: 300px; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
   font-variant-caps: normal; letter-spacing: 0.03em; opacity: 0; pointer-events: none; transform: translateY(-4px); z-index: 4;
   transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
@@ -559,6 +575,6 @@ html, body { background: var(--iw-bg); }
 </head>
 <body>
 <div id="app"></div>
-<script defer src="venturi.js?v=2cf0b13d"></script>
+<script defer src="venturi.js?v=4ac26b63"></script>
 </body>
 </html>
