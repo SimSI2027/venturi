@@ -300,9 +300,9 @@ export function buildBody(index) {
   const boreM = mk(merge([ring(-SP, SX0), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
   // run 14 (item 8): the air-box half of the bore is dark inside (owner's mine_1: black); the engine half stays bright machined steel
   const boreDark = A.M.bore.clone();
-  boreDark.color.set(0x15171a);
-  boreDark.metalness = 0.5;
-  boreDark.roughness = 0.55;
+  boreDark.color.set(0x0b0c0e);
+  boreDark.metalness = 0.1;
+  boreDark.roughness = 0.9;
   const boreD = mk(ring(SX1, ADAPT), boreDark);
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -BORE_R + 0.02, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
