@@ -1,7 +1,7 @@
 // The two guided modes (TEAR DOWN, REBUILD): their numbered steps from data.js, the saved checkboxes, the step
 // card (Back / Next, the one-line note, the brass callouts, the progress line), the Steps list and the owner's
 // Notes field. Everything saved goes to local storage only.
-import {STEPS_B, N_B, ADDED_STEP, NOTES_C, PIECES, KPIECES, nameOf} from './carb/data.js';
+import {STEPS_A, STEPS_B, N_B, ADDED_STEP, NOTES_C, PIECES, KPIECES, nameOf} from './carb/data.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const nn = (n) => String(n).padStart(2, '0');
@@ -33,7 +33,7 @@ for (const s of STEPS_B) for (const id of s.parts) {
 for (const id of KPIECES) if (PIECES[id].step) (REMOVED_AT[id] = PIECES[id].step), (FITTED_AT[id] = N_B + 1 - PIECES[id].step);
 
 // v2: the steps were renumbered in run 6 (2 added steps), so the run-5 ticks would land on the wrong steps
-const KEY = {done: 'venturi.done.v2', notes: 'venturi.notes.v1', step: 'venturi.step.v2'};
+const KEY = {done: 'venturi.done.v2', notes: 'venturi.notes.v1', off: 'venturi.off.v1', step: 'venturi.step.v2'};
 function load(k, fallback) {
   try {
     const v = JSON.parse(localStorage.getItem(k));
@@ -65,6 +65,18 @@ export function createGuide({el, ui, body, go, onPart}) {
   // the Steps list and the Notes field (panel tabs)
   const steps = el('div', 'vt-steps', null, body);
   steps.hidden = true;
+  // run 17 (item 8): the "Off the ATV" list (steps.md section A), text only, each line with a checkbox saved in this browser
+  const offDone = load(KEY.off, {});
+  const OFF = [{t: 'Seat, fuel tank cover and both side covers: off first'}, ...STEPS_A.list.map((s) => ({t: `${s.n}. ${s.text}`}))];
+  const offBox = el('div', 'vt-off', `<div class="vt-lh">Off the ATV</div>` + OFF.map((o, i) => `<label class="vt-orow"><input type="checkbox" data-i="${i}"${offDone[i] ? ' checked' : ''}><span>${esc(o.t)}</span></label>`).join('') + `<p class="vt-on">${esc(STEPS_A.owner)}</p>`, steps);
+  offBox.addEventListener('change', (e) => {
+    if (!e.target.matches('input')) return;
+    offDone[e.target.dataset.i] = e.target.checked;
+    save(KEY.off, offDone);
+    offBox.querySelectorAll('.vt-orow').forEach((r, i) => r.classList.toggle('done', !!offDone[i]));
+  });
+  offBox.querySelectorAll('.vt-orow').forEach((r, i) => r.classList.toggle('done', !!offDone[i]));
+  const list = el('div', 'vt-list', null, steps);
   const notesBox = el('div', 'vt-notes', '<p>Your own numbers: pilot screw turns counted, jets found, anything to remember on the rebuild. Saved in this browser only.</p>', body);
   notesBox.hidden = true;
   const notes = el('textarea', 'vt-ta', null, notesBox);
@@ -96,13 +108,13 @@ export function createGuide({el, ui, body, go, onPart}) {
 
   function renderList() {
     const M = MODES[G.mode];
-    if (!M) return (steps.innerHTML = '<p class="vt-src">Pick TEAR DOWN or REBUILD below to see its steps.</p>');
-    steps.innerHTML =
+    if (!M) return (list.innerHTML = '<p class="vt-src">Pick TEAR DOWN or REBUILD below to see its steps.</p>');
+    list.innerHTML =
       `<div class="vt-lh">${esc(M.label)} · ${count(G.mode)} of ${M.steps.length} done</div>` +
       M.steps.map((s) => `<div class="vt-srow${s.n === G.n ? ' on' : ''}${isDone(G.mode, s.n) ? ' done' : ''}" data-n="${s.n}"><input type="checkbox" aria-label="Step ${s.n} done"${isDone(G.mode, s.n) ? ' checked' : ''}><b>${nn(s.n)}</b><span>${esc(s.title)}${s.added ? ' <em>· added step, not in the manual’s list</em>' : ''}</span>${s.calls.length ? '<i title="has a note">!</i>' : ''}</div>`).join('');
-    steps.querySelector('.vt-srow.on')?.scrollIntoView({block: 'nearest'});
+    list.querySelector('.vt-srow.on')?.scrollIntoView({block: 'nearest'});
   }
-  steps.addEventListener('click', (e) => {
+  list.addEventListener('click', (e) => {
     const r = e.target.closest('.vt-srow');
     if (!r) return;
     const n = Number(r.dataset.n);
