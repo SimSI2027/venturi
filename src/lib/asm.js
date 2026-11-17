@@ -42,6 +42,53 @@ function crease(g, flatFaces = false) {
   return creased.get(g);
 }
 
+// run 23: the casting grain is a normal map tuned for flat faces; on a round boss or cylinder under 15 mm across it shows as speckle.
+// Every connected piece of a cast mesh that is round in 1 cross-section (2 equal extents, every vertex within 4% of that radius)
+// and under 15 mm across gets aGrain = SMALL_GRAIN (the cast material scales its normal map by it), every other vertex 1.
+const SMALL_GRAIN = 0.12, SMALL_MM = 15;
+function grainOf(g) {
+  const P = g.attributes.position, I = g.index, n = P.count;
+  if (g.attributes.aGrain) return;
+  const id = new Int32Array(n), seen = new Map();
+  for (let i = 0; i < n; i++) {
+    const k = `${P.getX(i).toFixed(4)},${P.getY(i).toFixed(4)},${P.getZ(i).toFixed(4)}`;
+    if (!seen.has(k)) seen.set(k, seen.size);
+    id[i] = seen.get(k);
+  }
+  const up = Int32Array.from({length: seen.size}, (_, i) => i);
+  const find = (a) => { while (up[a] !== a) a = up[a] = up[up[a]]; return a; };
+  const nv = I ? I.count : n;
+  for (let t = 0; t < nv; t += 3) {
+    const a = id[I ? I.getX(t) : t], b = id[I ? I.getX(t + 1) : t + 1], c = id[I ? I.getX(t + 2) : t + 2];
+    up[find(b)] = find(a);
+    up[find(c)] = find(a);
+  }
+  const comp = new Map(); // root -> the vertex indices of that piece
+  for (let i = 0; i < n; i++) {
+    const r = find(id[i]);
+    if (!comp.has(r)) comp.set(r, []);
+    comp.get(r).push(i);
+  }
+  const grain = new Float32Array(n).fill(1);
+  for (const vs of comp.values()) {
+    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (const i of vs) for (let d = 0; d < 3; d++) { const v = d === 0 ? P.getX(i) : d === 1 ? P.getY(i) : P.getZ(i); if (v < lo[d]) lo[d] = v; if (v > hi[d]) hi[d] = v; }
+    const e = [0, 1, 2].map((d) => hi[d] - lo[d]);
+    for (const [a, b] of [[0, 1], [0, 2], [1, 2]]) {
+      const w = Math.max(e[a], e[b]);
+      if (w > SMALL_MM || Math.min(e[a], e[b]) < 0.88 * w) continue;
+      const ca = (lo[a] + hi[a]) / 2, cb = (lo[b] + hi[b]) / 2, r = w / 2;
+      let out = 0;
+      for (const i of vs) {
+        const va = a === 0 ? P.getX(i) : P.getY(i), vb = b === 2 ? P.getZ(i) : P.getY(i);
+        if (Math.hypot(va - ca, vb - cb) > 1.04 * r) out++;
+      }
+      if (out <= 0.02 * vs.length) { for (const i of vs) grain[i] = SMALL_GRAIN; break; }
+    }
+  }
+  g.setAttribute('aGrain', new THREE.BufferAttribute(grain, 1));
+}
+
 const ease = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * t * (t * (t * 6 - 15) + 10));
 const clamp01 = (t) => Math.min(1, Math.max(0, t));
 
@@ -171,6 +218,7 @@ export class Asm {
       part.obj.traverse((o) => {
         if (!o.isMesh) return;
         o.geometry = crease(o.geometry, FLAT_PARTS.has(`${this.key}:${part.id}`));
+        if (o.material.normalMap) grainOf(o.geometry);
         if (!map.has(o.material)) map.set(o.material, cloneMat(o.material));
         o.material = map.get(o.material);
         for (const k of TEX) {

@@ -310,11 +310,18 @@ export function castNormal(size = 256, strength = 1.6) {
 export function makeMaterials() {
   const grain = castNormal();
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
+  const cast = std({color: 0x7a7d83, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
+    normalMap: grain, normalScale: new THREE.Vector2(0.5, 0.5)}); // run 13 (item 9): grain 0.35 -> 0.5 on the rough faces
+  // run 23: the grain's strength follows each vertex's aGrain (1 on flat faces, lower on round bosses and cylinders under 15 mm: asm.js)
+  cast.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aGrain;\nvarying float vGrain;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvGrain = aGrain;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vGrain;')
+      .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps.replace('mapN.xy *= normalScale;', 'mapN.xy *= normalScale * vGrain;'));
+  };
+  cast.customProgramCacheKey = () => 'cast-grain';
   return {
-    // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the
-    // cast faces show no blue or lavender tint at the default view
-    cast: std({color: 0x7a7d83, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
-      normalMap: grain, normalScale: new THREE.Vector2(0.5, 0.5)}), // run 13 (item 9): grain 0.35 -> 0.5 on the rough faces
+    // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the cast faces show no blue or lavender tint at the default view
+    cast,
     machined: std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}),
     bore: std({color: 0xb6b5b1, metalness: 0.8, roughness: 0.26, envMapIntensity: 0.5}), // run 13 (item 9): brighter machined bore
     brass: std({color: 0xc9a24b, metalness: 1, roughness: 0.3}),
