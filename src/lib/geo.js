@@ -340,7 +340,14 @@ export function spring(len, R, wire, turns, {endTurns = 1.25} = {}) {
   }
   // 24 segments per turn, 12 round the wire; run 13: wire under 0.6 mm (0.06) is under 3 mm across at the default view, so 16 per turn, 6 round
   const fine = wire < 0.06;
-  return new THREE.TubeGeometry(new Helix(), Math.ceil(turns * (fine ? 16 : 24)), wire, fine ? 6 : 12, false);
+  // run 14 (item 6): round opaque wire (12 sides, smooth), and each end of the wire ground flat: a disc closes it
+  const curve = new Helix(), tube = new THREE.TubeGeometry(curve, Math.ceil(turns * (fine ? 16 : 24)), wire, 12, false);
+  const caps = [0, 1].map((t) => {
+    const p = curve.getPoint(t), d = curve.getTangent(t).multiplyScalar(t ? 1 : -1);
+    const c = new THREE.CircleGeometry(wire, 12).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), d));
+    return c.translate(p.x, p.y, p.z);
+  });
+  return merge([tube, ...caps]);
 }
 
 /** Knurled cylinder along +X (straight knurl): n ridges. */

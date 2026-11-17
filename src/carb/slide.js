@@ -1,7 +1,7 @@
 // 5 slide: throttle valve (flat slide, 9) on 4 rollers (10), its plate (11) and seal (12), needle holder (14),
 // spring (15), collar (16), jet needle (48) with clip (13). Hidden in the tower until the top cover is off.
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, merge, cylY, tubeY, hexY, latheY, orient, oring, springY, plateXY, extrudeXY, rpoly, mk, part} from './kit.js';
+import {THREE, rbox, merge, cylY, tubeY, hexY, latheY, orient, oring, springY, plateXY, extrudeXY, rpoly, mk, part, headY, threadTubeY, cClipY} from './kit.js';
 
 export function buildSlide(index) {
   const A = new Asm('slide', 'Slide', {offset: [0, 9.0, 0], index});
@@ -29,9 +29,12 @@ export function buildSlide(index) {
   const g11 = extrudeXY(s, 0.12, 0.04, 6);
   g11.rotateY(Math.PI / 2);
   A.add(part([NX - 0.56, 1.6, 0], mk(g11, machined), mk(orient(tubeY(0.3, 0.14, -0.08, 0.08), [1, 0, 0]), machined, 0, 0.3, 0)), '11', {ex: [-2.4, 0, 0], order: 0.3});
-  A.add(part([NX - 0.6, 3.12, 0], mk(rbox(0.2, 0.18, 4.0, 0.05), rubber)), '12', {ex: [-3.6, 1.0, 0], order: 0.35});
+  // run 14 (item 6, Keihin 22): the seal is a rubber frame round the plate (4.6 x 3.2 outside, a 4.0 x 2.7 window), proud of it
+  const fr = rpoly([[-2.3, -1.6], [2.3, -1.6], [2.3, 1.6], [-2.3, 1.6]], 0.35);
+  fr.holes.push(rpoly([[-2.0, -1.35], [2.0, -1.35], [2.0, 1.35], [-2.0, 1.35]], 0.2, new THREE.Path()));
+  A.add(part([NX - 0.56, 1.6, 0], mk(extrudeXY(fr, 0.17, 0.05, 8, {free: true}).rotateY(Math.PI / 2), rubber)), '12', {ex: [-3.6, 1.0, 0], order: 0.35});
   // 14 needle holder (screw), 15 spring, 16 collar
-  A.add(part([NX, 3.2, 0], mk(merge([hexY(0.3, 0, 0.28), tubeY(0.2, 0.08, -0.4, 0)]), steel)), '14', {ex: [0, 3.0, 0], order: 0.5});
+  A.add(part([NX, 3.2, 0], mk(merge([headY(0.3, 0.28, 'slot'), threadTubeY(0.4, 0.2, 0.08)]), steel)), '14', {ex: [0, 3.0, 0], order: 0.5});
   A.add(part([NX, 3.52, 0], mk(springY(0.7, 0.2, 0.04, 5), steel)), '15', {ex: [0, 4.3, 0], order: 0.45});
   A.add(part([NX, 2.6, 0], mk(tubeY(0.2, 0.08, 0, 0.28), brass)), '16', {ex: [2.6, 2.4, -1.4], order: 0.55});
   // 48 jet needle: a straight shank, then a visible taper down to a rounded tip hanging into the needle jet, and 7
@@ -41,6 +44,6 @@ export function buildSlide(index) {
   np.push([2.86, 0.125], [2.9, 0.09], [2.9, 0]);
   A.add(part([NX, 0, 0], mk(latheY(np, 16), steel)), '48', {ex: [3.4, 1.2, 0], order: 0.7});
   // 13 clip on groove 4
-  A.add(part([NX, 2.47, 0], mk(oring(0.15, 0.035), steel)), '13', {ex: [3.4, 2.0, 0], order: 0.65});
+  A.add(part([NX, 2.47, 0], mk(cClipY(0.24, 0.1, 70, 0.05), steel)), '13', {ex: [3.4, 2.0, 0], order: 0.65});
   return A;
 }

@@ -1,14 +1,14 @@
 // 1 hoses (from the photos): drain pipe (71) and drain hose (72) with its clamp (75); two air vent hoses (57, 58) with clip (39);
 // the cable-cover hose (68) with clip (69); fuel hose (73) with clips (74, 76). Each comes away from its fitting.
 import {Asm} from '../lib/asm.js';
-import {THREE, merge, cylY, tubeY, orient, hose, rbox, mk, part} from './kit.js';
+import {THREE, merge, cylY, tubeY, latheY, orient, hose, rbox, mk, part} from './kit.js';
 import {BY, DRAIN, DRAIN_END} from './bowl.js';
 
-/** A spring hose clip: a band round the hose (axis dir) with two tabs. */
+/** A spring hose clip, run 14 (item 6): a wire ring round the hose (axis dir) with a small wire loop for the pliers. */
 function clip(r, dir, p) {
-  const band = new THREE.TorusGeometry(r + 0.05, 0.05, 6, 28).rotateX(Math.PI / 2);
-  const tabs = merge([rbox(0.12, 0.12, 0.5, 0.04).translate(r + 0.05, 0, 0.12), rbox(0.12, 0.12, 0.5, 0.04).translate(r + 0.05, 0, -0.12)]);
-  return orient(merge([band, tabs]), dir, p);
+  const band = new THREE.TorusGeometry(r + 0.06, 0.04, 10, 40).rotateX(Math.PI / 2);
+  const ear = new THREE.TorusGeometry(0.11, 0.03, 8, 20).rotateX(Math.PI / 2).translate(r + 0.15, 0, 0);
+  return orient(merge([band, ear]), dir, p);
 }
 
 export function buildHoses(index) {
@@ -38,7 +38,9 @@ export function buildHoses(index) {
   // (run 10: the nipple under the deep floor, placed from the screws (item 5); the pipe angles out of it to its end
   // where carb_7 shows it (item 4), 16 long as the scale table has it)
   const p0 = [DRAIN[0], BY.deep - 0.3, DRAIN[1]], dv = DRAIN_END.map((v, i) => v - p0[i]), dl = Math.hypot(...dv);
-  A.add(part(p0, mk(orient(tubeY(0.16, 0.09, 0, dl), dv), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
+  // run 14: a flange at the nipple end, 2 barbs and a chamfered mouth at the far end, bored through
+  const pipe = latheY([[0, 0.09], [0, 0.26], [0.15, 0.26], [0.15, 0.16], [dl - 0.6, 0.16], [dl - 0.55, 0.21], [dl - 0.35, 0.21], [dl - 0.3, 0.16], [dl - 0.25, 0.21], [dl - 0.05, 0.21], [dl, 0.15], [dl, 0.09]], 28);
+  A.add(part(p0, mk(orient(pipe, dv), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
   A.add(part([0, 0, 0], mk(hose([[-3.14, -8.48, 0.57], [-3.55, -8.86, 0.96], [-3.65, -9.9, 1.05], [-3.45, -11.3, 1.15]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
   A.add(part([-3.64, -9.65, 1.04], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
   // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank

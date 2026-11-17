@@ -60,7 +60,7 @@ export function buildLinkage(index) {
   const [LX, LY] = LINK, LT = mm(1.6);
   const lever = (ax, ay) => {
     const L = Math.hypot(ax, ay);
-    return merge([orient(cylY(0.36, -LT / 2, LT / 2, 0.03), [0, 0, 1]), rbox(L, 0.3, LT, 0.05).translate(L / 2, 0, 0).rotateZ(Math.atan2(ay, ax)), orient(cylY(0.2, -LT / 2, LT / 2, 0.03), [0, 0, 1], [ax, ay, 0])]);
+    return merge([orient(tubeY(0.4, 0.24, -LT / 2, LT / 2, 0.03), [0, 0, 1]), rbox(L, 0.3, LT, 0.05).translate(L / 2, 0, 0).rotateZ(Math.atan2(ay, ax)), orient(cylY(0.2, -LT / 2, LT / 2, 0.03), [0, 0, 1], [ax, ay, 0])]);
   };
   const T40 = [-0.65, 0.34], A41 = [0.82, 0.35];
   const tab = rbox(0.5, 0.1, 0.6, 0.04).translate(T40[0], T40[1], -0.27);

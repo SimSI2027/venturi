@@ -28,7 +28,7 @@ function tier(pts, y0, y1, b = 0.12, hole = null, r = 0.25, rounds = []) {
   const s = rpoly(pts, r);
   if (hole) s.holes.push(rpoly(hole, Math.max(0.1, r - 0.15), new THREE.Path()));
   for (const [x, z, hr] of rounds) s.holes.push(circ(x, z, hr)); // run 14: round through-holes
-  return extrudeXY(s, y0 - y1, b, y0 - y1 < 0.2 ? 4 : 12, {free: true}).rotateX(Math.PI / 2).translate(0, (y0 + y1) / 2, 0);
+  return extrudeXY(s, y0 - y1, b, y0 - y1 < 0.2 ? 4 : 8, {free: true}).rotateX(Math.PI / 2).translate(0, (y0 + y1) / 2, 0);
 }
 /** n points of an arc round (cx, cz), radius r, from angle a0 to a1 (radians), corner radius cr. */
 const arc = (cx, cz, r, a0, a1, n, cr = 0.1) => Array.from({length: n}, (_, i) => {

@@ -55,7 +55,10 @@ export function buildSensor(index) {
   const pseats = merge(PLATE_SCREWS.map(([x, y]) => orient(tubeY(0.3, M3_HOLE, 0, 0.04, 0.01), [0, 0, 1], [x, y, 0.165])));
   A.add(part([0, 0, P + 0.255], mk(merge([slabZ(PLATE59, 0, 0.35, [[SX, SY, 1.05], ...PH], 0.4), psleeve]), cast), mk(pseats, machined)), '59', {ex: [-1.6, -0.6, 2.2], order: 0.35});
   A.add(part([0, 0, P + 0.03], mk(slabZ(PLATE59, 0, 0.1, [[[-1.4, 6.5], [3.2, 6.5], [3.2, 0.2], [2.2, 0.2], [2.2, 2.4], [0.8, 3.5], [-1.4, 3.6]]], 0.42), rubber)), '61', {ex: [-1.6, -0.6, 1.0], order: 0.45});
-  A.add(part([2.6, 3.5, FZ + 0.1], mk(plateXY(1.6, 1.0, 0.2, 0.2), cast)), '60', {ex: [-2.2, 1.0, 2.6], order: 0.3});
+  // run 14 (item 6): cover 2 is a plate with a cut corner, 2 screw holes and a round boss, not a plain slab
+  const c2 = rpoly([[-0.8, -0.5], [0.8, -0.5], [0.8, 0.2], [0.4, 0.5], [-0.8, 0.5]], 0.15);
+  c2.holes.push(circ(-0.55, -0.2, M3_HOLE), circ(0.55, -0.2, M3_HOLE));
+  A.add(part([2.6, 3.5, FZ + 0.1], mk(merge([extrudeXY(c2, 0.2, 0.04, 8, {free: true}), orient(tubeY(0.3, 0.12, 0, 0.14), [0, 0, 1], [-0.05, 0.12, 0.09])]), cast)), '60', {ex: [-2.2, 1.0, 2.6], order: 0.3});
   const scr = orient(fastenerY(0.8, 0.22, 0.11, 0.16, 'torx'), [0, 0, 1]);
   A.add(part([0, 0, FZ + 0.03], ...PLATE_SCREWS.map(([x, y]) => mk(scr.clone(), zinc, x, y, 0))), '55', {ex: [-1.6, -0.6, 4.0], order: 0.2});
   // 46 carburetor switch with the throttle stop screw assembly (run 9, carb_8 and carb_3): on the sensor housing's

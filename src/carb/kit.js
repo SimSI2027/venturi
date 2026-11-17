@@ -50,7 +50,7 @@ export function hexY(r, y0, y1) {
   return g.toNonIndexed();
 }
 /** O-ring in the XZ plane (axis Y). */
-export const oring = (R, r) => new THREE.TorusGeometry(R, Math.max(r, 0.045), 10, Math.max(24, Math.round(R * 40))).rotateX(Math.PI / 2);
+export const oring = (R, r) => new THREE.TorusGeometry(R, Math.max(r, 0.045), 14, Math.max(24, Math.round(R * 40))).rotateX(Math.PI / 2); // run 14: 14 sides round the section (the creased normals broke 10 into a bevelled ring)
 /** Coil spring along +Y from 0 to len. */
 export const springY = (len, R, wire, turns) => springX(len, R, Math.max(wire, 0.035), turns, {endTurns: 1}).rotateZ(Math.PI / 2);
 /** Screw along -Y: pan head on top (y 0..headH), threaded shank down to -len. Slot across the head. */
@@ -84,7 +84,16 @@ export function hose(points, r, ri = r * 0.55) {
     ring.rotateX(-Math.PI / 2); // facing +Y
     return orient(ring, d.toArray(), p.toArray());
   });
-  return merge([tube, ...ends]);
+  // run 14 (item 6): open ends: a bore wall runs 4 radii into each end (normals inward) and a lip ring rolls round the rim
+  const bores = [0, 1].map((t) => {
+    const p = curve.getPointAt(t), d = curve.getTangentAt(t).multiplyScalar(t ? -1 : 1); // into the hose
+    return orient(latheY([[r * 4, ri], [0, ri]], 16), d.toArray(), p.toArray());
+  });
+  const lips = [0, 1].map((t) => {
+    const p = curve.getPointAt(t), d = curve.getTangentAt(t);
+    return orient(new THREE.TorusGeometry(r * 0.92, r * 0.1, 8, 16).rotateX(Math.PI / 2), d.toArray(), p.toArray());
+  });
+  return merge([tube, ...ends, ...bores, ...lips]);
 }
 /** A flat outline gasket (rounded rect w x d with a rounded inner hole, wall thickness t), in the XZ plane. */
 export function gasketXZ(w, d, wall, t, r = 0.4) {
@@ -122,7 +131,43 @@ export function part(p, ...kids) {
 }
 /** A brass jet along -Y: hex on top, threaded body, slotted bottom. len, r. */
 export function jetY(len, r, hexR = r * 1.35, hexH = 0.25) {
-  return merge([hexY(hexR, 0, hexH), screwY(len, r, r, 0.01).translate(0, 0, 0), tubeY(r * 0.55, r * 0.3, -len - 0.02, -len + 0.15)]);
+  // run 14 (item 6): a hex head and a threaded shank, both bored through (the bore r * 0.3)
+  const bore = r * 0.3, hex = new THREE.Shape();
+  for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3; i ? hex.lineTo(Math.cos(a) * hexR, Math.sin(a) * hexR) : hex.moveTo(Math.cos(a) * hexR, Math.sin(a) * hexR); }
+  hex.holes.push(circ(0, 0, bore));
+  const head = extrudeXY(hex, hexH, 0.03, 12, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, hexH / 2, 0);
+  return merge([head, threadTubeY(len, r, bore)]);
+}
+/** A threaded tube along -Y from y 0 down to -len: outer radius ro (the thread's rings down to 0.86 ro), bore ri, open at both ends. */
+export function threadTubeY(len, ro, ri, pitch = ro < 0.15 ? 0.2 : 0.15) {
+  const n = Math.max(3, Math.round(len / pitch)), step = len / n, pts = [[-len, ri], [-len, ro * 0.9]];
+  for (let k = 0; k < n; k++) pts.push([-len + (k + 0.3) * step, ro * 0.86], [-len + (k + 0.75) * step, ro]);
+  pts.push([0, ro], [0, ri]); // the loop goes up the outer wall (outward normals), across the top, down the bore
+  return latheY(pts, 24);
+}
+/** A flat C-shaped wire clip (the jet needle's and valve's clip) in the XZ plane, axis Y: outer radius R, inner r, a gap of gapDeg. */
+export function cClipY(R, r, gapDeg, t) {
+  const s = new THREE.Shape(), a0 = (gapDeg / 2) * (Math.PI / 180), a1 = Math.PI * 2 - a0;
+  s.absarc(0, 0, R, a0, a1, false);
+  s.absarc(0, 0, r, a1, a0, true);
+  s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, {depth: t, bevelEnabled: false, curveSegments: 20});
+  return g.rotateX(-Math.PI / 2).translate(0, -t / 2, 0);
+}
+/** A hex ring along Y (a hex flange with a round bore): circumradius R, bore ri, y0..y1. */
+export function hexRingY(R, ri, y0, y1) {
+  const hex = new THREE.Shape();
+  for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3; i ? hex.lineTo(Math.cos(a) * R, Math.sin(a) * R) : hex.moveTo(Math.cos(a) * R, Math.sin(a) * R); }
+  hex.holes.push(circ(0, 0, ri));
+  return extrudeXY(hex, y1 - y0, 0.03, 12, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, (y0 + y1) / 2, 0);
+}
+/** A diaphragm along Y (y 0..): a thin rubber membrane (radius R, thickness t) with a convolution ring, a round bead on its edge and
+ * a steel centre plate (radius pr) with a stud; returns [rubber, steel] geometries. */
+export function diaphragmY(R, t, pr) {
+  const bead = new THREE.TorusGeometry(R, t * 1.6, 12, 56).rotateX(Math.PI / 2).translate(0, t / 2, 0);
+  const mem = latheY([[0, 0], [0, R], [t, R], [t, R * 0.86], [t * 2.6, R * 0.78], [t * 2.6, R * 0.7], [t, R * 0.62], [t, 0]], 48);
+  const plate = merge([cylY(pr, -t * 0.9, t * 1.2, t * 0.4), cylY(pr * 0.32, t * 1.2, t * 3.2, 0.01)]);
+  return [merge([bead, mem]), plate];
 }
 
 // ---- run 14 (items 2-4): real fastener heads with a drive recess at least 1 mm deep, flat seats, through and threaded holes
@@ -133,8 +178,9 @@ function driveHole(kind, r) {
   const pts = [];
   if (kind === 'hex') for (let i = 0; i < 6; i++) pts.push([Math.cos((i * Math.PI) / 3) * r, Math.sin((i * Math.PI) / 3) * r]);
   else if (kind === 'torx') for (let i = 0; i < 48; i++) { const a = (i / 48) * Math.PI * 2, k = 0.5 + 0.5 * Math.cos(6 * a); pts.push([Math.cos(a) * r * (0.72 + 0.28 * k ** 0.6), Math.sin(a) * r * (0.72 + 0.28 * k ** 0.6)]); }
+  else if (kind === 'slot') pts.push([r, -r * 0.2], [-r, -r * 0.2], [-r, r * 0.2], [r, r * 0.2]);
   else { // cross: 2 slots r long and 0.3 r wide
-    const w = r * 0.17, l = r;
+    const w = r * 0.3, l = r;
     pts.push([l, -w], [w, -w], [w, -l], [-w, -l], [-w, -w], [-l, -w], [-l, w], [-w, w], [-w, l], [w, l], [w, w], [l, w]);
   }
   pts.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
@@ -147,8 +193,10 @@ export function headY(rHead, headH, drive = 'cross', depth = DRIVE_DEPTH) {
   const top = Math.max(0.03, headH - depth), seg = segs(rHead);
   const body = latheY([[0, 0], [0, rHead - 0.02], [0.02, rHead], [top, rHead], [top, 0]], seg);
   const ring = new THREE.Shape();
-  ring.absarc(0, 0, rHead, 0, Math.PI * 2, false);
-  ring.holes.push(driveHole(drive, rHead * (drive === 'hex' ? 0.55 : drive === 'torx' ? 0.5 : 0.62)));
+  // the ring's outline is the lathe body's own polygon (same vertices), so the two never show corners past each other
+  for (let i = 0; i < seg; i++) { const f = (i / seg) * Math.PI * 2, x = Math.sin(f) * rHead, y = -Math.cos(f) * rHead; i ? ring.lineTo(x, y) : ring.moveTo(x, y); }
+  ring.closePath();
+  ring.holes.push(driveHole(drive, rHead * (drive === 'hex' ? 0.55 : drive === 'torx' ? 0.5 : drive === 'slot' ? 0.9 : 0.62)));
   const r = extrudeXY(ring, headH - top, 0.04, rHead < 0.2 ? 8 : 16, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, (top + headH) / 2, 0);
   return merge([body, r]);
 }

@@ -91,7 +91,7 @@ export const RIM = [[-2.0, -3.45], [-0.2, -3.5], [1.3, -3.45], [2.0, -3.45], [2.
 export function slabY(pts, y, t, hole = null, r = 0.3) {
   const s = rpoly(pts, r);
   if (hole) s.holes.push(rpoly(hole, 0.5, new THREE.Path()));
-  return extrudeXY(s, t, 0.08, 10, {free: true}).rotateX(Math.PI / 2).translate(0, y, 0);
+  return extrudeXY(s, t, 0.08, 8, {free: true}).rotateX(Math.PI / 2).translate(0, y, 0);
 }
 const mirror = (h) => h.slice().reverse().map(([z, y, r]) => [-z, y, r]);
 export const OUTLINE = [...HALF, ...mirror(HALF)];
@@ -133,14 +133,15 @@ export function inset(pts, d) {
 export function slabZ(pts, z, dz, holes = [], r = 0.3) {
   const s = rpoly(pts, r);
   for (const h of holes) s.holes.push(h.length === 3 && typeof h[0] === 'number' ? circ(...h) : rpoly(h, r * 0.7, new THREE.Path()));
-  return extrudeXY(s, dz, 0.06, dz < 0.15 ? 3 : 12, {free: true, bevelSegments: dz < 0.15 ? 1 : 2}).translate(0, 0, z); // run 13: thin gaskets and shims: fewer arc and bevel steps
+  return extrudeXY(s, dz, 0.06, dz < 0.15 ? 3 : 8, {free: true, bevelSegments: dz < 0.15 ? 1 : 2}).translate(0, 0, z); // run 13: thin gaskets and shims: fewer arc and bevel steps
 }
 
 /** An outline in (z, y), extruded along X from x0 to x1 with rounded edges, the bore cut through. */
 function outlineX(pts, x0, x1, holeR) {
   const s = rpoly(pts, 0.3);
-  if (holeR) s.holes.push(circ(0, 0, holeR));
-  const g = extrudeXY(s, x1 - x0, 0.12, 24, {free: true});
+  // run 14 (triangle budget): the bore's circle is 72 explicit points (not counted by curveSegments), the outline's rounded corners 8 steps
+  if (holeR) { const h = new THREE.Path(); for (let i = 0; i < 72; i++) { const a = (i / 72) * Math.PI * 2; i ? h.lineTo(Math.cos(a) * holeR, Math.sin(a) * holeR) : h.moveTo(Math.cos(a) * holeR, Math.sin(a) * holeR); } h.closePath(); s.holes.push(h); }
+  const g = extrudeXY(s, x1 - x0, 0.12, 8, {free: true});
   g.rotateY(Math.PI / 2); // depth -> x, shape x -> -z
   g.translate((x0 + x1) / 2, 0, 0);
   return g;
@@ -164,7 +165,7 @@ function cavitySection() {
   const arc = Array.from({length: 11}, (_, i) => a0 + ((a1 - a0) * (i + 1)) / 12).map((a) => [Math.cos(a) * BORE_R, Math.sin(a) * BORE_R, 0]);
   const slot = [[ZT, T, 0.05], [ZT, YT, 0.05], [SZ, YT - 0.25, 0.05], [SZ, SY, 0.05], [zc, SY, 0]];
   const s = rpoly([...HALF, ...slot, ...arc, ...mirror(slot), ...mirror(HALF)], 0.3);
-  const g = extrudeXY(s, SX1 - SX0, 0.08, 48, {free: true});
+  const g = extrudeXY(s, SX1 - SX0, 0.08, 10, {free: true});
   g.rotateY(Math.PI / 2);
   g.translate((SX0 + SX1) / 2, 0, 0);
   return g;
@@ -204,7 +205,7 @@ export function buildBody(index) {
   // run 12 (item 6): the 2 cover bolt bosses in the housing, where the cover's bolts (70, linkage.js) go in: the upper one
   // at the engine side, the lower one in the lobe toward the air box; hollow, from the floor out to the cover's gasket face
   for (const [bx, by] of [c3(495, 160), c3(345, 445)]) g.push(orient(tappedY(0.5, mm(2.4), 0, -CUPZ - TZ - 0.1, 0.85), [0, 0, -1], [bx, by, -TZ])); // run 14: M5 tapped, 9 mm deep
-  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 12, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
+  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 8, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
   const SF = SENS + 0.22;
@@ -304,10 +305,16 @@ export function buildBody(index) {
   A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(merge([arm, apin]), steel)), 'K12');
   // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
   const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
-  const rsp = merge([orient(springY(sL, 0.26, 0.045, 8), [sd[0], sd[1], 0], [POST[0], POST[1], SZW]), orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6])]);
+  // run 14 (item 6, Keihin 14): a torsion spring: a short coil with a straight leg to each end, not a long compression coil
+  const CL = 1.0, tors = merge([springY(CL, 0.26, 0.05, 7).translate(0, (sL - CL) / 2, 0), cylY(0.05, 0, (sL - CL) / 2 + 0.05, 0.01).translate(-0.26, 0, 0), cylY(0.05, (sL + CL) / 2 - 0.05, sL, 0.01).translate(-0.26, 0, 0)]);
+  const rsp = merge([orient(tors, [sd[0], sd[1], 0], [POST[0], POST[1], SZW]), orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6])]);
   // the link arm from the shaft down to the slide's lug (run 11: angled, the shaft now stands 0.7 toward the air box of it)
   const [LGX, LGY] = SLIDE_LUG, LA = Math.atan2(LGX - SHX, SHY - LGY), LL = Math.hypot(LGX - SHX, SHY - LGY) + 0.3;
-  A.add(part([SHX, SHY, 0], mk(rbox(0.22, LL, 0.5, 0.08).translate(0, -LL / 2 + 0.15, -0.9).rotateZ(LA), steel)), 'K16');
+  // run 14 (item 6, Keihin 16): a flat lever with an eye round the shaft and a forked foot for the slide's lug, the stop screw's hole through it
+  const yb = -(LL - 0.15), kS = rpoly([[-0.25, 0.15], [0.25, 0.15], [0.25, yb], [0.13, yb], [0.13, yb + 0.4], [-0.13, yb + 0.4], [-0.13, yb], [-0.25, yb]], 0.05);
+  kS.holes.push(circ(0, yb + 0.6, 0.09));
+  const kArm = merge([extrudeXY(kS, 0.22, 0.04, 8, {free: true}).rotateY(Math.PI / 2).translate(0, 0, -0.9), orient(tubeY(0.42, 0.23, -0.25, 0.25, 0.03), [0, 0, 1], [0, 0, -0.9])]).rotateZ(LA);
+  A.add(part([SHX, SHY, 0], mk(kArm, steel)), 'K16');
   A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(fastenerY(0.45, 0.17, 0.08, 0.16, 'cross'), [1, 0, 0]), steel)), 'K18');
   A.add(part([0, 0, 0], mk(rsp, steel)), 'K14');
   A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15');

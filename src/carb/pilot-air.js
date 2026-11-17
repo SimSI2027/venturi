@@ -1,7 +1,7 @@
 // 7 pilot-air: pilot air diaphragm cover (piece of reference 1), spring (79), diaphragm (78); out from its +Z face,
 // mid height on the sensor side under the cover plate's cut corner (from the photo): round, 0.11 H across, a tab.
 import {Asm} from '../lib/asm.js';
-import {merge, cylY, tubeY, latheY, orient, springY, screwY, fastenerY, rbox, mk, part, M3_HOLE} from './kit.js';
+import {merge, cylY, tubeY, latheY, orient, springY, screwY, fastenerY, rbox, mk, part, M3_HOLE, diaphragmY} from './kit.js';
 import {SENS} from './body.js';
 
 export function buildPilotAir(index) {
@@ -20,7 +20,8 @@ export function buildPilotAir(index) {
   A.add(part([0, 2.2, F + 0.15], mk(orient(springY(0.42, 0.45, 0.05, 4), Z), steel)), '79', {ex: [0, 0, 1.9], order: 0.2});
   // diaphragm: a rubber disc on the body's face (z 3.05), its moulded rim wider than the face and the cover so
   // its black edge shows between them; a brass-capped centre pin
-  const disc = merge([orient(tubeY(1.3, 0.25, 0, 0.1), Z), orient(tubeY(1.55, 1.15, 0, 0.12), Z), orient(cylY(0.3, 0, 0.14), Z)]);
-  A.add(part([0, 2.2, F], mk(disc, rubber), mk(orient(cylY(0.1, -0.6, 0.25), Z), steel)), '78', {ex: [0, 0, 0.8], order: 0.4});
+  // run 14 (item 6): membrane with a convolution, an edge bead and a steel centre plate on a stud
+  const [dRub, dPlate] = diaphragmY(1.45, 0.05, 0.5);
+  A.add(part([0, 2.2, F], mk(orient(dRub, Z), rubber), mk(orient(dPlate, Z), steel), mk(orient(cylY(0.1, -0.6, 0.25), Z), steel)), '78', {ex: [0, 0, 0.8], order: 0.4});
   return A;
 }

@@ -3,7 +3,7 @@
 // Run 11: 45 PLATE is a small strap under the cover's cable-side ear (mine_6 has no guard plate); the adjusting screw
 // (8, fits 45) goes up through its far end with its washers (6, 7). The pump rod rides with the bowl. Carb space.
 import {Asm} from '../lib/asm.js';
-import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, fastenerY, rpoly, rbox, extrudeXY, mk, part, mm, M4_HOLE} from './kit.js';
+import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, fastenerY, rpoly, rbox, extrudeXY, mk, part, mm, M4_HOLE, M3_HOLE, circ, diaphragmY} from './kit.js';
 import {PUMP, PYW} from './bowl.js';
 import {inset} from './body.js';
 
@@ -26,9 +26,11 @@ export function buildPump(index) {
   A.add(part([PX, PY - 0.44, PZ], ...EA.map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
   // the stack under the bowl's pump housing: gasket 29 on the cover, diaphragm 28 on the gasket; both a little
   // wider than the cover and housing, so their black edges show between them
-  A.add(part([PX, PY, PZ], mk(tubeY(1.72, 1.3, 0, 0.1), rubber)), '29', {ex: [0, -2.5, 0], order: 0.3});
+  // run 14: the gasket has its 3 screw ears, each with its hole (a little thinner than the ring so the faces do not fight)
+  A.add(part([PX, PY, PZ], mk(merge([tubeY(1.72, 1.3, 0, 0.1), ...EA.map((a) => tubeY(0.45, M4_HOLE, 0.015, 0.085, 0.01).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER))]), rubber)), '29', {ex: [0, -2.5, 0], order: 0.3});
   A.add(part([PX, PY - 0.5, PZ], mk(springY(0.75, 0.55, 0.06, 4), steel)), '30', {ex: [0, -1.7, 0], order: 0.35});
-  A.add(part([PX, PY + 0.1, PZ], mk(merge([tubeY(1.72, 0.2, 0, 0.1), cylY(0.32, -0.2, 0.15)]), rubber)), '28', {ex: [0, -0.9, 0], order: 0.45});
+  const [dRub, dPlate] = diaphragmY(1.68, 0.05, 0.55); // run 14: membrane with a convolution, an edge bead and a steel centre plate on a stud
+  A.add(part([PX, PY + 0.1, PZ], mk(dRub, rubber), mk(dPlate, steel)), '28', {ex: [0, -0.9, 0], order: 0.45});
   // 31 O-ring: run 9, seated on the bowl lobe's face beside the diaphragm, round the pump's outlet passage
   A.add(part([PX + 1.3, PYW - 0.06, PZ + 0.6], mk(oring(0.22, 0.06), rubber)), '31', {ex: [0.8, -0.3, 0.8], order: 0.5});
   // 45 PLATE (run 11, item 8): the owner's underside (mine_6) has 0 large guard plates, so the plate is a small
@@ -38,12 +40,14 @@ export function buildPump(index) {
   const dv = [ADJ[0] - EAR[0], ADJ[1] - EAR[1]], dl = Math.hypot(...dv), d = [dv[0] / dl, dv[1] / dl], nrm = [-d[1], d[0]];
   const c = (p, s, t) => [p[0] + d[0] * s + nrm[0] * t, p[1] + d[1] * s + nrm[1] * t];
   const STRAP = [c(EAR, -SR, -SR), c(ADJ, SR, -SR), c(ADJ, SR, SR), c(EAR, -SR, SR)];
-  const strap = extrudeXY(rpoly(STRAP, SR * 0.9), PT, 0.03, 10, {free: true}).rotateX(Math.PI / 2);
+  const strapS = rpoly(STRAP, SR * 0.9);
+  strapS.holes.push(circ(EAR[0], EAR[1], M4_HOLE), circ(ADJ[0], ADJ[1], M3_HOLE)); // run 14: the cover's screw through the ear end, the adjusting screw (8) through the far end
+  const strap = extrudeXY(strapS, PT, 0.03, 10, {free: true}).rotateX(Math.PI / 2);
   // (on its seat: on the ear's top, against the bowl lobe's face, the cover screw through both)
   A.add(part([0, PY + PT / 2, 0], mk(strap, steel)), '45', {ex: [0, -4.2, -0.6], order: 0.2, axis: [0, -1, 0]});
   // 8 adjusting screw up through the plate's ear into the lobe, a knurled head under it, washers 6 and 7 between
   const yb = PY; // the plate's underside (run 11: it sits on the cover ear's top)
-  const adj = merge([screwY(1.0, 0.13, 0.13, 0.01).rotateX(Math.PI), cylY(0.3, -0.32, 0)]);
+  const adj = fastenerY(1.0, 0.3, 0.13, 0.32, 'hex').rotateX(Math.PI);
   A.add(part([ADJ[0], yb - 0.16, ADJ[1]], mk(adj, steel)), '8', {ex: [0, -3.6, 0], order: 0.1, axis: [0, -1, 0]});
   A.add(part([ADJ[0], yb, ADJ[1]], mk(tubeY(0.3, 0.14, -0.08, 0), steel)), '6', {ex: [0, -2.8, 0], order: 0.12, axis: [0, -1, 0]});
   A.add(part([ADJ[0], yb - 0.08, ADJ[1]], mk(tubeY(0.26, 0.14, -0.08, 0), steel)), '7', {ex: [0, -2.2, 0], order: 0.14, axis: [0, -1, 0]});
