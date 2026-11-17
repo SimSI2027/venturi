@@ -3,7 +3,7 @@
 // Run 11: 45 PLATE is a small strap under the cover's cable-side ear (mine_6 has no guard plate); the adjusting screw
 // (8, fits 45) goes up through its far end with its washers (6, 7). The pump rod rides with the bowl. Carb space.
 import {Asm} from '../lib/asm.js';
-import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, rpoly, rbox, extrudeXY, mk, part, mm} from './kit.js';
+import {THREE, merge, cylY, tubeY, latheY, oring, springY, screwY, fastenerY, rpoly, rbox, extrudeXY, mk, part, mm, M4_HOLE} from './kit.js';
 import {PUMP, PYW} from './bowl.js';
 import {inset} from './body.js';
 
@@ -12,16 +12,18 @@ const ADJ = [1.16, -5.88]; // the adjusting screw (8) up through the fan near it
 
 export function buildPump(index) {
   const A = new Asm('pump', 'Pump', {offset: [0, -9.0, -3.0], index, axis: [0, -1, 0]});
-  const {cast, rubber, steel, zinc} = A.M;
+  const {cast, rubber, steel, zinc, machined} = A.M;
   // 27 cover: a shallow round cover with three screw ears and the rod boss
-  const ER = 1.75; // a round cover 3.2 across (carb_12, carb_bottom), screw ears at r 1.75
+  const ER = 1.85; // a round cover 3.2 across (carb_12, carb_bottom), screw ears at r 1.85 (run 14: 0.1 out so the holes clear the dome)
   const EA = [0.55, 2.85, 4.95]; // the ears clear of the plate's ear and the lobe's root
-  const ears = merge(EA.map((a) => cylY(0.34, -0.4, 0).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER)));
+  // run 14 (item 4): each ear has its 4.5 mm through-hole and, under it, a flat machined seat for the screw head
+  const ears = merge(EA.map((a) => tubeY(0.45, M4_HOLE, -0.4, 0, 0.03).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER)));
+  const seats = merge(EA.map((a) => tubeY(mm(4.6), M4_HOLE, -0.44, -0.4, 0.015).translate(Math.cos(a) * ER, 0, Math.sin(a) * ER)));
   const cov = merge([latheY([[-0.55, 0], [-0.55, 1.25], [-0.4, 1.5], [0, 1.6], [0, 0]].reverse().map(([y, r]) => [y, r]).reverse()), ears, cylY(0.35, -0.85, -0.5)]);
-  A.add(part([PX, PY, PZ], mk(cov, cast)), '27', {ex: [0, -3.4, 0], order: 0.15});
-  const scr = screwY(mm(8), mm(3.5), mm(2), mm(2.6)).rotateX(Math.PI); // M4 x 8 (Keihin list)
+  A.add(part([PX, PY, PZ], mk(cov, cast), mk(seats, machined)), '27', {ex: [0, -3.4, 0], order: 0.15});
+  const scr = fastenerY(mm(8), mm(3.5), mm(2), mm(2.6), 'cross').rotateX(Math.PI); // M4 x 8 (Keihin list)
   const PT = mm(1.2); // the plate's thickness
-  A.add(part([PX, PY - 0.4, PZ], ...EA.map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
+  A.add(part([PX, PY - 0.44, PZ], ...EA.map((a) => mk(scr.clone(), zinc, Math.cos(a) * ER, 0, Math.sin(a) * ER))), '4', {ex: [0, -5.0, 0], order: 0});
   // the stack under the bowl's pump housing: gasket 29 on the cover, diaphragm 28 on the gasket; both a little
   // wider than the cover and housing, so their black edges show between them
   A.add(part([PX, PY, PZ], mk(tubeY(1.72, 1.3, 0, 0.1), rubber)), '29', {ex: [0, -2.5, 0], order: 0.3});

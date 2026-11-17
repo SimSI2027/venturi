@@ -3,7 +3,7 @@
 // Run 8: H = 16.55 cm, top cover (y 8.11) to bowl bottom (y -8.44); bore-axis length 8.5 = 0.51 H. The 2 new photos
 // (carb_7 engine side, carb_8 air-box side) put the ENGINE at -X and the AIR BOX at +X (run 7 had them swapped).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, mk, part, mm} from './kit.js';
+import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, fastenerY, tappedY, tappedAt, mk, part, mm} from './kit.js';
 
 export const BORE_R = mm(19.5); // run 9: the 39 bore (sketch units, baked into mm by toMM)
 // run 8 proportions (carb_7, along the bore), H = top cover to bowl bottom = 16.55 (the bore ring, 4.8 across, is
@@ -15,6 +15,7 @@ export const HT = {top: 8.11, joint: -2.48, bottom: -8.44};
 // the air-box adapter ring (50 across) bolts on as a separate step about 11 deep; run 10's body ran 70.3 to there
 export const ENG_FACE = -4.0, BODY_AF = ENG_FACE + mm(63.5), ADAPT = BODY_AF + mm(11);
 export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; the lower block is x +/-2.6
+export const BOLT_X = 2.35; // run 14: the top cover's 2 bolts sit this far either side of the tower's middle, in 2 threaded bosses
 export const BOT = HT.joint; // the body's underside: the float chamber gasket face
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
 // throttle shaft (x, y), across the tower along Z; run 11 (item 7, round 1): 1.1 toward the air box (was -0.2), where
@@ -25,6 +26,11 @@ export const LINK = [0.75, -1.7]; // run 10: the pump linkage's pivot (x, y), al
 export const CUPZ = -4.4; // the cable-wheel housing's face (the cover's gasket sits on it); run 9: 0.1 in, for the 120.8 width
 // the starters on the engine face (carb_7): hot start boss at (x, z) from y0 to top, the cold start arm at armY out to face
 export const STARTER = {x: -2.75, z: 1.9, y0: 3.9, top: 6.6, armY: 3.4, face: 5.2}; // run 9 landmarks (carb_7): the knob 70 out, 30 above the bore
+// run 14 (item 4): the sensor cover plate's 3 screws (55), the TPS's own Torx screw K241 and the pilot air cover's 2 screws: where they thread into the sensor side
+export const PLATE_SCREWS = [[-1.3, 3.8], [3.25, 4.7], [3.25, 0.2]];
+export const PILOT_SCREWS = [0, Math.PI].map((a) => [Math.cos(a + 0.5) * 1.55, 2.2 + Math.sin(a + 0.5) * 1.55]);
+export const TA25 = (25 * Math.PI) / 180;
+export const K241_AT = (() => { const t = Math.PI - TA25; return [SHAFT[0] + 2.15 * Math.cos(t) + 1.0 * Math.sin(t), SHAFT[1] + 2.15 * Math.sin(t) - 1.0 * Math.cos(t)]; })();
 export const SENS = 4.75; // the sensor housing: its face at SENS + 0.22, the cover plate's outer face at SENS + 0.65 (run 10: 0.35 out, so the pump cover (-61.2) to the pilot air cover is the table's 120.8 at MM 10.66)
 export const HOUSE_X = 3.6; // run 9: the sensor housing's air-box face (PLATE59's +X edge), where the star knob sits
 // the cable side's flat shield-shaped cover outline (x, y, corner r), seen from -Z: wide top, narrow lobe below;
@@ -127,7 +133,7 @@ export function inset(pts, d) {
 export function slabZ(pts, z, dz, holes = [], r = 0.3) {
   const s = rpoly(pts, r);
   for (const h of holes) s.holes.push(h.length === 3 && typeof h[0] === 'number' ? circ(...h) : rpoly(h, r * 0.7, new THREE.Path()));
-  return extrudeXY(s, dz, 0.06, dz < 0.15 ? 6 : 12, {free: true, bevelSegments: dz < 0.15 ? 1 : 2}).translate(0, 0, z); // run 13: thin gaskets and shims: fewer arc and bevel steps
+  return extrudeXY(s, dz, 0.06, dz < 0.15 ? 3 : 12, {free: true, bevelSegments: dz < 0.15 ? 1 : 2}).translate(0, 0, z); // run 13: thin gaskets and shims: fewer arc and bevel steps
 }
 
 /** An outline in (z, y), extruded along X from x0 to x1 with rounded edges, the bore cut through. */
@@ -180,7 +186,8 @@ export function buildBody(index) {
   // engine and air-box faces, 2 vertical ribs on the engine face, 2 round bosses on the air-box face, a rib band
   // round both faces at the outline's band height
   const CX = (TX0 + TX1) / 2;
-  for (const sx of [-1, 1]) g.push(cylY(0.5, 4.9, TT, 0.1).translate(CX + sx * 2.35, 0, 0));
+  // run 14 (item 2): each boss is tapped for the cover's M4 bolt (3): 10 mm deep, the thread's rings in the hole
+  for (const sx of [-1, 1]) g.push(tappedY(0.5, mm(1.85), 4.9, TT, mm(11)).translate(CX + sx * BOLT_X, 0, 0));
   for (const z of [-1.4, -2.5]) g.push(rbox(0.5, 3.6, 0.36, 0.12).translate(TX0 - 0.1, 4.6, z));
   for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.55, 0.25, 0, 0.55), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up; run 13 (item 8, line 3): 0.55 radius, 0.55 out
   for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
@@ -196,15 +203,20 @@ export function buildBody(index) {
   // cup triangulated as a solid face over the throttle wheel at the cover's plane (since run 9)
   // run 12 (item 6): the 2 cover bolt bosses in the housing, where the cover's bolts (70, linkage.js) go in: the upper one
   // at the engine side, the lower one in the lobe toward the air box; hollow, from the floor out to the cover's gasket face
-  for (const [bx, by] of [c3(495, 160), c3(345, 445)]) g.push(orient(tubeY(0.5, 0.2, 0, -CUPZ - TZ - 0.1), [0, 0, -1], [bx, by, -TZ]));
+  for (const [bx, by] of [c3(495, 160), c3(345, 445)]) g.push(orient(tappedY(0.5, mm(2.4), 0, -CUPZ - TZ - 0.1, 0.85), [0, 0, -1], [bx, by, -TZ])); // run 14: M5 tapped, 9 mm deep
   g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 12, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
   const SF = SENS + 0.22;
-  g.push(slabZ(PLATE59, (TZ - 0.1 + SF) / 2, SF - TZ + 0.1, [[SHX, SHY, 1.1]], 0.4));
+  g.push(slabZ(PLATE59, (TZ - 0.1 + SF) / 2, SF - TZ + 0.1, [[SHX, SHY, 1.1], ...PLATE_SCREWS.map(([x, y]) => [x, y, 0.3])], 0.4));
+  // run 14 (item 4): the plate's 3 screws (M3) thread into blind holes in this housing (6 mm deep, thread 2.8 mm across), each hole
+  // a plug that fills the slab's hole: solid at the bottom, tapped from the face
+  for (const [x, y] of PLATE_SCREWS) g.push(tappedAt(0.3, 0.125, 0, 1.2, 0.6, [0, 0, 1], [x, y, SF - 1.2]));
+  // the pilot air cover's 2 ears sit over empty housing (the plate is cut there): 2 tapped lugs from the housing's back to its face
+  for (const [x, y] of PILOT_SCREWS) g.push(tappedAt(0.45, 0.125, 0, SF - TZ, 0.6, [0, 0, 1], [x, y, TZ]));
   // bosses: throttle shaft both sides (the +Z one through the plate: the TPS O-ring 62 sits on it), pilot air face
   // (out to the housing's face, under the plate's cut corner)
-  g.push(orient(cylY(1.0, 0, SF + 0.4 - TZ), [0, 0, 1], [SHX, SHY, TZ]));
+  g.push(tappedAt(1.0, 0.115, 0, SF + 0.4 - TZ, 1.0, [0, 0, 1], [SHX, SHY, TZ])); // run 14: the shaft boss is tapped for the TPS screw (36)
   g.push(orient(cylY(0.6, 0, 0.2), [0, 0, -1], [SHX, SHY, -TZ - 0.1]));
   g.push(orient(cylY(1.3, 0, SF - TZ), [0, 0, 1], [0, 2.2, TZ]));
   // the starters on the tower's engine face (carb_7): the hot start's vertical boss, 0.20 H tall with its cap
@@ -217,6 +229,9 @@ export function buildBody(index) {
   // shows under it
   g.push(rbox(0.95, 1.9, 1.4, 0.3).translate(-3.95, -3.15 + UY, 0));
   g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
+  // run 14 (item 4): the 4 bowl screws thread up into 4 posts hanging from this flange to the bowl's ears (their tops at -4.45);
+  // each post is tapped from below, 10 mm deep, 7.4 mm across the thread (M4)
+  for (const [ex, ez] of EARS) g.push(tappedY(0.42, mm(1.85), 0, BOT + 0.2 + 4.45, mm(10)).rotateX(Math.PI).translate(ex, BOT + 0.2, ez));
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
   g.push(slabY(RIM, BOT + 0.2, 0.4));
   // the projection on the engine spigot (-X) that keys into the joint slot
@@ -293,7 +308,7 @@ export function buildBody(index) {
   // the link arm from the shaft down to the slide's lug (run 11: angled, the shaft now stands 0.7 toward the air box of it)
   const [LGX, LGY] = SLIDE_LUG, LA = Math.atan2(LGX - SHX, SHY - LGY), LL = Math.hypot(LGX - SHX, SHY - LGY) + 0.3;
   A.add(part([SHX, SHY, 0], mk(rbox(0.22, LL, 0.5, 0.08).translate(0, -LL / 2 + 0.15, -0.9).rotateZ(LA), steel)), 'K16');
-  A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(screwY(0.45, 0.13, 0.08, 0.09), [1, 0, 0]), steel)), 'K18');
+  A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(fastenerY(0.45, 0.17, 0.08, 0.16, 'cross'), [1, 0, 0]), steel)), 'K18');
   A.add(part([0, 0, 0], mk(rsp, steel)), 'K14');
   A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15');
   const nips = mk(merge(nipG), brass);

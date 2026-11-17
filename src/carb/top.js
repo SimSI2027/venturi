@@ -1,44 +1,40 @@
 // 4 top: carburetor top cover (piece of reference 1), its gasket (2) and bolts (3). Comes off upward.
+// Run 14 (item 2, cmp_5): rebuilt from scratch: a rounded cap (one outline with a bolt ear at each of its 2 short ends), a
+// raised centre panel, 0 lettering. Each ear has a 4.5 mm through-hole with a flat machined seat round it; the 2 M4
+// hex-socket cap bolts (3) pass through them into the 2 threaded bosses in the tower (body.js).
 import {Asm} from '../lib/asm.js';
-import {rbox, merge, cylY, screwY, mk, part} from './kit.js';
-import {TOWER, slabY} from './body.js';
+import {merge, cylY, tubeY, mk, part, mm, fastenerY, slabHolesY} from './kit.js';
+import {TOWER, BOLT_X} from './body.js';
 
-// run 8: the cover's plan (traced from carb_11: x, z, corner r), a rectangle 4.3 along the bore by 4.9 across (0.30 H,
-// narrower than the body), a small rib bump on each long side and a bolt tab out of the middle of each end (26 points)
-const COVER = [[-2.15, -2.45, 0.5], [-0.8, -2.45, 0.2], [-0.5, -2.55, 0.15], [0.5, -2.55, 0.15], [0.8, -2.45, 0.2], [2.15, -2.45, 0.5], [2.15, -0.75, 0.15],
-  [2.4, -0.6, 0.15], [2.65, -0.45, 0.3], [2.7, 0, 0.45], [2.65, 0.45, 0.3], [2.4, 0.6, 0.15], [2.15, 0.75, 0.15], [2.15, 2.45, 0.5], [0.8, 2.45, 0.2],
-  [0.5, 2.55, 0.15], [-0.5, 2.55, 0.15], [-0.8, 2.45, 0.2], [-2.15, 2.45, 0.5], [-2.15, 0.75, 0.15], [-2.4, 0.6, 0.15], [-2.65, 0.45, 0.3], [-2.7, 0, 0.45],
-  [-2.65, -0.45, 0.3], [-2.4, -0.6, 0.15], [-2.15, -0.75, 0.15]];
+// the cap's plan (x along the bore, z across; corner radius): a rounded rectangle 4.0 x 4.9 with a narrow ear out of the
+// middle of each short end, the ear holding the bolt hole (x +/- BOLT_X from the cover's centre)
+const CAP = [[-2.0, -2.45, 0.55], [2.0, -2.45, 0.55], [2.0, -0.7, 0.2], [2.9, -0.68, 0.4], [2.9, 0.68, 0.4], [2.0, 0.7, 0.2], [2.0, 2.45, 0.55], [-2.0, 2.45, 0.55], [-2.0, 0.7, 0.2],
+  [-2.9, 0.68, 0.4], [-2.9, -0.68, 0.4], [-2.0, -0.7, 0.2]];
+const HOLE_R = mm(2.25); // 4.5 mm through-hole
+const HOLES = [-BOLT_X, BOLT_X].map((x) => [x, 0, HOLE_R]);
 const INNER = [[-1.75, -2.05], [1.75, -2.05], [1.75, 2.05], [-1.75, 2.05]];
+const CAP_T = 0.5, SEAT_T = 0.05;
 
 export function buildTop(index) {
   const A = new Asm('top', 'Top', {offset: [0, 10, 0], index});
   const {cast, machined, rubber, steel} = A.M;
-  // the cover: a flat lid in that plan with rounded edges, a raised plain panel in the middle (0 lettering), a vent
-  // boss, the 2 bolt bosses on the end tabs (over the tower's bolt bosses, body.js)
   const {x0, x1, top} = TOWER;
   const cx = (x0 + x1) / 2;
-  const E = [[-2.35, 0], [2.35, 0]];
+  // the cap 0..CAP_T high with its 2 through-holes, a raised centre panel on it with rounded corners (0.5 high)
   const lid = merge([
-    slabY(COVER, 0.21, 0.42, null, 0.3),
-    // run 12 (item 3, cmp_5): a raised centre casting with rounded corners (radius 0.85), and 1 bolt ear at each end
-    slabY([[-2.0, -2.2], [2.0, -2.2], [2.0, 2.2], [-2.0, 2.2]], 0.62, 0.42, null, 0.85),
-    slabY([[-3.15, -0.62], [-1.85, -0.62], [-1.85, 0.62], [-3.15, 0.62]], 0.46, 0.34, null, 0.6),
-    slabY([[1.85, -0.62], [3.2, -0.62], [3.2, 0.62], [1.85, 0.62]], 0.46, 0.34, null, 0.6),
-    // run 13 (item 8, line 49): a smaller third tier on the casting and 2 ribs along the bore, so it is not a plain block
-    slabY([[-1.3, -1.5], [1.3, -1.5], [1.3, 1.5], [-1.3, 1.5]], 0.86, 0.14, null, 0.5),
-    rbox(3.6, 0.2, 0.22, 0.06).translate(0, 0.9, -1.85), rbox(3.6, 0.2, 0.22, 0.06).translate(0, 0.9, 1.85),
-    cylY(0.3, 0.4, 0.75).translate(1.25, 0, 1.5),
-    cylY(0.45, 0, 0.55).translate(E[0][0], 0, 0),
-    // run 9 landmarks (carb_8): the air-box bolt sits on a lug 1.25 down the tower's face, under the cover's tab
-    // run 10 landmarks (carb_8, frozen frame): the lug 0.39 shorter, the bolt 0.86 down the face
-    cylY(0.45, -0.86, -0.4).translate(2.75, 0, 0), rbox(0.55, 0.75, 0.9, 0.2).translate(2.65, -0.43, 0),
+    slabHolesY(CAP, CAP_T / 2, CAP_T, HOLES, 0.4, 0.12),
+    slabHolesY([[-1.65, -2.1], [1.65, -2.1], [1.65, 2.1], [-1.65, 2.1]], CAP_T + 0.19, 0.42, [], 0.8, 0.14),
   ]);
-  // the gasket (2) lies on the tower's top face and the cover sits on the gasket, so its black edge shows
-  const cover = part([cx, top + 0.11, 0], mk(lid, cast), mk(slabY(INNER.map(([x, z]) => [x * 1.1, z * 1.1]), 0.02, 0.06, null, 0.4), machined));
+  // the flat seat round each hole: a machined washer face, SEAT_T proud of the ear's top, the hole through it
+  const seats = merge(HOLES.map(([x]) => tubeY(mm(4.6), HOLE_R, CAP_T - 0.06, CAP_T + SEAT_T, 0.015).translate(x, 0, 0)));
+  // the machined mating face under the cap (inside the gasket's opening)
+  const face = slabHolesY(INNER.map(([x, z]) => [x * 1.1, z * 1.1]), 0.02, 0.06, [], 0.4, 0.04);
+  const cover = part([cx, top + 0.11, 0], mk(lid, cast), mk(merge([seats, face]), machined));
   A.add(cover, '1-top', {ex: [0, 2.2, 0], order: 0.3});
-  A.add(part([cx, top + 0.055, 0], mk(slabY(COVER, 0, 0.11, INNER, 0.3), rubber)), '2', {ex: [0, 0.6, 0], order: 0.6});
-  const b = screwY(1.2, 0.36, 0.17, 0.26);
-  A.add(part([cx, top + 0.66, 0], mk(b.clone(), steel, E[0][0], 0, 0), mk(b.clone(), steel, 2.75, -0.86, 0)), '3', {ex: [0, 4.5, 0], order: 0});
+  // the gasket (2) lies on the tower's top face under the cap, its black edge showing; the 2 bolt holes in its ears
+  A.add(part([cx, top + 0.055, 0], mk(slabHolesY(CAP, 0.055, 0.11, HOLES, 0.4, 0.04), rubber)), '2', {ex: [0, 0.6, 0], order: 0.6});
+  // 3 bolts: M4 hex-socket cap bolts, head on the seat, the thread down through the ear, the gasket and into the boss
+  const b = fastenerY(mm(16), mm(3.5), mm(2), mm(4), 'hex');
+  A.add(part([cx, top + 0.11 + CAP_T + SEAT_T, 0], ...HOLES.map(([x]) => mk(b.clone(), steel, x, 0, 0))), '3', {ex: [0, 4.5, 0], order: 0});
   return A;
 }

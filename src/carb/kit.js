@@ -56,7 +56,7 @@ export const springY = (len, R, wire, turns) => springX(len, R, Math.max(wire, 0
 /** Screw along -Y: pan head on top (y 0..headH), threaded shank down to -len. Slot across the head. */
 export function screwY(len, rHead, rShank, headH = rHead * 0.7) {
   const pts = [[headH, 0], [headH, rHead * 0.7], [headH * 0.75, rHead * 0.95], [headH * 0.3, rHead], [0, rHead], [0, rShank]];
-  const n = Math.max(3, Math.round(len / (rShank < 0.15 ? 0.2 : 0.12))); // run 13: shanks under 3 mm across: fewer thread rings
+  const n = Math.max(3, Math.round(len / (rShank < 0.15 ? 0.2 : rShank < 0.25 ? 0.17 : 0.13))); // run 13: shanks under 3 mm across: fewer thread rings; run 14: M4 and up a little coarser
   for (let i = 0; i < n; i++) pts.push([-(i / n) * (len - 0.1), rShank], [-((i + 0.5) / n) * (len - 0.1), rShank * 0.86]);
   pts.push([-len + 0.06, rShank * 0.86], [-len, rShank * 0.6], [-len, 0]);
   return latheY(pts.reverse(), segs(rHead)); // bottom to top: outward normals
@@ -76,7 +76,7 @@ export function orient(g, dir, p = [0, 0, 0]) {
 export function hose(points, r, ri = r * 0.55) {
   const curve = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p)), false, 'centripetal');
   const n = Math.max(24, Math.round(curve.getLength() * 6));
-  const tube = new THREE.TubeGeometry(curve, n, r, 16, false);
+  const tube = new THREE.TubeGeometry(curve, n, r, 12, false);
   const ends = [0, 1].map((t) => {
     const p = curve.getPointAt(t);
     const d = curve.getTangentAt(t).multiplyScalar(t ? 1 : -1);
@@ -124,3 +124,54 @@ export function part(p, ...kids) {
 export function jetY(len, r, hexR = r * 1.35, hexH = 0.25) {
   return merge([hexY(hexR, 0, hexH), screwY(len, r, r, 0.01).translate(0, 0, 0), tubeY(r * 0.55, r * 0.3, -len - 0.02, -len + 0.15)]);
 }
+
+// ---- run 14 (items 2-4): real fastener heads with a drive recess at least 1 mm deep, flat seats, through and threaded holes
+export const DRIVE_DEPTH = mm(1.15);
+/** The drive recess outline (a hole Path, radius r about the axis): hex socket, 6-lobe Torx or Phillips cross. */
+function driveHole(kind, r) {
+  const p = new THREE.Path();
+  const pts = [];
+  if (kind === 'hex') for (let i = 0; i < 6; i++) pts.push([Math.cos((i * Math.PI) / 3) * r, Math.sin((i * Math.PI) / 3) * r]);
+  else if (kind === 'torx') for (let i = 0; i < 48; i++) { const a = (i / 48) * Math.PI * 2, k = 0.5 + 0.5 * Math.cos(6 * a); pts.push([Math.cos(a) * r * (0.72 + 0.28 * k ** 0.6), Math.sin(a) * r * (0.72 + 0.28 * k ** 0.6)]); }
+  else { // cross: 2 slots r long and 0.3 r wide
+    const w = r * 0.17, l = r;
+    pts.push([l, -w], [w, -w], [w, -l], [-w, -l], [-w, -w], [-l, -w], [-l, w], [-w, w], [-w, l], [w, l], [w, w], [l, w]);
+  }
+  pts.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
+  p.closePath();
+  return p;
+}
+/** A fastener head along +Y, base at y 0, top at headH: a solid body, then a ring on it whose hole is the drive recess
+ * (depth DRIVE_DEPTH, floored by the body), the ring's outer top edge rounded. drive: 'hex' | 'torx' | 'cross'. */
+export function headY(rHead, headH, drive = 'cross', depth = DRIVE_DEPTH) {
+  const top = Math.max(0.03, headH - depth), seg = segs(rHead);
+  const body = latheY([[0, 0], [0, rHead - 0.02], [0.02, rHead], [top, rHead], [top, 0]], seg);
+  const ring = new THREE.Shape();
+  ring.absarc(0, 0, rHead, 0, Math.PI * 2, false);
+  ring.holes.push(driveHole(drive, rHead * (drive === 'hex' ? 0.55 : drive === 'torx' ? 0.5 : 0.62)));
+  const r = extrudeXY(ring, headH - top, 0.04, rHead < 0.2 ? 8 : 16, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, (top + headH) / 2, 0);
+  return merge([body, r]);
+}
+/** A screw or bolt along -Y: a real head (base y 0, top headH) with its drive recess and a threaded shank down to -len. */
+export function fastenerY(len, rHead, rShank, headH, drive = 'cross') {
+  return merge([headY(rHead, headH, drive), screwY(len, rShank, rShank, 0.01).translate(0, 0, 0)]);
+}
+/** A boss along Y from y0 up to y1 (outer radius ro) with a threaded blind hole (thread radius ri, the thread's rings
+ * between ri and 0.86 ri) of the given depth from the top; the floor closes it. */
+export function tappedY(ro, ri, y0, y1, depth) {
+  const n = Math.max(3, Math.round(depth / 0.15));
+  const pts = [[y0, 0], [y0, ro], [y1, ro], [y1, ri + 0.02]];
+  for (let i = 0; i < n; i++) pts.push([y1 - (i / n) * (depth - 0.06), ri], [y1 - ((i + 0.5) / n) * (depth - 0.06), ri * 0.86]);
+  pts.push([y1 - depth, ri * 0.86], [y1 - depth, 0]);
+  return latheY(pts, segs(ro));
+}
+/** A plate in the XZ plane (axis Y): outline pts [x, z, r], round through-holes [[x, z, r]] , centred at height yc, thickness t. */
+export function slabHolesY(pts, yc, t, holes = [], r = 0.3, bevel = 0.08) {
+  const s = rpoly(pts, r);
+  for (const [x, z, hr] of holes) s.holes.push(circ(x, z, hr));
+  return extrudeXY(s, t, bevel, 10, {free: true}).rotateX(Math.PI / 2).translate(0, yc, 0);
+}
+/** A threaded blind hole in a slab: the plug that fills a slab's round hole (outer radius ro), solid from y0 up to y1, the hole
+ * (thread radius ri, depth) open at y1; oriented so +Y points along dir, its y = 0 at pos. */
+export const tappedAt = (ro, ri, y0, y1, depth, dir, pos = [0, 0, 0]) => orient(tappedY(ro, ri, y0, y1, depth), dir, pos);
+export const M4_HOLE = mm(2.25), M3_HOLE = 0.16, M5_HOLE = mm(2.75);
