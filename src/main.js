@@ -833,6 +833,67 @@ async function main() {
     }
     return B;
   }
+  // run 14 (item 10): in the guided modes the step's name label sits where it covers 0 px of the carburetor (every carburetor mesh
+  // drawn: the body, the parts left on it, the hovering parts and the tray). The carburetor's silhouette is drawn flat white at a
+  // quarter of the screen's size into a small target (the shadow pass and the lights left alone), its summed-area table tells every
+  // candidate rectangle in the usable area whether it touches a white pixel, and the nearest free one to the part's hit point wins.
+  const maskRT = new THREE.WebGLRenderTarget(8, 8), maskMat = new THREE.MeshBasicMaterial({color: 0xffffff}), maskCol = new THREE.Color();
+  const MASK = {key: '', w: 0, h: 0, sat: null};
+  function carbMask() {
+    camera.updateMatrixWorld();
+    const key = [S.size.w, S.size.h, ...camera.matrixWorld.elements.map((v) => v.toFixed(3)), poseKey.toFixed(4), guide.mode, guide.n, ...meshes.map((m) => (m.visible ? 1 : 0))].join();
+    if (key === MASK.key) return MASK;
+    const sc = 0.25, w = Math.max(8, Math.round(S.size.w * sc)), h = Math.max(8, Math.round(S.size.h * sc));
+    maskRT.setSize(w, h);
+    const R = S.renderer, hid = [];
+    scene.children.forEach((o) => o !== carb && !o.isLight && o.visible && (hid.push(o), (o.visible = false)));
+    const bg = scene.background, oldRT = R.getRenderTarget(), oldA = R.getClearAlpha(), sm = R.shadowMap.enabled;
+    R.getClearColor(maskCol);
+    const oc = maskCol.getHex();
+    scene.background = null;
+    scene.overrideMaterial = maskMat;
+    R.shadowMap.enabled = false;
+    R.setRenderTarget(maskRT);
+    R.setClearColor(0x000000, 1);
+    R.clear();
+    R.render(scene, camera);
+    const buf = new Uint8Array(w * h * 4);
+    R.readRenderTargetPixels(maskRT, 0, 0, w, h, buf);
+    R.setRenderTarget(oldRT);
+    R.setClearColor(oc, oldA);
+    R.shadowMap.enabled = sm;
+    scene.overrideMaterial = null;
+    scene.background = bg;
+    hid.forEach((o) => (o.visible = true));
+    const sat = new Int32Array((w + 1) * (h + 1));
+    for (let y = 0; y < h; y++) {
+      let row = 0;
+      for (let x = 0; x < w; x++) {
+        row += buf[((h - 1 - y) * w + x) * 4] > 100 ? 1 : 0; // the target's rows run bottom to top
+        sat[(y + 1) * (w + 1) + x + 1] = sat[y * (w + 1) + x + 1] + row;
+      }
+    }
+    Object.assign(MASK, {key, w, h, sat, sc});
+    return MASK;
+  }
+  /** The free spot (card top-left, px) nearest the hit point a: {x, y}, or null when the mask is empty of room. */
+  function freeSpot(cw, ch, a, U) {
+    const M = carbMask(), sc = M.sc, P = 8, E = 8;
+    const hit = (x, y) => {
+      const x0 = Math.max(0, Math.floor((x - P) * sc)), x1 = Math.min(M.w, Math.ceil((x + cw + P) * sc)), y0 = Math.max(0, Math.floor((y - P) * sc)), y1 = Math.min(M.h, Math.ceil((y + ch + P) * sc));
+      const q = M.w + 1;
+      return M.sat[y1 * q + x1] - M.sat[y0 * q + x1] - M.sat[y1 * q + x0] + M.sat[y0 * q + x0];
+    };
+    let best = null;
+    for (let y = U.t + E; y <= U.b - ch - E; y += 6) {
+      for (let x = U.l + E; x <= U.r - cw - E; x += 6) {
+        const c = hit(x, y);
+        const d = Math.hypot(x + cw / 2 - a.x, y + ch / 2 - a.y);
+        if (!best || c < best.c || (c === best.c && d < best.d)) best = {x, y, c, d};
+      }
+    }
+    return best;
+  }
   /** Name card 40 px clear of the part's screen bounds; the leader runs from the hit point into the card's near edge. */
   function drawLeader() {
     camera.updateMatrixWorld();
@@ -840,6 +901,20 @@ async function main() {
     const B = partBounds();
     if (!(B.x1 > B.x0)) Object.assign(B, {x0: a.x, x1: a.x, y0: a.y, y1: a.y});
     const cw = card.offsetWidth, ch = card.offsetHeight, W = S.size.w, H = S.size.h, G = 42, E = 8;
+    if (guideLab) {
+      const spot = freeSpot(cw, ch, a, usable());
+      if (spot) {
+        const cx = Math.min(spot.x + cw, Math.max(spot.x, a.x)), cy = Math.min(spot.y + ch, Math.max(spot.y, a.y));
+        const ex = a.x < spot.x ? spot.x : a.x > spot.x + cw ? spot.x + cw : cx, ey = a.y < spot.y ? spot.y : a.y > spot.y + ch ? spot.y + ch : cy;
+        card.classList.toggle('flip', spot.x + cw / 2 < a.x);
+        card.style.transform = `translate(${spot.x.toFixed(1)}px, ${spot.y.toFixed(1)}px)`;
+        lLine.setAttribute('points', `${a.x.toFixed(1)},${a.y.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`);
+        for (const c of [lDot, lHalo]) (c.setAttribute('cx', a.x), c.setAttribute('cy', a.y));
+        const vis = a.visible ? 'visible' : 'hidden';
+        for (const c of [lLine, lDot, lHalo]) c.setAttribute('visibility', vis);
+        return;
+      }
+    }
     const lift = W < 720 ? 20 : 32;
     const fits = {r: B.x1 + G + cw <= W - E, l: B.x0 - G - cw >= E, t: B.y0 - G - ch >= E, b: B.y1 + G + ch <= H - E};
     const room = {r: W - E - B.x1 - cw, l: B.x0 - E - cw, t: B.y0 - E - ch, b: H - E - B.y1 - ch};
