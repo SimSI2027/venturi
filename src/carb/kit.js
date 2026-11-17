@@ -64,10 +64,10 @@ export function torsionSpring(a, b, z, R = 0.26, wire = 0.045, turns = 4, len = 
   const C = new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z);
   const loc = (x) => new THREE.Vector3(x - len / 2, R, 0).applyMatrix4(M).add(C);
   const coil = springX(len, R, wire, turns, {endTurns: 0}).translate(-len / 2, 0, 0).applyMatrix4(M).translate(C.x, C.y, C.z);
-  const seg = (p, q) => { const v = q.clone().sub(p); return orient(cylY(wire, 0, v.length(), 0.004), v.toArray(), p.toArray()); };
+  const seg = (p, q) => { const v = q.clone().sub(p); return orient(cylY(wire, 0, v.length(), 0.004, 16), v.toArray(), p.toArray()); }; // run 16: the legs are the coil's wire: the same radius, 16 sides
   const leg = (p, dir, tip) => {
     const t = new THREE.Vector3(tip[0], tip[1], z), e = p.clone().addScaledVector(dir, Math.max(0.05, t.clone().sub(p).dot(dir) - 0.25));
-    return merge([seg(p, e), seg(e, t), new THREE.SphereGeometry(wire, 8, 6).translate(e.x, e.y, e.z)]);
+    return merge([seg(p, e), seg(e, t), new THREE.SphereGeometry(wire, 12, 8).translate(e.x, e.y, e.z)]);
   };
   return merge([coil, leg(loc(wire), d, b), leg(loc(len - wire), d.clone().negate(), a)]);
 }

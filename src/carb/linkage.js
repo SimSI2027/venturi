@@ -72,7 +72,7 @@ export function buildLinkage(index) {
   A.add(part([SX, SY + 0.11, SZ], mk(springY(0.7, 0.22, 0.04, 5), steel)), '43', {ex: [0, -2.2, -0.6], order: 0.55, axis: [0, -1, 0]});
   // run 11 (item 3): on the pin (body.js), behind each lever its torsion spring (Keihin 66 behind 40, 67 behind 41),
   // and at the pin's end the washer (69) and the E-clip (70): pieces of reference 1, off the pin first
-  const leg = (z, a, len) => orient(cylY(0.04, 0, len, 0.01), [Math.cos(a), Math.sin(a), 0], [Math.cos(a) * 0.25, Math.sin(a) * 0.25, z]);
+  const leg = (z, a, len) => orient(cylY(0.045, 0, len, 0.01, 12), [Math.cos(a), Math.sin(a), 0], [Math.cos(a) * 0.25, Math.sin(a) * 0.25, z]);
   A.add(part([LX, LY, 0], mk(merge([orient(springY(0.24, 0.25, 0.045, 3), [0, 0, -1], [0, 0, -3.22]), leg(-3.24, Math.PI * 1.25, 0.4), leg(-3.44, Math.PI * 0.75, 0.45)]), steel)), 'K66', {ex: [0, -0.8, -1.2], order: 0.75});
   A.add(part([LX, LY, 0], mk(merge([orient(springY(0.3, 0.25, 0.045, 3.5), [0, 0, -1], [0, 0, -3.68]), leg(-3.7, Math.PI * 0.8, 0.45), leg(-3.96, Math.PI * 0.12, 0.5)]), steel)), 'K67', {ex: [0.8, -0.8, -2.0], order: 0.68});
   A.add(part([LX, LY, -4.48], mk(orient(tubeY(0.26, 0.11, 0, 0.05), [0, 0, -1]), steel)), 'K69', {ex: [0, 0, -3.0], order: 0.62});

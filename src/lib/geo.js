@@ -325,11 +325,14 @@ export function rrectSection(hn, hz, r, seg = 4) {
   return out;
 }
 
-/** Coil spring along +X: closed ground ends, real helix. */
+/** Coil spring along +X: closed ground ends, real helix of round wire (radius `wire`). Run 16: the turns never overlap: the pitch of the body turns
+ * is at least 2.1 wire radii (a wire diameter and a hair), so a spring asked for more turns than fit its length gets fewer. */
 export function spring(len, R, wire, turns, {endTurns = 1.25} = {}) {
   const pitchEnd = wire * 2.05;
-  const body = turns - 2 * endTurns;
-  const pitch = (len - 2 * endTurns * pitchEnd - wire * 2) / body;
+  const room = len - 2 * endTurns * pitchEnd - wire * 2;
+  const body = Math.max(0, Math.min(turns - 2 * endTurns, room / (wire * 2.1)));
+  turns = body + 2 * endTurns;
+  const pitch = body > 0 ? room / body : 0;
   const xAt = (k) => {
     if (k <= endTurns) return wire + k * pitchEnd;
     if (k <= endTurns + body) return wire + endTurns * pitchEnd + (k - endTurns) * pitch;
@@ -342,10 +345,8 @@ export function spring(len, R, wire, turns, {endTurns = 1.25} = {}) {
       return out.set(xAt(k), R * Math.cos(a), R * Math.sin(a));
     }
   }
-  // 24 segments per turn, 12 round the wire; run 13: wire under 0.6 mm (0.06) is under 3 mm across at the default view, so 16 per turn, 6 round
-  const fine = wire < 0.06;
-  // run 14 (item 6): round opaque wire (12 sides, smooth), and each end of the wire ground flat: a disc closes it
-  const curve = new Helix(), tube = new THREE.TubeGeometry(curve, Math.ceil(turns * (fine ? 16 : 24)), wire, 12, false);
+  // run 16: 20 segments per turn and 12 sides round the wire for every spring (smooth, round), each end of the wire ground flat: a disc closes it
+  const curve = new Helix(), tube = new THREE.TubeGeometry(curve, Math.ceil(turns * 20), wire, 12, false);
   const caps = [0, 1].map((t) => {
     const p = curve.getPoint(t), d = curve.getTangent(t).multiplyScalar(t ? 1 : -1);
     const c = new THREE.CircleGeometry(wire, 12).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), d));
