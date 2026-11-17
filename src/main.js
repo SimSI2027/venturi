@@ -326,24 +326,30 @@ async function main() {
   // (or hovering at its step), 1 in its slot; p.tray: the slot as a position of the part's object. TEAR DOWN: the parts of steps before n
   // are in the tray; REBUILD: the parts not yet fitted are (their slots stay by removal order, so the fitted ones leave gaps).
   const trT = parts.map(() => tween(0, 0.8));
+  // run 16 (item 5): the tray is grouped by step. Each tear-down step's parts sit side by side in one group, the groups in step order (REBUILD:
+  // rebuild order) in TRAY_ROWS rows hanging under the carburetor, 1 small step number under each group, the current step's group outlined in
+  // brass. Parts keep their true relative scale (one factor f for all, as large as the tray's height allows), except that none shows smaller
+  // than TRAY_MIN mm across on screen (12 px at 800 x 500). The tray faces the camera: its slots follow the camera's right and up (layTray).
+  const TRAY_MIN = 11.8, TRAY_GAP = 0.8, TRAY_GG = 2, TRAY_PAD = 0.4, TRAY_LB = 6.4, TRAY_RG = 0.3, TRAY_ROWS = 5, TRAY_H = 97;
+  const tr = new THREE.Vector3(), tu = new THREE.Vector3(), tc = new THREE.Vector3(), tp = new THREE.Vector3();
   let trayBox = null;
-  const TRAY_CELL = 10.8, TRAY_FIT = 1.07, tr = new THREE.Vector3(), tu = new THREE.Vector3(), tc = new THREE.Vector3(), tp = new THREE.Vector3();
+  const trayGroups = []; // {n: tear-down step, ps: its parts in the tray}, in tear-down order
+  const trayLay = {v: null, to: null}; // the layout for the camera as it is, and for the target camera
   {
     const order = parts.filter((p) => Number.isFinite(REMOVED_AT[p.id])).sort((a, b) => REMOVED_AT[a.id] - REMOVED_AT[b.id] || a.k - b.k);
-    const bb = new THREE.Box3().setFromObject(partOf['1'].obj).union(new THREE.Box3().setFromObject(partOf['1-bowl'].obj));
-    // run 15 (item 9): 1 tidy grid below the carburetor, ROWS rows of square cells filled left to right in removal order; each part is
-    // scaled to fit its cell (small ones up, big ones down: p.trayS), so every removed part reads at least 12 px across at 800 x 500. The grid
-    // faces the camera (its slots follow the camera's right and up, so it is a straight grid on screen in every view: layTray)
-    const ROWS = 5, COLS = Math.ceil(order.length / ROWS);
-    trayBox = bb;
-    for (const [i, p] of order.entries()) {
-      const s = new THREE.Box3().setFromObject(p.obj).getSize(new THREE.Vector3());
-      p.th = s.multiplyScalar(0.5); // half its box: layTray scales it to fit its cell as the camera sees it
+    trayBox = new THREE.Box3().setFromObject(partOf['1'].obj).union(new THREE.Box3().setFromObject(partOf['1-bowl'].obj));
+    for (const p of order) {
       p.trayS = 1;
-      p.tg = [((i % COLS) + 0.5 - COLS / 2) * TRAY_CELL, Math.floor(i / COLS)];
+      p.tg = true;
       p.tray = new THREE.Vector3();
+      const n = REMOVED_AT[p.id];
+      let g = trayGroups[trayGroups.length - 1];
+      if (!g || g.n !== n) trayGroups.push((g = {n, ps: []}));
+      g.ps.push(p);
     }
   }
+  const trayUI = el('div', 'vt-tray', null, ui);
+  const trayEls = new Map(trayGroups.map((g) => [g.n, el('div', 'vt-tg', '<b></b>', trayUI)]));
   /** A part's hull points relative to its origin, at rest (taken once). */
   function hullLocal(p) {
     if (!p.hp) {
@@ -354,7 +360,32 @@ async function main() {
     }
     return p.hp;
   }
-  /** The tray's slots for the camera's right and up (the target camera's when useTo): the grid hangs under the carburetor's lowest point along up. */
+  /** The groups' layout at part scale factor f, in mm on the tray's plane (x along the camera's right, y down from the tray's top). sz: p -> [width, height] of its projection. */
+  function trayFit(f, seq, sz) {
+    const gs = seq.map((g) => {
+      const items = g.ps.map((p) => {
+        const [er, eu] = sz.get(p);
+        const s = THREE.MathUtils.clamp(Math.max(f, TRAY_MIN / Math.max(er, eu, 1e-3)), 0.04, 30);
+        return {p, s, w: er * s, h: eu * s};
+      });
+      return {n: g.n, items, w: items.reduce((a, i) => a + i.w, 0) + TRAY_GAP * (items.length - 1) + 2 * TRAY_PAD, h: Math.max(...items.map((i) => i.h))};
+    });
+    const tot = gs.reduce((a, g) => a + g.w + TRAY_GG, -TRAY_GG), widest = Math.max(...gs.map((g) => g.w));
+    let rows;
+    for (let lim = Math.max((tot / TRAY_ROWS) * 1.03, widest), k = 0; k < 30; k++, lim *= 1.03) {
+      rows = [[]];
+      let x = 0;
+      for (const g of gs) {
+        if (x > 0 && x + g.w > lim) rows.push([]), (x = 0);
+        rows[rows.length - 1].push(g);
+        x += g.w + TRAY_GG;
+      }
+      if (rows.length <= TRAY_ROWS) break;
+    }
+    const rh = rows.map((r) => Math.max(...r.map((g) => g.h)));
+    return {gs, rows, rh, H: rh.reduce((a, h) => a + h + TRAY_LB + 2 * TRAY_PAD, 0) + (rows.length - 1) * TRAY_RG};
+  }
+  /** The tray's slots for the camera's right and up (the target camera's when useTo): the rows hang under the carburetor's lowest point along up. */
   function layTray(useTo) {
     if (!trayBox) return;
     if (useTo) {
@@ -372,14 +403,62 @@ async function main() {
     for (const q of hullLocal(partOf['1'])) lowB = Math.min(lowB, tp.copy(q).add(partOf['1'].rest).sub(tc).dot(tu));
     for (const q of hullLocal(partOf['1-bowl'])) low = Math.min(low, tp.copy(q).add(partOf['1-bowl'].rest).sub(tc).dot(tu));
     low = Math.min(lowB, low) + (lowB - Math.min(lowB, low)) * (useTo ? trT[partOf['1-bowl'].k].to : trT[partOf['1-bowl'].k].v);
-    for (const p of parts) {
-      if (!p.tg) continue;
+    // each part's size as the camera sees it
+    const sz = new Map();
+    for (const g of trayGroups) for (const p of g.ps) {
       hullLocal(p);
       let r0 = Infinity, r1 = -Infinity, u0 = Infinity, u1 = -Infinity;
       for (const q of p.hp) { const a = q.dot(tr), b = q.dot(tu); r0 = Math.min(r0, a); r1 = Math.max(r1, a); u0 = Math.min(u0, b); u1 = Math.max(u1, b); }
-      const er = r1 - r0, eu = u1 - u0;
-      p.trayS = THREE.MathUtils.clamp((TRAY_FIT * TRAY_CELL) / Math.max(er, eu, 1e-3), 0.04, 12); // run 15: the part's size on screen, not its size in the model, fills the cell
-      p.tray.copy(tc).addScaledVector(tr, p.tg[0]).addScaledVector(tu, low - 14 - (p.tg[1] + 0.5) * TRAY_CELL).sub(tp.copy(p.seat).sub(p.rest).multiplyScalar(p.trayS)); // its centre lands on the slot at its scale there
+      sz.set(p, [r1 - r0, u1 - u0]);
+    }
+    const seq = guide.mode === 'rebuild' ? trayGroups.slice().reverse() : trayGroups;
+    // the largest f (at most 1: never bigger than in the carburetor) whose rows fit TRAY_H mm
+    let lo = 0.01, hi = 1;
+    if (trayFit(hi, seq, sz).H <= TRAY_H) lo = hi;
+    else for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (trayFit(m, seq, sz).H <= TRAY_H) lo = m; else hi = m; }
+    const L = trayFit(lo, seq, sz);
+    const top = low - 14, boxes = [];
+    let y = 0;
+    L.rows.forEach((row, ri) => {
+      const rw = row.reduce((a, g) => a + g.w + TRAY_GG, -TRAY_GG), rhh = L.rh[ri];
+      let x = -rw / 2;
+      for (const g of row) {
+        let px = x + TRAY_PAD;
+        for (const it of g.items) {
+          const p = it.p;
+          p.trayS = it.s;
+          // its centre lands on the slot at its scale there
+          p.tray.copy(tc).addScaledVector(tr, px + it.w / 2).addScaledVector(tu, top - (y + TRAY_PAD + rhh / 2)).sub(tp.copy(p.seat).sub(p.rest).multiplyScalar(it.s));
+          px += it.w + TRAY_GAP;
+        }
+        const h = rhh + TRAY_LB + 2 * TRAY_PAD, c = (a, b) => new THREE.Vector3().copy(tc).addScaledVector(tr, a).addScaledVector(tu, top - b);
+        boxes.push({n: g.n, pts: [c(x, y), c(x + g.w, y), c(x + g.w, y + h), c(x, y + h)]});
+        x += g.w + TRAY_GG;
+      }
+      y += rhh + TRAY_LB + 2 * TRAY_PAD + TRAY_RG;
+    });
+    trayLay[useTo ? 'to' : 'v'] = {f: lo, H: L.H, boxes};
+  }
+  /** The tray's step numbers and the brass outline of the current step's group, placed from the layout the parts were laid by (run 16, item 5). */
+  function drawTrayUI() {
+    const L = guide.mode ? trayLay.v : null;
+    trayUI.classList.toggle('on', !!L);
+    if (!L) return;
+    camera.updateMatrixWorld();
+    const cur = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
+    for (const b of L.boxes) {
+      const g = trayGroups.find((q) => q.n === b.n), e = trayEls.get(b.n);
+      const show = b.n === cur || g.ps.some((p) => trT[p.k].to > 0.5);
+      e.classList.toggle('show', show);
+      e.classList.toggle('on', b.n === cur);
+      if (!show) continue;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const q of b.pts) { const o = S.project(q); x0 = Math.min(x0, o.x); x1 = Math.max(x1, o.x); y0 = Math.min(y0, o.y); y1 = Math.max(y1, o.y); }
+      e.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px)`;
+      e.style.width = `${(x1 - x0).toFixed(1)}px`;
+      e.style.height = `${(y1 - y0).toFixed(1)}px`;
+      const t = String(guide.mode === 'rebuild' ? N_B + 1 - b.n : b.n);
+      if (e.dataset.t !== t) (e.dataset.t = t), (e.firstChild.textContent = t);
     }
   }
   function poseAll(e, useTo = false) {
@@ -1198,6 +1277,7 @@ async function main() {
     S.outline.edgeStrength = 4.5 * stepT(hvT, now);
     lead.classList.toggle('show', !!hovered);
     if (hovered) drawLeader();
+    drawTrayUI();
 
     // shadows follow the parts, not the camera: re-rendered when the explode moves, and once when a solo move
     // settles (never every frame while a part flies or spins: that pass alone would pass the 350k triangle budget)
@@ -1263,7 +1343,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, trayLay, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {

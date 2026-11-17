@@ -363,3 +363,12 @@ html, body { background: var(--iw-bg); }
   .vt-detail { max-height: 40vh; }
   .iw-helpcard div b, .iw-helpcard div span { font-size: 14px; line-height: 1.4; padding: 3px 0; }
 }
+
+/* run 16 (item 5): the bench tray's step numbers and the current step's brass outline */
+.vt-tray { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; overflow: hidden; }
+.vt-tray.on { opacity: 1; }
+.vt-tg { position: absolute; left: 0; top: 0; display: none; box-sizing: border-box; border: 1px solid transparent; border-radius: 3px; }
+.vt-tg.show { display: block; }
+.vt-tg.on { border-color: #c9a24b; }
+.vt-tg b { position: absolute; left: 0; right: 0; bottom: 1px; text-align: center; font-size: 8px; line-height: 8px; font-weight: 600; letter-spacing: 0; font-variant-caps: normal; color: rgba(222, 216, 204, 0.62); }
+.vt-tg.on b { color: #c9a24b; }
