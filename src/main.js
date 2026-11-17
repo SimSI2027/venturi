@@ -868,7 +868,7 @@ async function main() {
     if (e.key === 'Escape' && helpCard.classList.contains('on')) return setHelp(false);
     if (guide.mode &&(e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.target.closest?.('input, textarea')) {
       e.preventDefault();
-      return setMode(guide.mode, guide.n + (e.key === 'ArrowRight' ? 1 : -1));
+      return e.key === 'ArrowRight' ? guide.next() : setMode(guide.mode, guide.n - 1);
     }
     if (e.key !== 'Escape') return;
     if (solo.part) deselect();

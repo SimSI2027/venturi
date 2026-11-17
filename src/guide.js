@@ -143,8 +143,15 @@ export function createGuide({el, ui, body, go, onPart}) {
   card.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (b?.dataset.id) return onPart(b.dataset.id);
-    if (b?.dataset.go) return go(G.mode, G.n + Number(b.dataset.go));
+    if (b?.dataset.go) return Number(b.dataset.go) > 0 ? G.next() : go(G.mode, G.n - 1);
   });
+  // run 23 (correction 50): Next marks the current step done and moves on; Back moves back and unticks nothing
+  G.next = () => {
+    const {mode, n} = G;
+    if (!mode || n >= MODES[mode].steps.length) return;
+    if (!isDone(mode, n)) setDone(mode, n, true);
+    go(mode, n + 1);
+  };
   // Done marks the step and moves on to the next one
   card.addEventListener('change', (e) => {
     if (!e.target.matches('input')) return;
