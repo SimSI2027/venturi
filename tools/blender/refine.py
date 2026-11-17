@@ -1,5 +1,6 @@
 # Run 18 (Blender pilot). Headless: blender -b -P tools/blender/refine.py -- [--ids 1-top 1 1-bowl 65] [--dir scratch/blender] [--union]
 # Run 19 (pilot 2): --union runs the body (id 1) with an exact boolean union and seam-only bevels, 0 voxel remesh, 0 decimation; see union() below.
+# Run 21 (pilot 3): the pieces that are not closed solids are repaired (repair() below) and join the union, which is hole tolerant; 0 stay separate.
 # Reads <dir>/in_<id>.glb (tools/blender/export_in.mjs), writes <dir>/out_<id>.glb, <dir>/refine_<id>.blend and <dir>/report_<id>.txt.
 # Blender units = mm (a glTF unit is 1 mm here), so the voxel size below is in mm.
 #
@@ -368,6 +369,53 @@ def piece_check(b):
     return op, multi, flip, vol
 
 
+def repair(b):
+    """Pilot 3: close a piece that is not a solid. Merge vertices within 0.01 mm, delete loose geometry and interior faces
+    (faces whose every edge has 3+ faces, and the second copy of a face over the same vertices), fill holes, recalculate normals."""
+    bmesh.ops.remove_doubles(b, verts=b.verts, dist=0.01)
+    bmesh.ops.dissolve_degenerate(b, edges=b.edges, dist=1e-6)
+    b.verts.index_update()
+    seen, dup = set(), []
+    for f in b.faces:
+        k = frozenset(v.index for v in f.verts)
+        if k in seen:
+            dup.append(f)
+        seen.add(k)
+    bmesh.ops.delete(b, geom=dup, context='FACES_ONLY')
+    inner = []
+    for _ in range(20):  # interior faces: a sheet (faces joined across 2-face edges) whose whole rim is 3+ face edges; the smallest goes first
+        if not any(len(e.link_faces) > 2 for e in b.edges):
+            break
+        seen, sheets = set(), []
+        for f in b.faces:
+            if f in seen:
+                continue
+            st, s = [f], [f]
+            seen.add(f)
+            while st:
+                x = st.pop()
+                for e in x.edges:
+                    if len(e.link_faces) == 2:
+                        for g in e.link_faces:
+                            if g not in seen:
+                                seen.add(g); st.append(g); s.append(g)
+            rim = [e for g in s for e in g.edges if len(e.link_faces) != 2]
+            if rim and all(len(e.link_faces) > 2 for e in rim):
+                sheets.append((sum(g.calc_area() for g in s), s))
+        if not sheets:
+            break
+        s = min(sheets, key=lambda t: t[0])[1]
+        inner += s
+        bmesh.ops.delete(b, geom=s, context='FACES_ONLY')
+    bmesh.ops.delete(b, geom=[e for e in b.edges if not e.link_faces], context='EDGES')
+    bmesh.ops.delete(b, geom=[v for v in b.verts if not v.link_faces], context='VERTS')
+    bmesh.ops.holes_fill(b, edges=[e for e in b.edges if len(e.link_faces) == 1], sides=0)
+    bmesh.ops.triangulate(b, faces=b.faces)
+    bmesh.ops.recalc_face_normals(b, faces=b.faces)
+    b.verts.ensure_lookup_table(); b.edges.ensure_lookup_table(); b.faces.ensure_lookup_table()
+    return len(dup), len(inner)
+
+
 def finish(obj):
     """Smooth under 35 degrees, weighted normals, grain UVs: the same last steps as the voxel path."""
     bpy.ops.object.select_all(action='DESELECT')
@@ -414,14 +462,17 @@ def union(cid):
         b = piece_bmesh(faces)
         op, multi, flip, vol = piece_check(b)
         if op or multi or flip or len(b.faces) < 4:
-            bad.append((i, b, op, multi, flip))
-            continue
+            nd, ni = repair(b)  # pilot 3: repaired, then joined like the rest (the union is hole tolerant)
+            op2, mu2, fl2, vol = piece_check(b)
+            log(cid, f'repaired #{i}: {op} open, {multi} 3+, {flip} winding -> {op2} open, {mu2} 3+, {fl2} winding '
+                     f'({nd} duplicate, {ni} interior faces deleted), {len(b.faces)} tris')
+            bad.append((i, None, op, multi, flip))
         if vol < 0:
             bmesh.ops.reverse_faces(b, faces=b.faces)
         good.append((i, b))
     bm.free()
-    log(cid, 'pieces', len(comps), 'manifold', len(good), 'not manifold', len(bad),
-        [f'#{i}: {len(b.faces)} tris, {op} open, {mu} 3+, {fl} winding' for i, b, op, mu, fl in bad])
+    log(cid, 'pieces', len(comps), 'repaired', len(bad), [f'#{i}: {op} open, {mu} 3+, {fl} winding' for i, _, op, mu, fl in bad])
+    bad = []  # 0 pieces stay separate
     # --- 3. 1 exact boolean union of the manifold pieces, each face tagged with its piece index
     joined = bmesh.new()
     lay = joined.faces.layers.int.new('piece')
@@ -443,10 +494,10 @@ def union(cid):
     for o in bpy.context.scene.objects:
         o.select_set(o is work)
     m = work.modifiers.new('union', 'BOOLEAN')
-    m.operation = 'UNION'; m.solver = 'EXACT'; m.operand_type = 'OBJECT'; m.object = nul; m.use_self = True
+    m.operation = 'UNION'; m.solver = 'EXACT'; m.operand_type = 'OBJECT'; m.object = nul; m.use_self = True; m.use_hole_tolerant = True
     bpy.ops.object.modifier_apply(modifier=m.name)
     bpy.data.objects.remove(nul)
-    log(cid, 'union', len(work.data.polygons), 'faces', f'({time.time() - t0:.1f} s)', 'attributes', [a.name for a in work.data.attributes if not a.name.startswith('.')])
+    log(cid, 'union', len(work.data.polygons), 'faces, non-manifold edges', non_manifold_edges(work.data), f'({time.time() - t0:.1f} s)', 'attributes', [a.name for a in work.data.attributes if not a.name.startswith('.')])
     # --- 4. bevel only the seams between different piece indices
     bm = bmesh.new(); bm.from_mesh(work.data)
     lay = bm.faces.layers.int.get('piece')
