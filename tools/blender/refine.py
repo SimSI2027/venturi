@@ -1,4 +1,5 @@
-# Run 18 (Blender pilot). Headless: blender -b -P tools/blender/refine.py -- [--ids 1-top 1 1-bowl 65] [--dir scratch/blender]
+# Run 18 (Blender pilot). Headless: blender -b -P tools/blender/refine.py -- [--ids 1-top 1 1-bowl 65] [--dir scratch/blender] [--union]
+# Run 19 (pilot 2): --union runs the body (id 1) with an exact boolean union and seam-only bevels, 0 voxel remesh, 0 decimation; see union() below.
 # Reads <dir>/in_<id>.glb (tools/blender/export_in.mjs), writes <dir>/out_<id>.glb, <dir>/refine_<id>.blend and <dir>/report_<id>.txt.
 # Blender units = mm (a glTF unit is 1 mm here), so the voxel size below is in mm.
 #
@@ -23,10 +24,17 @@ FILL_MAX = 0.42   # mm: peak movement of a joint vertex = about a 1 mm fillet on
 UV_MM = 10.66     # mm per UV unit (the page's grain scale; the material repeat of 1.5 stays on the material)
 RIPPLE = 0.07    # mm
 CREASE = math.radians(35)
+WELD = 3e-3       # mm: union mode, how far apart a piece's own seam vertices (float rounding in three's lathes and extrusions) still weld
+BEVEL = 1.0       # mm: union mode, bevel offset on the seams
+BEVEL_SEG = 3
+SEAM_MIN = math.radians(5)  # a seam between 2 near-coplanar faces has nothing to round
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = 'scratch/blender'
 IDS = ['1-top', '1', '1-bowl', '65']
+UNION = '--union' in argv
+if UNION:
+    IDS = ['1']
 if '--dir' in argv:
     OUT = argv[argv.index('--dir') + 1]
 if '--ids' in argv:
@@ -313,5 +321,189 @@ def refine(cid):
     log('REPORT', line)
 
 
+def label_pieces(bm):
+    """Face lists of the connected pieces of a welded, triangulated bmesh."""
+    seen, comps = set(), []
+    for f in bm.faces:
+        if f in seen:
+            continue
+        st, c = [f], [f]
+        seen.add(f)
+        while st:
+            x = st.pop()
+            for e in x.edges:
+                for g in e.link_faces:
+                    if g not in seen:
+                        seen.add(g); st.append(g); c.append(g)
+        comps.append(c)
+    return comps
+
+
+def piece_bmesh(faces):
+    """A piece as its own bmesh, its seam vertices welded at WELD."""
+    b = bmesh.new()
+    vm = {}
+    for f in faces:
+        vs = []
+        for v in f.verts:
+            if v.index not in vm:
+                vm[v.index] = b.verts.new(v.co)
+            vs.append(vm[v.index])
+        try:
+            b.faces.new(vs)
+        except ValueError:
+            pass
+    bmesh.ops.remove_doubles(b, verts=b.verts, dist=WELD)
+    bmesh.ops.dissolve_degenerate(b, edges=b.edges, dist=1e-6)
+    b.verts.ensure_lookup_table(); b.edges.ensure_lookup_table(); b.faces.ensure_lookup_table()
+    return b
+
+
+def piece_check(b):
+    """(open edges, edges with 3+ faces, edges whose 2 faces disagree on winding, signed volume)."""
+    op = sum(1 for e in b.edges if len(e.link_faces) == 1)
+    multi = sum(1 for e in b.edges if len(e.link_faces) > 2)
+    flip = sum(1 for e in b.edges if len(e.link_faces) == 2 and not e.is_contiguous)
+    vol = sum(f.verts[0].co.dot(f.verts[1].co.cross(f.verts[2].co)) for f in b.faces) / 6
+    return op, multi, flip, vol
+
+
+def finish(obj):
+    """Smooth under 35 degrees, weighted normals, grain UVs: the same last steps as the voxel path."""
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.shade_smooth_by_angle(angle=CREASE)
+    m = obj.modifiers.new('wn', 'WEIGHTED_NORMAL'); m.mode = 'FACE_AREA'; m.weight = 50; m.keep_sharp = True
+    bpy.ops.object.modifier_apply(modifier=m.name)
+    box_uv(obj)
+    obj.data.update()
+
+
+def union(cid):
+    """Pilot 2, the body. 1. every face tagged with its piece index (the original's connected pieces); 2. each piece checked for
+    manifoldness (open edges, 3+ face edges, winding, negative volume flipped): the ones that are not are listed and kept as separate
+    meshes; 3. the rest joined with 1 exact boolean union (self-intersecting, winding rule); 4. only the edges between faces of different
+    piece index (and over SEAM_MIN apart in angle) are beveled, BEVEL mm, BEVEL_SEG segments; 5. weighted normals, box UVs; 6. export.
+    0 voxel remesh, 0 decimation."""
+    t0 = time.time()
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(OUT, f'in_{cid}.glb'))
+    obj = [o for o in bpy.context.scene.objects if o.type == 'MESH'][0]
+    for o in bpy.context.scene.objects:
+        o.select_set(o is obj)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    t_orig = len(obj.data.polygons)
+    c_orig = bpy.data.collections.new('00_ORIGINAL'); c_work = bpy.data.collections.new('01_WORK')
+    bpy.context.scene.collection.children.link(c_orig); bpy.context.scene.collection.children.link(c_work)
+    for c in list(obj.users_collection):
+        c.objects.unlink(obj)
+    obj.name = f'{cid}_original'; obj.data.name = f'{cid}_original'
+    c_orig.objects.link(obj)
+    # --- 1. pieces
+    bm = bmesh.new(); bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-3)  # only to find which faces belong together
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.verts.ensure_lookup_table(); bm.faces.ensure_lookup_table()
+    comps = label_pieces(bm)
+    # --- 2. manifold check
+    good, bad = [], []
+    for i, faces in enumerate(comps):
+        b = piece_bmesh(faces)
+        op, multi, flip, vol = piece_check(b)
+        if op or multi or flip or len(b.faces) < 4:
+            bad.append((i, b, op, multi, flip))
+            continue
+        if vol < 0:
+            bmesh.ops.reverse_faces(b, faces=b.faces)
+        good.append((i, b))
+    bm.free()
+    log(cid, 'pieces', len(comps), 'manifold', len(good), 'not manifold', len(bad),
+        [f'#{i}: {len(b.faces)} tris, {op} open, {mu} 3+, {fl} winding' for i, b, op, mu, fl in bad])
+    # --- 3. 1 exact boolean union of the manifold pieces, each face tagged with its piece index
+    joined = bmesh.new()
+    lay = joined.faces.layers.int.new('piece')
+    for i, b in good:
+        vm = {}
+        for v in b.verts:
+            vm[v.index] = joined.verts.new(v.co)
+        for f in b.faces:
+            nf = joined.faces.new([vm[v.index] for v in f.verts])
+            nf[lay] = i + 1
+        b.free()
+    me = bpy.data.meshes.new(cid)
+    joined.to_mesh(me); joined.free()
+    work = bpy.data.objects.new(cid, me)
+    c_work.objects.link(work)
+    nul = bpy.data.objects.new('empty_operand', bpy.data.meshes.new('empty_operand'))
+    c_work.objects.link(nul)
+    bpy.context.view_layer.objects.active = work
+    for o in bpy.context.scene.objects:
+        o.select_set(o is work)
+    m = work.modifiers.new('union', 'BOOLEAN')
+    m.operation = 'UNION'; m.solver = 'EXACT'; m.operand_type = 'OBJECT'; m.object = nul; m.use_self = True
+    bpy.ops.object.modifier_apply(modifier=m.name)
+    bpy.data.objects.remove(nul)
+    log(cid, 'union', len(work.data.polygons), 'faces', f'({time.time() - t0:.1f} s)', 'attributes', [a.name for a in work.data.attributes if not a.name.startswith('.')])
+    # --- 4. bevel only the seams between different piece indices
+    bm = bmesh.new(); bm.from_mesh(work.data)
+    lay = bm.faces.layers.int.get('piece')
+    seams = []
+    nseam_all = 0
+    for e in bm.edges:
+        if len(e.link_faces) == 2 and e.link_faces[0][lay] != e.link_faces[1][lay]:
+            nseam_all += 1
+            if e.calc_face_angle(0.0) > SEAM_MIN:
+                seams.append(e)
+    log(cid, 'seam edges', len(seams), 'of', nseam_all, 'between different pieces (the rest are nearly flat)')
+    bmesh.ops.bevel(bm, geom=seams, offset=BEVEL, offset_type='OFFSET', segments=BEVEL_SEG, profile=0.5, affect='EDGES', clamp_overlap=True, loop_slide=True)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.to_mesh(work.data); bm.free()
+    work.data.attributes.remove(work.data.attributes['piece'])
+    finish(work)
+    # --- 5. the pieces that were not manifold stay separate meshes
+    work_objs = [work]
+    nm_open = 0
+    for i, b, op, mu, fl in bad:
+        bmesh.ops.triangulate(b, faces=b.faces)
+        me2 = bpy.data.meshes.new(f'{cid}_open_{i}'); b.to_mesh(me2); b.free()
+        o2 = bpy.data.objects.new(f'{cid}_open_{i}', me2)
+        c_work.objects.link(o2)
+        finish(o2)
+        work_objs.append(o2)
+        nm_open += op + mu + fl
+    nm_union = non_manifold_edges(work.data)
+    tris = sum(len(o.data.polygons) for o in work_objs)
+    # --- 6. checks and export
+    chk = work.copy(); chk.data = work.data.copy(); chk.name = 'chk'
+    c_work.objects.link(chk)
+    for o in work_objs[1:]:
+        o2 = o.copy(); o2.data = o.data.copy(); c_work.objects.link(o2)
+        bpy.ops.object.select_all(action='DESELECT')
+        chk.select_set(True); o2.select_set(True)
+        bpy.context.view_layer.objects.active = chk
+        bpy.ops.object.join()
+    bpy.context.view_layer.update()
+    holes, still, closed = hole_check(obj, chk)
+    bpy.data.objects.remove(chk)
+    c_orig.hide_viewport = True; c_orig.hide_render = True
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in work_objs:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = work
+    path = os.path.join(OUT, f'out_{cid}.glb')
+    bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_yup=True, export_apply=False, export_normals=True,
+                              export_texcoords=True, export_materials='NONE', export_cameras=False, export_lights=False, export_extras=False,
+                              export_meshopt_compression_enable=True)
+    kb = os.path.getsize(path) / 1024
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, f'refine_{cid}.blend'))
+    line = (f'{cid}: union, triangles {tris} (was {t_orig}), non-manifold edges {nm_union + nm_open} (union {nm_union}, {len(bad)} separate open pieces {nm_open}), '
+            f'{kb:.0f} KB, holes still open {still} of {holes}, closed-by-union clusters {closed}, pieces {len(comps)}, {time.time() - t0:.0f} s')
+    open(os.path.join(OUT, f'report_{cid}.txt'), 'w').write(line + '\n')
+    log('REPORT', line)
+
+
 for cid in IDS:
-    refine(cid)
+    (union if UNION else refine)(cid)
