@@ -134,8 +134,9 @@ export function createGuide({el, ui, body, go, onPart}) {
       (s.added ? `<div class="vt-add">${esc(ADDED_STEP)}</div>` : '') +
       (names.length ? `<div class="vt-sp">${s.parts.map((id, k) => `<button data-id="${esc(id)}">${esc(names[k])}</button>`).join('')}</div>` : '') +
       (s.note ? `<div class="vt-note">${esc(s.note)}</div>` : '') +
-      s.calls.map((c) => `<div class="vt-call">${esc(c)}</div>`).join('') +
-      `<div class="vt-prog" style="--n:${N}">${M.steps.map((t) => `<i class="${isDone(G.mode, t.n) ? 'd' : ''}${t.n === s.n ? ' c' : ''}"></i>`).join('')}</div>` +
+      s.calls.map((c) => `<div class="vt-call">${esc(c)}</div>`).join('') + `</div>` +
+      // run 23 (item 3): the progress line is its own pinned row under the scrolling chips, note and callouts, above Back / Done / Next
+      `<div class="vt-pg"><div class="vt-prog" style="--n:${N}">${M.steps.map((t) => `<i class="${isDone(G.mode, t.n) ? 'd' : ''}${t.n === s.n ? ' c' : ''}"></i>`).join('')}</div>` +
       `<div class="vt-pl">${count(G.mode)} of ${N} done</div></div>` +
       `<div class="vt-nav"><button class="iw-btn" data-go="-1"${s.n === 1 ? ' disabled' : ''}>Back</button><label><input type="checkbox"${isDone(G.mode, s.n) ? ' checked' : ''}> Done</label><button class="iw-btn" data-go="1"${s.n === N ? ' disabled' : ''}>Next</button></div>`;
     card.classList.add('show');

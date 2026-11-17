@@ -296,7 +296,8 @@ html, body { background: var(--iw-bg); }
   transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
   max-height: calc(100% - 104px - 64px); }
 /* run 17 (item 9): the card's text scrolls in .vt-sb above the Back / Done / Next bar, which is its own row, opaque, so no text ever sits behind it */
-.vt-sb { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
+.vt-sb { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px 6px; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
+.vt-pg { flex: none; padding: 4px 16px 6px; border-top: 1px solid rgba(233, 228, 218, 0.06); }
 .vt-step.show { opacity: 1; pointer-events: auto; transform: none; }
 .vt-step.show.away { opacity: 0; pointer-events: none; }
 .vt-sh { display: flex; align-items: baseline; gap: 8px; }
@@ -315,7 +316,7 @@ html, body { background: var(--iw-bg); }
   background: rgba(201, 162, 75, 0.12); border: 1px solid var(--iw-brass-dim); border-radius: 4px; }
 .vt-call::before { content: '!'; position: absolute; left: 9px; top: 7px; width: 14px; height: 14px; border-radius: 50%; background: #c9a24b; color: #111;
   font-size: 11px; font-weight: 700; line-height: 14px; text-align: center; }
-.vt-prog { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 2px; margin-top: 10px; }
+.vt-prog { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 2px; margin-top: 6px; }
 .vt-prog i { height: 4px; background: var(--iw-mute); opacity: 0.6; }
 .vt-prog i.d { background: #c9a24b; opacity: 1; }
 .vt-prog i.c { outline: 1px solid var(--iw-fg); outline-offset: 1px; }
@@ -364,7 +365,8 @@ html, body { background: var(--iw-bg); }
   .vt-sh b { font-size: 24px; }
   .vt-st { font-size: 18px; margin: 4px 0 6px; }
   .vt-note, .vt-call { font-size: 14px; }
-  .vt-prog { margin-top: 6px; }
+  .vt-pg { padding: 3px 12px 4px; }
+  .vt-prog { margin-top: 4px; }
   .vt-nav { padding: 6px 12px 10px; }
 }
 /* run 3: one easing for every UI transition; the "?" controls card */
