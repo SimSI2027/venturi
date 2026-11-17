@@ -143,14 +143,37 @@ export function part(p, ...kids) {
   kids.forEach((k) => g.add(k));
   return g;
 }
-/** A brass jet along -Y: hex on top, threaded body, slotted bottom. len, r. */
-export function jetY(len, r, hexR = r * 1.35, hexH = 0.25) {
-  // run 14 (item 6): a hex head and a threaded shank, both bored through (the bore r * 0.3)
-  const bore = r * 0.3, hex = new THREE.Shape();
-  for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3; i ? hex.lineTo(Math.cos(a) * hexR, Math.sin(a) * hexR) : hex.moveTo(Math.cos(a) * hexR, Math.sin(a) * hexR); }
-  hex.holes.push(circ(0, 0, bore));
-  const head = extrudeXY(hex, hexH, 0.03, 12, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, hexH / 2, 0);
-  return merge([head, threadTubeY(len, r, bore)]);
+/** n windows (cross holes, width holeW) through a tube wall between y0 < y1: the wall's sectors between them, as closed prisms. */
+export function holedBandY(ro, ri, y0, y1, n, holeW) {
+  const half = Math.asin(Math.min(0.95, holeW / 2 / ro)), sectors = [];
+  for (let i = 0; i < n; i++) {
+    const c = ((i + 0.5) / n) * Math.PI * 2, a0 = c + half, a1 = c + (Math.PI * 2) / n - half, s = new THREE.Shape();
+    s.absarc(0, 0, ro, a0, a1, false);
+    s.absarc(0, 0, ri, a1, a0, true);
+    s.closePath();
+    sectors.push(s);
+  }
+  return new THREE.ExtrudeGeometry(sectors, {depth: y1 - y0, bevelEnabled: false, curveSegments: 8}).rotateX(-Math.PI / 2).translate(0, y0, 0);
+}
+/** A round head along Y, y 0..h, with a bore ri straight through and a slot (width slotW, depth slotD) across its top. */
+export function slotHeadY(R, h, slotW, slotD, ri) {
+  const base = tubeY(R, ri, 0, h - slotD, Math.min(0.03, R * 0.15)), w = slotW / 2, t0 = Math.asin(w / R), halves = [];
+  for (const o of [0, Math.PI]) {
+    const s = new THREE.Shape();
+    s.absarc(0, 0, R, o + t0, o + Math.PI - t0, false);
+    s.closePath();
+    halves.push(s);
+  }
+  return merge([base, new THREE.ExtrudeGeometry(halves, {depth: slotD, bevelEnabled: false, curveSegments: 16}).rotateX(-Math.PI / 2).translate(0, h - slotD, 0)]);
+}
+/** A brass jet along -Y: head on top (y 0..hexH: a hex of circumradius hexR, or a slotted round head with o.slot), a threaded shank down to -len,
+ * both bored through (bore radius o.ri, default 0.5 mm) so the bore shows from both ends. o.holes = n cross holes of width o.holeW through the
+ * shank's wall in the band o.holeY = [a, b] below the head. Run 15 (item 4). */
+export function jetY(len, r, hexR = r * 1.35, hexH = 0.25, o = {}) {
+  const ri = o.ri ?? mm(0.5), head = o.slot ? slotHeadY(hexR, hexH, o.slotW ?? mm(1), o.slotD ?? hexH * 0.6, ri) : hexRingY(hexR, ri, 0, hexH);
+  if (!o.holes) return merge([head, threadTubeY(len, r, ri)]);
+  const [a, b] = o.holeY, ch = 0.002;
+  return merge([head, tubeY(r, ri, -a, 0, ch), holedBandY(r, ri, -b, -a, o.holes, o.holeW ?? mm(1)), threadTubeY(len - b, r, ri).translate(0, -b, 0)]);
 }
 /** A threaded tube along -Y from y 0 down to -len: outer radius ro (fine rings at the real pitch, at most 10, the crest ro, the root 12% less), bore ri, open at both ends. */
 export function threadTubeY(len, ro, ri, pitch = threadPitch(ro)) {
