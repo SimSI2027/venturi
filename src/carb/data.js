@@ -246,7 +246,7 @@ export const NOTES_C = [
   {key: 'pilot-turns', at: [{mode: 'teardown', step: 1}], text: 'Before disassembly: count and write down the pilot screw turns from seated.'},
   {key: 'clean', at: [{mode: 'rebuild', step: 1}], text: 'Before reassembling, wash all parts in a clean petroleum-based solvent.'},
   {key: 'clip', at: [{mode: 'rebuild', step: 17}], text: 'Jet needle clip: groove 4.'},
-  {key: 'float', at: [{mode: 'rebuild', step: 9}], text: 'Float height 8.0 mm: carburetor upside down, gasket removed, float arm resting on the needle valve without compressing it; adjust by bending the tang, then recheck.'},
+  {key: 'float', at: [{mode: 'rebuild', step: 10}], text: 'Float height 8.0 mm: carburetor upside down, gasket removed, float arm resting on the needle valve without compressing it; adjust by bending the tang, then recheck.'},
   {key: 'pump', at: [{mode: 'rebuild', step: 29}], text: 'Pump timing, before the cover goes on: a 3.40 mm rod under the throttle valve plate; turn the adjusting screw fully in, check the link lever has free play, then turn the screw out until it has none.'},
   {key: 'joint', at: [{mode: 'rebuild', step: 29}], text: 'Fitting: the joint projection into the clamp slot, the cylinder head projection into the joint slot, the carburetor projections into the joint slot and the air duct slot.'},
   {key: 'final', at: [{mode: 'rebuild', step: 29}], text: 'After fitting: throttle lever free play 2-4 mm, idle 1,750-1,850 r/min, then the TPS output 0.58-0.78 V, checked with idle already set and the sensor plugged into the harness coupler.'},
