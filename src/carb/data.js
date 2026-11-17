@@ -101,14 +101,15 @@ export const PIECES = {
   '1-mainjet': {piece: 'main jet', role: 'main jet (the manual lists #158; this fiche has no reference of its own for it, its #100 jet is reference 20). Check the number stamped on your jet.', group: 'jets', fits: '17', step: 22, specs: ['main_jet']},
   // run 11 (item 3): the Keihin FCR-MX diagram's parts that had no mesh of their own (scratch/parts_map.txt), each a
   // clickable piece of the fiche reference it belongs to (of), named "<name> · part of <of>". k: the Keihin number.
-  // step: the tear-down step it comes off with (that of the part it rides on), null: it stays on the body.
+  // step: the tear-down step it comes off with (that of the part it rides on), null: it stays on the body. Run 16 (correction 34): the 5
+  // throttle shaft parts (K12, K14, K15, K16, K18) are named by no step of the manual's list, so they stay in the body like reference 1.
   K10: {k: 10, of: '65', piece: 'bracket', role: 'cable bracket: holds the throttle cable adjuster', group: 'linkage', fits: '65', step: 1},
   K11: {k: 11, of: '65', piece: 'screw, M5 x 8', role: 'cable bracket screw', group: 'linkage', fits: 'K10', step: 1},
-  K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'throttle shaft with the cable wheel on its cable-side end', group: 'body', fits: '1', step: 10},
-  K14: {k: 14, of: '1', piece: 'coil spring', role: 'throttle return spring, behind the cable wheel', group: 'body', fits: 'K12', step: 10},
-  K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: 10},
-  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: 10},
-  K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: 10},
+  K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'throttle shaft with the cable wheel on its cable-side end', group: 'body', fits: '1', step: null},
+  K14: {k: 14, of: '1', piece: 'coil spring', role: 'throttle return spring, behind the cable wheel', group: 'body', fits: 'K12', step: null},
+  K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: null},
+  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: null},
+  K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: null},
   K36: {k: 36, of: '23', piece: 'valve seat', role: 'float needle valve seat', group: 'float', fits: '1', step: 22, specs: ['valve_seat']},
   K37: {k: 37, of: '23', piece: 'O-ring', role: 'valve seat O-ring', group: 'float', fits: 'K36', step: 22},
   K38: {k: 38, of: '23', piece: 'screw', role: 'valve seat retaining screw', group: 'float', fits: '1', step: 22},
@@ -229,6 +230,10 @@ export const STEPS_B = [
   {n: 29, m: null, added: true, text: 'Pilot screw set', parts: ['49', '50', '52', '51'], note: 'Turn the pilot screw in until it seats, counting the turns, before it comes out.'},
 ];
 export const N_B = STEPS_B.length;
+// run 16 (correction 34): the parts the manual's list names (section A's steps and section B's 27); every other part keeps its step on the page
+// but its card says it is not named in the manual's list. The 5 throttle shaft parts have no step at all.
+const NAMED = new Set([...STEPS_A.list, ...MANUAL_B].flatMap((s) => s.parts));
+export const inManual = (id) => NAMED.has(id);
 // each part's tear-down step on the page (reference 1, the body, has none: everything comes off it)
 for (const s of STEPS_B) for (const id of s.parts) (PIECES[id] || PARTS.find((p) => String(p.ref) === id)).step = s.n;
 

@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm, SEC, CLIP} from './lib/asm.js';
-import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, info, nameOf, specValue, groupIndex} from './carb/data.js';
+import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, inManual, info, nameOf, specValue, groupIndex} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -708,7 +708,7 @@ async function main() {
     const gi = groupIndex(i.group);
     const role = i.ref === 20 ? CONFLICT_20 : i.likely ? `likely: ${i.role}` : i.role;
     const sB = STEPS_B[i.step - 1];
-    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added ? ' (added step, not in the manual’s list)' : ''}` : id === '1' ? 'Stays: everything else comes off it' : 'Stays on the body: not in the manual’s steps';
+    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added || !inManual(id) ? ' (' + (sB.added ? 'added step, ' : '') + 'not named in the manual’s list)' : ''}` : id === '1' ? 'Stays: everything else comes off it' : 'Stays in the body: not in the manual’s removal list';
     const fits = i.fits ? label(i.fits) : 'the carburetor joint (engine) and the air intake duct';
     const sp = i.specs.map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('');
     detail.innerHTML =
