@@ -27,7 +27,7 @@ export function buildStarters(index) {
   A.add(part([CX, CY, CF + 0.66], mk(oring(0.23, 0.06).rotateX(Math.PI / 2), rubber)), '35', {ex: [0, 0, 1.1], order: 0.5});
   // hot start: plunger and springs inside the vertical boss, the black knurled cap screwed on top (boss and cap 0.20 H)
   const {x: HX, z: HZ, top: HT} = STARTER;
-  A.add(part([HX, HT - 0.05, HZ], mk(merge([knurlX(0, 0.5, 0.74, 28, 0.045, 0.06).rotateZ(Math.PI / 2), cylY(0.55, 0.45, 0.6), tubeY(0.18, 0.08, 0.6, 0.8)]), plastic)), '54', {ex: [0, 6.2, 0], order: 0, axis: [0, 1, 0]});
+  A.add(part([HX, HT - 0.05, HZ], mk(merge([knurlX(0, 0.68, 0.76, 28, 0.05, 0.06).rotateZ(Math.PI / 2), cylY(0.58, 0.63, 0.78), tubeY(0.2, 0.09, 0.78, 1.0)]), plastic)), '54', {ex: [0, 6.2, 0], order: 0, axis: [0, 1, 0]});
   A.add(part([HX, HT - 0.9, HZ], mk(springY(0.9, 0.3, 0.05, 6), steel)), '64', {ex: [0, 5.0, 0], order: 0.15, axis: [0, 1, 0]});
   A.add(part([HX, HT - 0.8, HZ], mk(springY(0.7, 0.16, 0.035, 6), steel)), '56', {ex: [0, 4.0, 0], order: 0.25, axis: [0, 1, 0]});
   const HP = ringsUp(0.95, 1.37, 0.12); // run 15 (item 7): the 53 plunger has a seat cone, an O-ring groove and thread rings

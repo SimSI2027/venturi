@@ -37,8 +37,8 @@ export function buildLinkage(index) {
   const KZ = -0.45;
   // run 12 (item 3, cmp_5): the bracket runs along the cable side: a flange out of the lug's top, 2 holes through it
   // (the lug's world z span is -3.9 to -5.6; the part sits at z -5.18)
-  const fl = rpoly([[-3.6, -3.95, 0.3], [-0.9, -3.95, 0.3], [-0.9, -5.55, 0.3], [-3.6, -5.55, 0.3]], 0.3);
-  fl.holes.push(circ(-3.05, -4.75, 0.24), circ(-1.45, -4.75, 0.24));
+  const fl = rpoly([[-3.6, -3.95, 0.3], [-0.5, -3.95, 0.3], [-0.5, -5.7, 0.3], [-3.6, -5.7, 0.3]], 0.3); // run 16 (item 7, lines 43 and 53): 3.1 long, 1.75 wide (was 2.7 x 1.6)
+  fl.holes.push(circ(-3.05, -4.82, 0.24), circ(-1.1, -4.82, 0.24));
   const flange = extrudeXY(fl, 0.3, 0.05, 8, {free: true}).rotateX(Math.PI / 2).translate(0, 8.85, -(CUPZ - 0.33 + KZ));
   const kseat = orient(tubeY(mm(5), M5_HOLE, 0, 0.03, 0.01), [-1, 0, 0], [-3.6, 5.6, 0.43]); // the flat seat under K11's head
   A.add(part([0, 0, CUPZ - 0.33 + KZ], mk(merge([lug, flange]), cast), mk(kseat, machined)), 'K10', {ex: [0, 0, -1.8], order: 0.25});

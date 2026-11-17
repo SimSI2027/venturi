@@ -8,8 +8,9 @@ import {TOWER, BOLT_X} from './body.js';
 
 // the cap's plan (x along the bore, z across; corner radius): a rounded rectangle 4.0 x 4.9 with a narrow ear out of the
 // middle of each short end, the ear holding the bolt hole (x +/- BOLT_X from the cover's centre)
-const CAP = [[-2.0, -2.45, 0.55], [2.0, -2.45, 0.55], [2.0, -0.7, 0.2], [2.9, -0.68, 0.4], [2.9, 0.68, 0.4], [2.0, 0.7, 0.2], [2.0, 2.45, 0.55], [-2.0, 2.45, 0.55], [-2.0, 0.7, 0.2],
-  [-2.9, 0.68, 0.4], [-2.9, -0.68, 0.4], [-2.0, -0.7, 0.2]];
+// run 16 (item 7, lines 4 and 49): each ear 1.7 wide (was 1.36) and out to 3.05 (was 2.9), so the air-box bolt lug reads from the air-box side
+const CAP = [[-2.0, -2.45, 0.55], [2.0, -2.45, 0.55], [2.0, -0.85, 0.2], [3.05, -0.85, 0.45], [3.05, 0.85, 0.45], [2.0, 0.85, 0.2], [2.0, 2.45, 0.55], [-2.0, 2.45, 0.55], [-2.0, 0.85, 0.2],
+  [-3.05, 0.85, 0.45], [-3.05, -0.85, 0.45], [-2.0, -0.85, 0.2]];
 const HOLE_R = mm(2.25); // 4.5 mm through-hole
 const HOLES = [-BOLT_X, BOLT_X].map((x) => [x, 0, HOLE_R]);
 const INNER = [[-1.75, -2.05], [1.75, -2.05], [1.75, 2.05], [-1.75, 2.05]];

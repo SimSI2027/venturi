@@ -187,7 +187,7 @@ export function buildBody(index) {
   // run 14 (item 2): each boss is tapped for the cover's M4 bolt (3): 10 mm deep, the thread's rings in the hole
   for (const sx of [-1, 1]) g.push(tappedY(0.5, mm(1.85), 4.9, TT, mm(11)).translate(CX + sx * BOLT_X, 0, 0));
   for (const z of [-1.4, -2.5]) g.push(rbox(0.5, 3.6, 0.36, 0.12).translate(TX0 - 0.1, 4.6, z));
-  for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.55, 0.25, 0, 0.55), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up; run 13 (item 8, line 3): 0.55 radius, 0.55 out
+  for (const z of [-2.3, 2.3]) g.push(orient(tubeY(0.68, 0.3, 0, 0.8), [1, 0, 0], [TX1 - 0.05, 5.55, z])); // run 9 landmarks (carb_8): 4 out, 4 up; run 13 (item 8, line 3): 0.55 radius, 0.55 out; run 16 (item 7, line 3): 0.68 radius, 0.8 out
   for (const x of [TX0, TX1]) g.push(rbox(0.36, 0.4, 6.7, 0.1).translate(x, 4.8, 0));
   // run 9 (carb_8): the top cover's bolt lug on the tower's air-box face, a tapered block under the cover's tab
   // (run 9 landmarks: under the top cover's lowered air-box bolt, top.js; run 10: 0.39 higher with it)
