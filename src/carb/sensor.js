@@ -30,10 +30,12 @@ export function buildSensor(index) {
   // and moved into each part's frame: 47 sits at its hub, 46 at (KX, KY, KZ)
   const hubZ = FZ + 0.02;
   const in47 = (p) => [p[0] - SX, p[1] - SY, p[2] - hubZ];
-  const L47 = [[-1.6, 6.7, 6.95], [-2.0, 7.3, 7.5], [-3.4, 8.3, 7.7], [-5.8, 8.5, 7.3], [-8.2, 7.7, 6.9]];
+  // run 14 (item 9): the lead leaves the TPS toward the engine side, then hangs: it droops under its own weight (every point past the
+  // first 2 lower than the one before) and ends in its coupler hanging nose down, 39 mm from the sensor housing
+  const L47 = [[-1.6, 6.7, 6.95], [-2.3, 6.6, 7.5], [-3.2, 6.1, 7.9], [-3.9, 5.3, 8.0], [-4.3, 4.4, 7.9], [-4.4, 3.8, 7.7]];
   const lead = hose(L47.map(in47), 0.17, 0.001);
   const coupX = (len) => conn(1.0, len, 0.9).rotateZ(Math.PI / 2); // lies along X, its socket toward -X
-  const C47 = coupX(2.3).translate(...in47([-9.35, 7.6, 6.9]));
+  const C47 = conn(1.0, 2.3, 0.9).translate(...in47([-4.4, 2.65, 7.7])); // hanging, its top at the lead's end
   // 47: the TPS and its lead, with the grey coupler (run 12: see the block above; no mirroring)
   const tseat = orient(tubeY(mm(4.6), 0.2, 0, 0.06, 0.015), [0, 0, 1], [0, 0, 1.15]); // the flat seat under the screw's head
   A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(C47, grey), mk(tseat, machined)), '47', {ex: [0, 1.8, 3.0], order: 0});
@@ -75,8 +77,9 @@ export function buildSensor(index) {
   const stop = orient(cylY(0.14, -0.6, -0.3), [1, 0, 0]);
   const sw = merge([rbox(0.7, 1.2, 1.0, 0.22), orient(cylY(0.28, 0, 0.35), [0, 1, 0], [0, 0.6, 0.2])]).translate(-0.2, 2.35, 0);
   const in46 = (p) => [p[0] - KX, p[1] - KY, p[2] - KZ];
-  const sLead = hose([[3.95, 6.3, 4.6], [3.9, 7.5, 4.9], [2.4, 8.5, 5.0], [-0.5, 9.0, 4.9], [-3.5, 9.0, 4.8], [-6.0, 9.0, 4.9], [-8.4, 9.3, 4.7]].map(in46), 0.12, 0.001);
-  const sConn = coupX(2.0).translate(...in46([-9.5, 9.4, 4.6]));
+  // run 14 (item 9): the switch's lead droops down the sensor side to a hanging coupler 24 mm from the housing
+  const sLead = hose([[3.95, 6.3, 4.6], [4.4, 6.5, 5.3], [4.9, 6.0, 6.0], [5.2, 5.1, 6.5], [5.3, 4.2, 6.7], [5.3, 3.8, 6.7]].map(in46), 0.12, 0.001);
+  const sConn = conn(1.0, 2.0, 0.9).translate(...in46([5.3, 2.8, 6.7]));
   // run 13 (item 8, line 6): 2 small screw heads on the switch body's air-box face
   const swScr = merge([0.9, 1.7].map((y) => orient(fastenerY(0.3, 0.15, 0.07, 0.16, 'cross'), [1, 0, 0], [0.32, y + 0.1, 0.28])));
   A.add(part([KX, KY, KZ], mk(sw, plastic), mk(swScr, zinc), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
