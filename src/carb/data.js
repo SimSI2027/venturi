@@ -80,7 +80,7 @@ export const PARTS = [
   {ref: 70, name: 'BOLT (qty 2)', role: 'throttle cable cover bolt', group: 'linkage', fits: '65', step: 'A4', specs: ['torque.throttle_cable_cover_bolt_M5']},
   {ref: 71, name: 'PIPE', role: 'drain pipe', group: 'hoses', fits: '1-bowl', step: 1},
   {ref: 72, name: 'TUBE, FLEXIBLE VINYL', role: 'drain hose', group: 'hoses', fits: '71', step: 1},
-  {ref: 73, name: 'PIPE, FUEL 1', role: 'fuel hose', group: 'hoses', fits: '1-bowl', step: 'A3'},
+  {ref: 73, name: 'PIPE, FUEL 1', role: 'fuel hose', group: 'hoses', fits: 'K83', step: 'A3'},
   {ref: 74, name: 'CLIP', role: 'fuel hose clip', group: 'hoses', fits: '73', step: 'A3'},
   {ref: 75, name: 'CLAMP', role: 'clamp', group: 'hoses', fits: '72', step: 1},
   {ref: 76, name: 'CLIP', role: 'fuel hose clip', group: 'hoses', fits: '73', step: 'A3'},
@@ -104,11 +104,11 @@ export const PIECES = {
   // step: the tear-down step it comes off with (that of the part it rides on), null: it stays on the body.
   K10: {k: 10, of: '65', piece: 'bracket', role: 'cable bracket: holds the throttle cable adjuster', group: 'linkage', fits: '65', step: 1},
   K11: {k: 11, of: '65', piece: 'screw, M5 x 8', role: 'cable bracket screw', group: 'linkage', fits: 'K10', step: 1},
-  K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'throttle shaft with the cable wheel on its cable-side end', group: 'body', fits: '1', step: null},
-  K14: {k: 14, of: '1', piece: 'coil spring', role: 'throttle return spring, behind the cable wheel', group: 'body', fits: 'K12', step: null},
-  K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: null},
-  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: null},
-  K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: null},
+  K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'throttle shaft with the cable wheel on its cable-side end', group: 'body', fits: '1', step: 10},
+  K14: {k: 14, of: '1', piece: 'coil spring', role: 'throttle return spring, behind the cable wheel', group: 'body', fits: 'K12', step: 10},
+  K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: 10},
+  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: 10},
+  K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: 10},
   K36: {k: 36, of: '23', piece: 'valve seat', role: 'float needle valve seat', group: 'float', fits: '1', step: 22, specs: ['valve_seat']},
   K37: {k: 37, of: '23', piece: 'O-ring', role: 'valve seat O-ring', group: 'float', fits: 'K36', step: 22},
   K38: {k: 38, of: '23', piece: 'screw', role: 'valve seat retaining screw', group: 'float', fits: '1', step: 22},
@@ -129,7 +129,7 @@ export const PIECES = {
   K109: {k: 109, of: '47', piece: 'collar', role: 'throttle sensor collar, between its ear and the cover plate', group: 'sensor', fits: '47', step: 4},
   K199: {k: 199, of: '47', piece: 'washer', role: 'throttle sensor screw washer', group: 'sensor', fits: '47', step: 4},
   K241: {k: 241, of: '47', piece: 'Torx screw', role: 'throttle sensor Torx screw through its ear', group: 'sensor', fits: '47', step: 4},
-  K140: {k: 140, of: '1', piece: 'screw', role: 'small body screw above the carburetor switch stop screw', group: 'sensor', fits: '1', step: null},
+  K140: {k: 140, of: '1', piece: 'screw', role: 'small body screw above the carburetor switch stop screw', group: 'sensor', fits: '1', step: 6},
 };
 /** The Keihin pieces, in Keihin order. */
 export const KPIECES = Object.keys(PIECES).filter((id) => PIECES[id].k);

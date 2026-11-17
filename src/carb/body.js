@@ -333,7 +333,7 @@ export function buildBody(index) {
   cream.color.set(0xd9d2b0); // pale cream, as the owner's photos show it (run 11's brass was too saturated)
   cream.roughness = 0.55;
   const pulley = mk(orient(wheel, [0, 0, -1], [0, 0, WZ]), cream);
-  A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(apin, steel), mk(arm, A.M.plastic)), 'K12');
+  A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(apin, steel), mk(arm, A.M.plastic)), 'K12', {axis: [0, 0, -1]}); // run 15 (item 11): it has a tear-down step now, off toward the cable side
   // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
   const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
   // run 15 (item 6, Keihin 14): a torsion spring: 4 whole turns round the pivot axis (along z), a straight leg off each end, one bent onto the post and one onto the arm's pin
@@ -344,10 +344,10 @@ export function buildBody(index) {
   const yb = -(LL - 0.15), kS = rpoly([[-0.25, 0.15], [0.25, 0.15], [0.25, yb], [0.13, yb], [0.13, yb + 0.4], [-0.13, yb + 0.4], [-0.13, yb], [-0.25, yb]], 0.05);
   kS.holes.push(circ(0, yb + 0.6, 0.09));
   const kArm = merge([extrudeXY(kS, 0.22, 0.04, 8, {free: true}).rotateY(Math.PI / 2).translate(0, 0, -0.9), orient(tubeY(0.42, 0.23, -0.25, 0.25, 0.03), [0, 0, 1], [0, 0, -0.9])]).rotateZ(LA);
-  A.add(part([SHX, SHY, 0], mk(kArm, steel)), 'K16');
-  A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(fastenerY(0.45, 0.17, 0.08, 0.16, 'cross'), [1, 0, 0]), steel)), 'K18');
-  A.add(part([0, 0, 0], mk(rsp, steel)), 'K14');
-  A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15');
+  A.add(part([SHX, SHY, 0], mk(kArm, steel)), 'K16', {axis: [0, 0, -1]});
+  A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(fastenerY(0.45, 0.17, 0.08, 0.16, 'cross'), [1, 0, 0]), steel)), 'K18', {axis: [1, 0, 0]});
+  A.add(part([0, 0, 0], mk(rsp, steel)), 'K14', {axis: [0, 0, -1]});
+  A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15', {axis: [0, 0, -1]});
   const nips = mk(merge(nipG), brass);
   // run 10 (item 7): the accelerator pump linkage as the Keihin FCR-MX diagram draws it (its 64-67, 72), replacing
   // run 9's T-bar: a cast boss on the body's cable side under the cable cup, a pivot pin out of it with a washer at its
