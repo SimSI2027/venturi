@@ -56,7 +56,7 @@ export function buildSensor(index) {
   const psleeve = tappedAt(0.3, 0.125, 0, 0.35, 0.3, [0, 0, 1], [bx, by, -0.175]);
   const pseats = merge(PLATE_SCREWS.map(([x, y]) => orient(tubeY(0.3, M3_HOLE, 0, 0.04, 0.01), [0, 0, 1], [x, y, 0.165])));
   A.add(part([0, 0, P + 0.255], mk(merge([slabZ(PLATE59, 0, 0.35, [[SX, SY, 1.05], ...PH], 0.4), psleeve]), cast), mk(pseats, machined)), '59', {ex: [-1.6, -0.6, 2.2], order: 0.35});
-  A.add(part([0, 0, P + 0.03], mk(slabZ(PLATE59, 0, 0.1, [[[-1.4, 6.5], [3.2, 6.5], [3.2, 0.2], [2.2, 0.2], [2.2, 2.4], [0.8, 3.5], [-1.4, 3.6]]], 0.42), rubber)), '61', {ex: [-1.6, -0.6, 1.0], order: 0.45});
+  A.add(part([0, 0, P + 0.03], mk(slabZ(PLATE59, 0, 0.1, [[[-1.4, 6.5], [3.2, 6.5], [3.2, 0.2], [2.2, 0.2], [2.2, 2.4], [0.8, 3.5], [-1.4, 3.6]], ...PH], 0.42), rubber)), '61', {ex: [-1.6, -0.6, 1.0], order: 0.45});
   // run 14 (item 6): cover 2 is a plate with a cut corner, 2 screw holes and a round boss, not a plain slab
   const c2 = rpoly([[-0.8, -0.5], [0.8, -0.5], [0.8, 0.2], [0.4, 0.5], [-0.8, 0.5]], 0.15);
   c2.holes.push(circ(-0.55, -0.2, M3_HOLE), circ(0.55, -0.2, M3_HOLE));
@@ -87,7 +87,7 @@ export function buildSensor(index) {
   // knob the washer (91) and the spring (92); the switch's screw into plate 63 (177)
   const SOPT = {ex: [2.6, -0.6, 0.6], axis: [1, 0, 0]};
   A.add(part([KX - 0.34, KY, KZ], mk(orient(tubeY(0.27, 0.15, 0, 0.04), [1, 0, 0]), steel)), 'K91', {...SOPT, order: 0.62});
-  A.add(part([KX - 0.3, KY, KZ], mk(orient(springY(0.3, 0.22, 0.035, 4), [1, 0, 0]), steel)), 'K92', {...SOPT, order: 0.61});
+  A.add(part([KX - 0.3, KY, KZ], mk(orient(springY(0.3, 0.22, 0.035, 2.8), [1, 0, 0]), steel)), 'K92', {...SOPT, order: 0.61});
   A.add(part([KX + 0.15, KY + 2.0, KZ - 0.3], mk(orient(fastenerY(0.5, 0.18, 0.08, 0.16, 'torx'), [1, 0, 0]), zinc)), 'K177', {...SOPT, order: 0.65});
   A.add(part([HOUSE_X + 0.47, KY + 0.9, KZ - 0.9], mk(orient(fastenerY(0.45, 0.17, 0.07, 0.16, 'torx'), [1, 0, 0]), zinc)), 'K140', {...SOPT, order: 0.66});
   A.add(part([HOUSE_X + 0.06, KY + 2.3, KZ], mk(plateXY(1.3, 1.5, 0.12, 0.2, [[0.3, 0.4, 0.15]]).rotateY(Math.PI / 2), machined)), '63', {ex: [1.4, -0.6, 0.6], order: 0.7, axis: [1, 0, 0]});

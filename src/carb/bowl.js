@@ -8,7 +8,7 @@
 // jets), the round hex-plug boss with its curled passage (-73..-80), the drain nipple at the engine end, the pump
 // housing lobe on the cable side under the round 3-screw pump cover (pump.js). Built in carb space (sketch units).
 import {Asm} from '../lib/asm.js';
-import {THREE, merge, tubeY, hexY, orient, oring, screwY, fastenerY, tappedY, extrudeXY, rpoly, circ, hose, rbox, mk, part, mm, M4_HOLE} from './kit.js';
+import {THREE, merge, tubeY, latheY, ringsUp, hexY, orient, oring, screwY, fastenerY, tappedY, extrudeXY, rpoly, circ, hose, rbox, mk, part, mm, M4_HOLE} from './kit.js';
 import {HT, RIM, EARS, PLAN, inset} from './body.js';
 
 // heights (carb space): the joint, the top lip under the gasket, the flange band, the belly's 2 floors, the boss
@@ -106,7 +106,9 @@ export function buildBowl(index) {
   const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.04, BOX);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
   // run 10 (item 7): the Keihin diagram's thin pump rod (its 72), 2 mm, a ball end up in link lever 41's arm (linkage.js)
-  const RT = -1.35, rod = merge([tubeY(mm(1.0), 0.001, PYW + 0.4, RT - 0.1, 0.01), new THREE.SphereGeometry(mm(2.2), 12, 8).translate(0, RT, 0)]).translate(1.57, 0, -4.09);
+  // run 15 (item 7): the rod has a chamfered foot with thread rings, a retaining groove and a collar under the ball
+  const RT = -1.35, y0 = PYW + 0.4, rr = mm(1.0), th = ringsUp(y0 + 0.08, y0 + 0.42, rr);
+  const rod = merge([latheY([[y0, 0], [y0, rr * 0.7], [y0 + 0.04, rr], ...th.pts, [th.end, rr], [RT - 0.75, rr], [RT - 0.75, rr * 1.9], [RT - 0.6, rr * 1.9], [RT - 0.6, rr], [RT - 0.4, rr], [RT - 0.4, rr * 0.7], [RT - 0.3, rr * 0.7], [RT - 0.3, rr], [RT - 0.1, rr], [RT - 0.1, 0]], 16), new THREE.SphereGeometry(mm(2.2), 12, 8).translate(0, RT, 0)]).translate(1.57, 0, -4.09);
   // fuel inlet fitting (carb_7): a steel elbow out of the upper box's sensor side, turned up, a hex at its foot, a
   // bead near its top (hose 73 goes on it)
   const IY = -3.18, IZ = 6.6, IT = IY + 2.675, z0 = RIM[13][1]; // run 10 landmarks (carb_7): 0.4 further out, its top 0.22 higher

@@ -44,7 +44,7 @@ export function buildLinkage(index) {
   A.add(part([0, 0, CUPZ - 0.33 + KZ], mk(merge([lug, flange]), cast), mk(kseat, machined)), 'K10', {ex: [0, 0, -1.8], order: 0.25});
   A.add(part([-3.63, 5.6, -4.3 + KZ], mk(orient(fastenerY(mm(8), mm(4), mm(2.5), mm(4.5), 'hex'), [-1, 0, 0]), steel)), 'K11', {ex: [-1.6, 0, -1.8], order: 0.2, axis: [-1, 0, 0]});
   // 66 gasket under it, its rim a little proud of the cover so the black edge shows
-  A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35)], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});
+  A.add(part([0, 0, CUPZ - 0.025], mk(slabZ(inset(SHIELD, -0.06), 0, 0.1, [inset(SHIELD, 0.35), ...BOLTS.map(([x, y]) => [x, y, M5_HOLE])], 0.3), rubber)), '66', {ex: [0, 0, -0.7], order: 0.4});
   // 67 seal: the rubber grommet where the cable enters the cover's boss
   A.add(part([BX - 0.6, BY, CUPZ - 0.33], mk(orient(merge([tubeY(0.36, 0.16, 0, 0.5), tubeY(0.46, 0.16, 0.38, 0.55)]), [-1, 0, 0]), rubber)), '67', {ex: [-1.8, 0, -1.8], order: 0.15, axis: [-1, 0, 0]});
   // 70 bolts (2): socket-head cap screws along +Z into the body, the hex socket dark in the head
