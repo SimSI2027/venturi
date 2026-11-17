@@ -337,7 +337,9 @@ export function buildBody(index) {
   // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
   const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
   // run 15 (item 6, Keihin 14): a torsion spring: 4 whole turns round the pivot axis (along z), a straight leg off each end, one bent onto the post and one onto the arm's pin
-  const rsp = merge([torsionSpring(POST, ARM, SZW), orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6])]);
+  // run 16 (item 6): K14 is the coil and its 2 legs only (all the coil's wire radius); the post the lower leg bends onto is the body's, below
+  const rsp = torsionSpring(POST, ARM, SZW);
+  const rpost = mk(orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6]), steel);
   // the link arm from the shaft down to the slide's lug (run 11: angled, the shaft now stands 0.7 toward the air box of it)
   const [LGX, LGY] = SLIDE_LUG, LA = Math.atan2(LGX - SHX, SHY - LGY), LL = Math.hypot(LGX - SHX, SHY - LGY) + 0.3;
   // run 14 (item 6, Keihin 16): a flat lever with an eye round the shaft and a forked foot for the slide's lug, the stop screw's hole through it
@@ -357,7 +359,7 @@ export function buildBody(index) {
   const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
   // run 11: its washer (Keihin 69), E-clip (70) and the 2 torsion springs (66, 67) are linkage.js pieces now
   const link = mk(orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), steel);
-  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks);
+  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks, rpost);
   A.add(body, '1');
   return A;
 }

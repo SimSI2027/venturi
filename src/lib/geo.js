@@ -345,8 +345,10 @@ export function spring(len, R, wire, turns, {endTurns = 1.25} = {}) {
       return out.set(xAt(k), R * Math.cos(a), R * Math.sin(a));
     }
   }
-  // run 16: 20 segments per turn and 12 sides round the wire for every spring (smooth, round), each end of the wire ground flat: a disc closes it
-  const curve = new Helix(), tube = new THREE.TubeGeometry(curve, Math.ceil(turns * 20), wire, 12, false);
+  // run 16 (sheet_2 showed spring 30 lumpy at 20 a turn: its chord was longer than its wire is thick): a segment is at most 0.7 wire diameters long,
+  // 20 to 48 a turn; 12 sides round the wire for every spring (smooth, round), each end of the wire ground flat: a disc closes it
+  const perTurn = Math.min(48, Math.max(20, Math.ceil((2 * Math.PI * R) / (wire * 1.4))));
+  const curve = new Helix(), tube = new THREE.TubeGeometry(curve, Math.ceil(turns * perTurn), wire, 12, false);
   const caps = [0, 1].map((t) => {
     const p = curve.getPoint(t), d = curve.getTangent(t).multiplyScalar(t ? 1 : -1);
     const c = new THREE.CircleGeometry(wire, 12).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), d));

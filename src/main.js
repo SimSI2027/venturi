@@ -788,7 +788,7 @@ async function main() {
     const gi = groupIndex(i.group);
     const role = i.ref === 20 ? CONFLICT_20 : i.likely ? `likely: ${i.role}` : i.role;
     const sB = STEPS_B[i.step - 1];
-    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added || !inManual(id) ? ' (' + (sB.added ? 'added step, ' : '') + 'not named in the manual’s list)' : ''}` : id === '1' ? 'Stays: everything else comes off it' : 'Stays in the body: not in the manual’s removal list';
+    const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added ? ' (added step, not in the manual’s list' + (inManual(id) ? '' : '; this part is not named in the manual’s list') + ')' : inManual(id) ? '' : ' (not named in the manual’s list)'}` : id === '1' ? 'Stays: everything else comes off it' : 'Stays in the body: not in the manual’s removal list';
     const fits = i.fits ? label(i.fits) : 'the carburetor joint (engine) and the air intake duct';
     const sp = i.specs.map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('');
     detail.innerHTML =
