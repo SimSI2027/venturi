@@ -258,8 +258,29 @@ export function buildBody(index) {
   // run 11 (item 4): the air-box one is the adapter ring, BODY_AF to ADAPT (11), a 3 mm flange step at its root
   // against the body's face, the bead near its lip
   const SP = -ENG_FACE, RE = mm(24), RA = mm(25), BD = mm(1), FL = mm(3), AF = BODY_AF, AD = ADAPT;
+  // the ring wall: an annulus (the bore's radius + 0.05 to RA) from the flange's face to the lip, 10 rounded windows (3.2 radial x 2.4 across, at
+  // the annulus's middle radius) cut through it: real holes, their floor the flange's face
+  const wallS = new THREE.Shape(), ringPts = (r, f) => Array.from({length: 72}, (_, k) => [Math.cos((k / 72) * Math.PI * 2) * r, Math.sin((k / 72) * Math.PI * 2) * r]);
+  ringPts(RA, 1).forEach(([x, y], k) => (k ? wallS.lineTo(x, y) : wallS.moveTo(x, y)));
+  wallS.closePath();
+  const wallHole = new THREE.Path();
+  ringPts(BORE_R + 0.05, 1).forEach(([x, y], k) => (k ? wallHole.lineTo(x, y) : wallHole.moveTo(x, y)));
+  wallHole.closePath();
+  wallS.holes.push(wallHole);
+  const WMID = (BORE_R + 0.05 + RA) / 2;
+  for (let k = 0; k < 10; k++) {
+    const a = ((k + 0.5) * Math.PI * 2) / 10, c = Math.cos(a), sn = Math.sin(a), hl = mm(1.6), hw = mm(1.2);
+    const P = [[-hl, -hw], [hl, -hw], [hl, hw], [-hl, hw]].map(([u, v]) => [(WMID + u) * c - v * sn, (WMID + u) * sn + v * c, mm(0.9)]);
+    wallS.holes.push(rpoly(P, mm(0.9), new THREE.Path()));
+  }
+  const WX0 = AF + mm(2.5) + 0.05;
+  const windowRing = extrudeXY(wallS, AD - 0.03 - WX0, 0.04, 6, {free: true}).rotateY(Math.PI / 2).translate((AD - 0.03 + WX0) / 2, 0, 0);
   const spigots = mk(merge([
-    latheX([[AF - 0.05, BORE_R + 0.05], [AF - 0.05, RA + FL - 0.03], [AF, RA + FL], [AF + mm(2.5), RA + FL], [AF + mm(2.5) + 0.03, RA + FL - 0.05], [AF + mm(2.5) + 0.05, RA], [AD - 0.3, RA], [AD - 0.25, RA + BD], [AD - 0.08, RA + BD], [AD - 0.03, RA], [AD, RA - 0.04], [AD, BORE_R + 0.05], [AF - 0.05, BORE_R + 0.05]]),
+    // run 14 (item 8): the adapter is 11 mm deep (AF to AD): the root flange step (2.5 mm), then the ring wall with 10 windows cut
+    // through it from the lip down to the flange's face (below), the bead near the lip
+    latheX([[AF - 0.05, BORE_R + 0.05], [AF - 0.05, RA + FL - 0.03], [AF, RA + FL], [AF + mm(2.5), RA + FL], [AF + mm(2.5) + 0.03, RA + FL - 0.05], [AF + mm(2.5) + 0.05, RA], [AF + mm(2.5) + 0.05, BORE_R + 0.05]]),
+    latheX([[AD - 0.3, RA - 0.03], [AD - 0.3, RA], [AD - 0.25, RA + BD], [AD - 0.08, RA + BD], [AD - 0.03, RA], [AD - 0.03, RA - 0.03]]),
+    windowRing,
     // run 13 (item 8, lines 21 44 54 71): a 3 mm flange step at the engine spigot's root, as the adapter has
     latheX([[-2.5, RE - 0.1], [-2.5 - mm(2.5), RE - 0.1], [-2.5 - mm(2.5), RE + FL - 0.05], [-2.5 - mm(2.5) + 0.03, RE + FL], [-2.5, RE + FL]]),
     latheX([[-2.5, BORE_R + 0.05], [-SP, BORE_R + 0.05], [-SP, RE - 0.04], [-SP + 0.03, RE], [-SP + 0.08, RE + BD], [-SP + 0.25, RE + BD], [-SP + 0.3, RE], [-2.5, RE]]),
@@ -267,7 +288,7 @@ export function buildBody(index) {
   // run 12 (item 7, mine_1): about 10 radial windows round the adapter ring's end face (dark slots, 3.4 x 1.6 mm, set in the
   // 5.5 mm annulus between the bore and the ring's rim), and 2 small holes at its foot, in the flange step's air-box face
   const rmid = (BORE_R + RA) / 2;
-  const wins = merge(Array.from({length: 10}, (_, i) => rbox(0.05, mm(4.0), mm(2.6), 0.02).translate(AD + 0.005, rmid, 0).rotateX(((i + 0.5) * Math.PI * 2) / 10)));
+  const wins = merge(Array.from({length: 10}, (_, i) => rbox(0.03, mm(3.0), mm(2.2), 0.02).translate(WX0 + 0.012, WMID, 0).rotateX(((i + 0.5) * Math.PI * 2) / 10 - Math.PI / 2))); // run 14: the dark floor of each window, on the flange's face
   const fx = AF + mm(2.5) + 0.04, fr = RA + FL * 0.55;
   const holes = merge([-1, 1].map((k) => cylY(mm(1.1), 0, 0.03, 0.005).rotateZ(-Math.PI / 2).translate(fx, -fr * Math.cos(k * 0.2), -fr * Math.sin(k * 0.2) * 1)));
   const adapterMarks = mk(merge([wins, holes]), A.M.rubber);
@@ -276,7 +297,13 @@ export function buildBody(index) {
   // inside: the cavity's 2 guide faces (machined strips on its engine-side wall, where the 4 rollers run), the needle jet bore in the bore floor
   // (a machined ring round the nozzle's top), the accelerator pump nozzle aimed into the bore toward the engine
   const guides = [-1, 1].map((sz) => rbox(0.02, 6.0, 0.5, 0.008).translate(SX1 - 0.012, 3.2, sz * 2.5));
-  const boreM = mk(merge([ring(-SP, SX0), ring(SX1, ADAPT), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
+  const boreM = mk(merge([ring(-SP, SX0), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
+  // run 14 (item 8): the air-box half of the bore is dark inside (owner's mine_1: black); the engine half stays bright machined steel
+  const boreDark = A.M.bore.clone();
+  boreDark.color.set(0x15171a);
+  boreDark.metalness = 0.5;
+  boreDark.roughness = 0.55;
+  const boreD = mk(ring(SX1, ADAPT), boreDark);
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -BORE_R + 0.02, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it
@@ -333,7 +360,7 @@ export function buildBody(index) {
   const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
   // run 11: its washer (Keihin 69), E-clip (70) and the 2 torsion springs (66, 67) are linkage.js pieces now
   const link = mk(orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), steel);
-  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, nozzle, nips, pboss, link, adapterMarks);
+  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks);
   A.add(body, '1');
   return A;
 }
