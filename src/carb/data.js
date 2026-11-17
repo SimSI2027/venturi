@@ -102,13 +102,13 @@ export const PIECES = {
   // run 11 (item 3): the Keihin FCR-MX diagram's parts that had no mesh of their own (scratch/parts_map.txt), each a
   // clickable piece of the fiche reference it belongs to (of), named "<name> · part of <of>". k: the Keihin number.
   // step: the tear-down step it comes off with (that of the part it rides on), null: it stays on the body. Run 16 (correction 34): the 5
-  // throttle shaft parts (K12, K14, K15, K16, K18) are named by no step of the manual's list, so they stay in the body like reference 1.
+  // throttle shaft parts (K12, K14, K15, K16, K18; run 17: K16 rides in step 9) are named by no step of the manual's list, so they stay in the body like reference 1.
   K10: {k: 10, of: '65', piece: 'bracket', role: 'cable bracket: holds the throttle cable adjuster', group: 'linkage', fits: '65', step: 1},
   K11: {k: 11, of: '65', piece: 'screw, M5 x 8', role: 'cable bracket screw', group: 'linkage', fits: 'K10', step: 1},
   K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'throttle shaft with the cable wheel on its cable-side end', group: 'body', fits: '1', step: null},
   K14: {k: 14, of: '1', piece: 'coil spring', role: 'throttle return spring, behind the cable wheel', group: 'body', fits: 'K12', step: null},
   K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: null},
-  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: null},
+  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: 9}, // run 17 (item 5): page 6-2 draws the forked lever under screw 8 coming off with it
   K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: null},
   K36: {k: 36, of: '23', piece: 'valve seat', role: 'float needle valve seat', group: 'float', fits: '1', step: 22, specs: ['valve_seat']},
   K37: {k: 37, of: '23', piece: 'O-ring', role: 'valve seat O-ring', group: 'float', fits: 'K36', step: 22},
@@ -205,9 +205,9 @@ const MANUAL_B = [
   {n: 10, text: 'Throttle valve plate', parts: ['11', '12']},
   {n: 11, text: 'Needle holder', parts: ['14', '15', '16']},
   {n: 12, text: 'Jet needle', parts: ['48', '13']},
-  {n: 13, text: 'Cover and spring', parts: ['1-pilot', '79']},
+  {n: 13, text: 'Cover and spring (pilot air)', parts: ['1-pilot', '79']},
   {n: 14, text: 'Pilot air diaphragm', parts: ['78']},
-  {n: 15, text: 'Cover and spring', parts: ['27', '30', '4', '29', '45', '8', '6', '7']},
+  {n: 15, text: 'Cover and spring (accelerator pump)', parts: ['27', '30', '4', '29', '45', '8', '6', '7']},
   {n: 16, text: 'Accelerator pump diaphragm', parts: ['28', '31']},
   {n: 17, text: 'Float chamber', parts: ['5', '1-bowl', '25', '26', '38', '37']},
   {n: 18, text: 'Accelerator jet', parts: ['77']},
@@ -232,7 +232,10 @@ export const STEPS_B = [
 export const N_B = STEPS_B.length;
 // run 16 (correction 34): the parts the manual's list names (section A's steps and section B's 27); every other part keeps its step on the page
 // but its card says it is not named in the manual's list. The 5 throttle shaft parts have no step at all.
-const NAMED = new Set([...STEPS_A.list, ...MANUAL_B].flatMap((s) => s.parts));
+// Run 17 (item 5): 12 parts ride in a step whose manual line does not name them (the plates, spring and screw of the throttle shaft screw's step; the
+// starter plunger's second set; the pump cover's plate, screw and washers).
+export const NOT_NAMED = ['40', '41', '43', '44', '53', '54', '56', '64', '45', '8', '6', '7'];
+const NAMED = new Set([...STEPS_A.list, ...MANUAL_B].flatMap((s) => s.parts).filter((id) => !NOT_NAMED.includes(id)));
 export const inManual = (id) => NAMED.has(id);
 // each part's tear-down step on the page (reference 1, the body, has none: everything comes off it)
 for (const s of STEPS_B) for (const id of s.parts) (PIECES[id] || PARTS.find((p) => String(p.ref) === id)).step = s.n;
@@ -320,3 +323,25 @@ export function nameOf(id) {
   const i = info(id);
   return i.piece ? `${i.piece[0].toUpperCase()}${i.piece.slice(1)} · part of ${i.ref}` : `${i.ref} · ${i.name}`;
 }
+
+// Run 17 (item 4, manual pages 6-1 and 6-2, looked at once). LT: the screws an LT mark points to. fitNew: the parts a "New" mark points to. A mark
+// that did not point to exactly 1 reference is not here (it is listed in STATUS.md).
+export const LT_IDS = ['42'];
+export const FIT_NEW = ['2', '25', '31', '66'];
+export const needsLT = (id) => LT_IDS.includes(id);
+export const fitNew = (id) => FIT_NEW.includes(id);
+export const LT_TEXT = 'Apply thread locker (LT)';
+NOTES_C.push({key: 'lt', at: LT_IDS.map((id) => ({mode: 'rebuild', step: N_B + 1 - PART[id].step})), text: `${LT_TEXT}: ${nameOf(LT_IDS[0])}`});
+
+// Run 17 (item 7): the manual's check lines, quoted in meaning only, 1 per part ('1' the body, '1-bowl' the float chamber, '1-mainjet' the main jet).
+const CK = {
+  body: 'Cracks or damage: replace. Dirty: clean.',
+  valve: 'Dirty: clean. Worn or damaged: the manual says replace the carburetor assembly.',
+  slide: 'Scratched, worn or damaged: replace. Sticks in the body: replace the throttle valve and its guide.',
+  jet: 'Bent, worn or damaged: replace. Blocked: blow out with compressed air.',
+  six: 'Check (manual 6-6).',
+};
+export const CHECKS = {'1': CK.body, '1-bowl': CK.body, '21': 'Float or tang damaged: replace.', '23': CK.valve, K36: CK.valve, '9': CK.slide, '11': CK.slide,
+  '48': 'Bent, worn or damaged: replace. Clip groove worn or loose: replace.', '1-mainjet': CK.jet, '17': CK.jet, '18': CK.jet, '19': CK.jet, '20': CK.jet, '77': CK.jet,
+  '28': CK.six, '78': CK.six, '30': CK.six, '79': CK.six};
+export const checkLine = (id) => (CHECKS[id] ? (/^Check/.test(CHECKS[id]) ? CHECKS[id] : `Check: ${CHECKS[id]}`) : null);

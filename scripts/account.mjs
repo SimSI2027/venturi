@@ -2,7 +2,7 @@
 // mesh (has triangles), card (clicking it shows a card with its group, fits-into and step), row (a parts-panel row), td / rb (the number of
 // tear-down / rebuild steps it is in: exactly 1, the body 0), tray (a tray slot), seat (the gap in mm from its surface to the surface of the part
 // it fits into, at rest, both sampled every 1.5 mm; at most 2), fits (names an existing part). Prints the failures and the count.
-// Run 16 (correction 34): the body and the 5 throttle shaft parts (K12, K14, K15, K16, K18) stay in the body: 0 tear-down steps, 0 rebuild steps, 0 tray slots, card
+// Run 16 (correction 34): the body and the 4 throttle shaft parts (K12, K14, K15, K18; run 17: K16 rides in step 9) stay in the body: 0 tear-down steps, 0 rebuild steps, 0 tray slots, card
 // 'Stays in the body: not in the manual's removal list'; every other part no step of the manual's list names keeps its step and its card says 'not named in the manual's list'.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,7 +27,7 @@ ids.sort((a, b) => key(a) - key(b));
 fs.copyFileSync('src/carb/data.js', 'scratch/_d.mjs');
 const D = await import(pathToFileURL(path.resolve('scratch/_d.mjs')).href);
 const fits = Object.fromEntries(ids.map((id) => [id, D.info(id).fits]));
-const STAYS = ['K12', 'K14', 'K15', 'K16', 'K18'];
+const STAYS = ['K12', 'K14', 'K15', 'K18'];
 // 1. the gaps at rest (nothing selected, explode 0), before any click moves a part
 const gaps = await page.evaluate(({ids, fits}) => {
   const V = window.VENTURI, T = V.THREE, by = Object.fromEntries(V.parts.map((p) => [p.id, p]));

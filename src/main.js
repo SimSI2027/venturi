@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm, SEC, CLIP} from './lib/asm.js';
-import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, inManual, info, nameOf, specValue, groupIndex} from './carb/data.js';
+import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, inManual, info, nameOf, specValue, groupIndex, needsLT, fitNew, checkLine, LT_TEXT} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -201,8 +201,8 @@ async function main() {
   // run 13 (item 13): the KIT tab: every seal, O-ring, gasket and diaphragm, with quantities and the total
   const kit = el('div', 'vt-specs vt-kit-tab', null, pBody);
   kit.innerHTML = `<p class="vt-src">Usually replaced at a rebuild: seals, O-rings, gaskets and diaphragms.</p>` +
-    `<table>${KIT.map((k) => `<tr data-id="${k.id}" tabindex="0"><th>${esc(k.id.startsWith('K') ? `${k.id} · ${PIECES[k.id].piece[0].toUpperCase()}${PIECES[k.id].piece.slice(1)}` : nameOf(k.id))}<small>${k.kind}${k.id.startsWith('K') ? ' · part of ' + esc(info(k.id).ref) : ''}</small></th><td>${k.qty}${k.known ? '' : '*'}</td></tr>`).join('')}` +
-    `<tr class="tot"><th>Total</th><td>${KIT_TOTAL} pieces in ${KIT.length} lines</td></tr></table>` +
+    `<table><tr class="vt-kh"><th>Part</th><td>Qty</td><td class="vt-fn">manual: fit new</td></tr>${KIT.map((k) => `<tr data-id="${k.id}" tabindex="0"><th>${esc(k.id.startsWith('K') ? `${k.id} · ${PIECES[k.id].piece[0].toUpperCase()}${PIECES[k.id].piece.slice(1)}` : nameOf(k.id))}<small>${k.kind}${k.id.startsWith('K') ? ' · part of ' + esc(info(k.id).ref) : ''}</small></th><td>${k.qty}${k.known ? '' : '*'}</td><td class="vt-fn">${fitNew(k.id) ? 'fit new' : ''}</td></tr>`).join('')}` +
+    `<tr class="tot"><th>Total</th><td colspan="2">${KIT_TOTAL} pieces in ${KIT.length} lines</td></tr></table>` +
     `<p class="vt-src">* the sources give no quantity for this line: counted once. Quantities come from the fiche table (refs 61-79) and the Keihin diagram.</p>`;
   kit.hidden = true;
   kit.onclick = (e) => {
@@ -796,7 +796,8 @@ async function main() {
       (i.piece
         ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">${i.k ? `Keihin ${i.k} · ` : ''}part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
         : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
-      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` + (inKit(id) ? '<div class="vt-kitnote">Usually replaced at rebuild</div>' : '') +
+      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` + (inKit(id) ? '<div class="vt-kitnote">Usually replaced at rebuild</div>' : '') + (fitNew(id) ? '<div class="vt-kitnote">manual: fit new</div>' : '') +
+      (checkLine(id) ? `<div class="vt-check">${esc(checkLine(id))}</div>` : '') + (needsLT(id) ? `<div class="vt-check">${esc(LT_TEXT)}</div>` : '') +
       `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd>${!i.piece && i.kk.length ? `<dt>Keihin</dt><dd>${esc(i.kk.map((k) => `K${k}`).join(', '))}</dd>` : ''}${i.qty ? `<dt>Qty</dt><dd>${i.qty}</dd>` : ''}</dl>` +
       (sp ? `<table>${sp}</table>` : '') +
       '<div class="vt-hint">Drag to turn it · Esc or click away to put it back</div>';
