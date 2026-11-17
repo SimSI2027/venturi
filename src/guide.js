@@ -19,7 +19,7 @@ export const MODES = {
   rebuild: {
     label: 'Rebuild',
     short: 'Rebuild',
-    steps: STEPS_B.slice().reverse().map((s, i) => ({n: i + 1, title: `Fit: ${s.text}`, parts: s.parts, moves: moves(s.n), td: s.n, added: !!s.added, note: s.note || null, calls: callouts('rebuild', i + 1)})),
+    steps: STEPS_B.slice().reverse().map((s, i) => ({n: i + 1, title: `Fit: ${s.text}`, parts: s.parts, moves: moves(s.n), td: s.n, added: !!s.added, note: s.rnote || s.note || null, calls: callouts('rebuild', i + 1)})),
   },
 };
 
