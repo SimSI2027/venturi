@@ -225,7 +225,7 @@ const MANUAL_B = [
 // reference but 1 (the base) comes off in exactly 1 step. added: shown as "added step, not in the manual's list".
 export const ADDED_STEP = 'Added step, not in the manual’s list.';
 export const STEPS_B = [
-  {n: 1, m: null, added: true, text: 'Throttle cable cover and fuel hose', parts: ['70', '65', '66', '67', '73', '74', '76'], note: 'These come off on the ATV, before the carburetor (section A: fuel hose, then the throttle cable cover, 2 bolts, 4 Nm).'},
+  {n: 1, m: null, added: true, text: 'Throttle cable cover and fuel hose', parts: ['70', '65', '66', '67', '73', '74', '76'], note: 'These come off on the ATV, before the carburetor (section A: fuel hose, then the throttle cable cover, 2 bolts, 4 Nm).', rnote: 'These go on after the carburetor is back on the ATV: fuel hose, then the throttle cable cover, 2 bolts, 4 Nm.'},
   ...MANUAL_B.map((s) => ({...s, m: s.n, n: s.n + 1})),
   {n: 29, m: null, added: true, text: 'Pilot screw set', parts: ['49', '50', '52', '51'], note: 'Turn the pilot screw in until it seats, counting the turns, before it comes out.', rnote: 'Turn the pilot screw in until it seats, then out the number of turns you wrote down before disassembly.'},
 ];
