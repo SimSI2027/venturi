@@ -291,10 +291,10 @@ html, body { background: var(--iw-bg); }
 .vt-modes .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
 .vt-modes .s { display: none; }
 .iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pills { display: none; }
-.vt-step { position: absolute; left: 28px; top: 112px; width: 300px; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
+.vt-step { position: absolute; left: 28px; top: 104px; width: 300px; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
   font-variant-caps: normal; letter-spacing: 0.03em; opacity: 0; pointer-events: none; transform: translateY(-4px); z-index: 4;
   transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
-  max-height: calc(100% - 112px - 120px); }
+  max-height: calc(100% - 104px - 64px); }
 /* run 17 (item 9): the card's text scrolls in .vt-sb above the Back / Done / Next bar, which is its own row, opaque, so no text ever sits behind it */
 .vt-sb { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
 .vt-step.show { opacity: 1; pointer-events: auto; transform: none; }
@@ -346,6 +346,13 @@ html, body { background: var(--iw-bg); }
   font: inherit; font-size: 16px; line-height: 1.4; letter-spacing: 0.03em; color: var(--iw-fg); background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--iw-line); border-radius: 8px; outline: none; resize: none; }
 .vt-ta:focus { border-color: var(--iw-brass-dim); }
+/* run 17 (item 9): on a short window the brass callouts are set tighter so the 3 of REBUILD step 29 fit the scrolling part of the card together */
+@media (max-height: 560px) {
+  .vt-call { font-size: 14px; line-height: 1.18; padding: 4px 8px 4px 26px; margin-bottom: 5px; }
+  .vt-nav { padding-top: 6px; padding-bottom: 9px; }
+  .vt-call::before { left: 7px; top: 5px; }
+  .vt-note { font-size: 14px; line-height: 1.25; margin-bottom: 6px; }
+}
 @media (max-width: 720px) {
   .vt-modes { justify-content: flex-start; }
   .vt-modes .iw-btn { font-size: 14px; padding: 5px 11px; }

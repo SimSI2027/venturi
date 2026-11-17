@@ -28,6 +28,14 @@ Years: rebuild-kit sellers list this carburetor for the 2004 to 2009 YFZ450 ([Kr
 - **?** (button or key) shows these controls on the page.
 - **High / Med / Low** sets the render quality; `?perf=1` shows a performance overlay.
 
+## At the bench
+
+1. Open **Steps** first: the "Off the ATV" list (seat and covers, then the manual's 9 steps) has a checkbox per line, saved in this browser.
+2. Before the first TEAR DOWN step, count the pilot screw turns from seated and write them in **Notes**; REBUILD step 1 asks for them back.
+3. In TEAR DOWN each part goes to the tray under the carburetor, grouped by step; REBUILD puts them back in reverse, with the manual's notes as brass callouts.
+4. A part's card shows the manual's check line where it has one, "manual: fit new" (also a column in **Kit**) and "Apply thread locker (LT)" on the throttle shaft screw.
+5. Parts the manual's list does not name say so on their card; the page is a visual guide only, so follow the service manual.
+
 ## Jets
 
 Stock settings, straight from the service manual (`specs.json`):
