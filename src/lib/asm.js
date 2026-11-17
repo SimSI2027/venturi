@@ -8,9 +8,32 @@ import {toCreasedNormals, mergeVertices} from 'three/addons/utils/BufferGeometry
 const CREASE = THREE.MathUtils.degToRad(35);
 const creased = new WeakMap(); // shared geometries are processed once
 const TEX = ['map', 'bumpMap', 'normalMap', 'roughnessMap'];
-function crease(g) {
+// run 22: a triangle with a neighbour in the same plane (within 0.5 deg) is a flat face: its 3 normals are its face normal,
+// so a flat face next to a gentle curve no longer shades in diagonal bands. Positions, indices and triangle count do not change.
+const FLAT = Math.cos(THREE.MathUtils.degToRad(0.5));
+function flatten(g) {
+  const P = g.attributes.position, N = g.attributes.normal, nt = P.count / 3;
+  const key = (i) => `${P.getX(i).toFixed(4)},${P.getY(i).toFixed(4)},${P.getZ(i).toFixed(4)}`;
+  const fn = [], edges = new Map();
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let t = 0; t < nt; t++) {
+    a.fromBufferAttribute(P, t * 3); b.fromBufferAttribute(P, t * 3 + 1); c.fromBufferAttribute(P, t * 3 + 2);
+    fn.push(b.sub(a).cross(c.sub(a)).normalize().clone());
+    const k = [key(t * 3), key(t * 3 + 1), key(t * 3 + 2)];
+    for (let e = 0; e < 3; e++) {
+      const id = [k[e], k[(e + 1) % 3]].sort().join('|');
+      if (!edges.has(id)) edges.set(id, []);
+      edges.get(id).push(t);
+    }
+  }
+  const flat = new Uint8Array(nt);
+  for (const l of edges.values()) if (l.length === 2 && fn[l[0]].dot(fn[l[1]]) > FLAT) flat[l[0]] = flat[l[1]] = 1;
+  for (let t = 0; t < nt; t++) if (flat[t] && fn[t].lengthSq() > 0) for (let k = 0; k < 3; k++) N.setXYZ(t * 3 + k, fn[t].x, fn[t].y, fn[t].z);
+}
+function crease(g, flatFaces = false) {
   if (!creased.has(g)) {
     let c = toCreasedNormals(g, CREASE);
+    if (flatFaces) flatten(c);
     if (!c.groups.length) c = mergeVertices(c, 1e-5); // indexed again
     creased.set(g, c);
   }
@@ -145,7 +168,7 @@ export class Asm {
       const map = new Map();
       part.obj.traverse((o) => {
         if (!o.isMesh) return;
-        o.geometry = crease(o.geometry);
+        o.geometry = crease(o.geometry, this.key === 'body' && part.id === '1');
         if (!map.has(o.material)) map.set(o.material, cloneMat(o.material));
         o.material = map.get(o.material);
         for (const k of TEX) {
