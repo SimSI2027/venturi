@@ -294,10 +294,12 @@ async function main() {
     const s = b.getSize(new THREE.Vector3());
     p.seat = carb.worldToLocal(b.getCenter(new THREE.Vector3()));
     p.ext = 0.5 * (Math.abs(p.ax.x) * s.x + Math.abs(p.ax.y) * s.y + Math.abs(p.ax.z) * s.z);
+    p.size = s;
+    p.extL = (p.legV || [p.gOff]).map((v) => { const d = v.clone().normalize(); return 0.5 * (Math.abs(d.x) * s.x + Math.abs(d.y) * s.y + Math.abs(d.z) * s.z); }); // half-length along each leg
   }
   // 1 thin brass dashed line per hovering part, from its seat to the part (drawn over everything)
   const DASH = [0.22 * MM, 0.14 * MM];
-  const MAXD = 600;
+  const MAXD = 1200;
   const dashGeo = new THREE.BufferGeometry();
   dashGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXD * 6), 3));
   const dashes = new THREE.LineSegments(dashGeo, new THREE.LineBasicMaterial({color: 0xc9a24b, transparent: true, opacity: 0.9, depthTest: false, depthWrite: false, toneMapped: false}));
@@ -320,13 +322,23 @@ async function main() {
   function placeDashes() {
     const arr = dashGeo.attributes.position.array;
     let k = 0;
-    if (guide.mode) for (const p of curParts()) {
+    if (guide.mode) for (const p of [...curParts(), ...legged()]) {
       const w = wT[p.k].v * mixT.v;
       if (w < 0.03 || hT[p.k].v > 0.5 || p === solo.part) continue;
-      const L = Math.max(Math.min(hoverAt(p, w, dv).length(), p.legV ? p.legV[0].length() : OFF) - p.ext, 0.25 * MM); // (with legs: the dashes stay on the first) from the seat to the part's near face
-      for (let s = 0; s < L && k < MAXD; s += DASH[0] + DASH[1], k++) {
-        dv.copy(p.seat).addScaledVector(p.ax, s).toArray(arr, k * 6);
-        dv.copy(p.seat).addScaledVector(p.ax, Math.min(L, s + DASH[0])).toArray(arr, k * 6 + 3);
+      // run 22 (item 3): the dashes follow every leg of the path; a finished leg is dashed to its end, the leg it is on from the seat to the part's near face
+      const legs = p.legV || [p.gOff];
+      let r = w * legs.reduce((a, v) => a + v.length(), 0);
+      dv.copy(p.seat);
+      for (let i = 0; i < legs.length && r > 0; i++) {
+        const Ll = legs[i].length(), dir = legs[i].clone().divideScalar(Ll), last = r <= Ll;
+        const L = last ? Math.max(r - p.extL[i], i ? 0 : 0.25 * MM) : Ll;
+        const a0 = dv.clone();
+        for (let s = 0; s < L && k < MAXD; s += DASH[0] + DASH[1], k++) {
+          dv.copy(a0).addScaledVector(dir, s).toArray(arr, k * 6);
+          dv.copy(a0).addScaledVector(dir, Math.min(L, s + DASH[0])).toArray(arr, k * 6 + 3);
+        }
+        dv.copy(a0).addScaledVector(dir, Ll);
+        r -= Ll;
       }
     }
     dashGeo.setDrawRange(0, k * 2);
@@ -718,6 +730,8 @@ async function main() {
   const ground = (y = S.floor.position.y) => [-3 * MM, 3 * MM].flatMap((x) => [-2.5 * MM, 2.5 * MM].map((z) => new THREE.Vector3(x, y, z)));
   // guided: the current step's parts with the body they come off, seen from the side they come off
   const curParts = () => (guide.step()?.parts || []).map((id) => partOf[id]).filter(Boolean);
+  // run 22 (item 3): the Keihin pieces riding the step that fly a path in legs (K16) are dashed and framed like the step's own parts
+  const legged = () => (guide.step()?.moves || []).map((id) => partOf[id]).filter((p) => p && p.legV);
   // ...from the end of the step's first part's fitting axis, so its seat shows: from below for the jets, float and
   // bowl, from above for the top and slide, square to the face for the side covers
   const guideDir = () => {
@@ -732,7 +746,16 @@ async function main() {
   // stay inside the usable area as loose points), so the castings fill 70-85% on load, not the hoses' ends
   const hoseAsm = asms.find((a) => a.key === 'hoses');
   const bare = () => !guide.mode && focus < 0 && st.explode < 0.02;
-  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
+  // run 22 (item 3): a part that flies a path in legs (K16) is framed along its whole flight: its box at the seat and at the end of each leg
+  const flightPts = () => [...curParts(), ...legged()].filter((p) => p.legV).flatMap((p) => {
+    const o = new THREE.Vector3(), h = p.size.clone().multiplyScalar(0.5), pts = [];
+    for (let j = 0; j <= p.legV.length; j++) {
+      if (j) o.add(p.legV[j - 1]);
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) pts.push(carb.localToWorld(p.seat.clone().add(o).add(new THREE.Vector3(sx * h.x, sy * h.y, sz * h.z))));
+    }
+    return pts;
+  });
+  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), ...flightPts(), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
   const autoLoose = () => (bare() ? subjectPts(hoseAsm.group) : []);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
