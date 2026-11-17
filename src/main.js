@@ -672,6 +672,7 @@ async function main() {
   const SPIN = (2 * Math.PI) / 500;
   const solo = {part: null, T: tween(0, 0.7), spin: new THREE.Quaternion(), c: new THREE.Vector3(), r: 1, drag: null, zoom: 1, zoomV: 1};
   const selT = tween(0, 0.45);
+  const SOLO_TRIM = -1.2; // uRim of the clicked part: its lit result x (1 + 0.15 x -1.2) = 0.82
   function select(id) {
     const p = partOf[id];
     if (!p) return;
@@ -1132,11 +1133,11 @@ async function main() {
     const floor = 0.5 - 0.4 * stepT(selT, now); // the rest of the carburetor fades to 10% opacity
     parts.forEach((p, i) => {
       aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
-      aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
+      aim(rimT[i], sel ? (p === sel ? SOLO_TRIM : 0) : guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus] ? 1 : 0, now); // run 16 (item 4, correction 35): a clicked part gets no +15% lift but a trim: with no neighbours to shade it the casting read 56-59% against 40-43% in the assembly, now 47-51% on HIGH (blown 0%)
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
       const hd = stepT(hT[i], now);
-      Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], r < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd, floor);
+      Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], Math.abs(r) < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd, floor);
     });
     const fl = 1 + 0.3 * THREE.MathUtils.smoothstep(st.explode, 0.5, 0.8);
     S.cool.intensity = 0.25 * S.key.intensity * fl; // the cool fill keeps 25% of the key
