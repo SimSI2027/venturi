@@ -52,7 +52,22 @@ export function hexY(r, y0, y1) {
 /** O-ring in the XZ plane (axis Y). */
 export const oring = (R, r) => new THREE.TorusGeometry(R, Math.max(r, 0.045), 14, Math.max(24, Math.round(R * 40))).rotateX(Math.PI / 2); // run 14: 14 sides round the section (the creased normals broke 10 into a bevelled ring)
 /** Coil spring along +Y from 0 to len. */
-export const springY = (len, R, wire, turns) => springX(len, R, Math.max(wire, 0.035), turns, {endTurns: 1}).rotateZ(Math.PI / 2);
+export const springY = (len, R, wire, turns, endTurns = 1) => springX(len, R, Math.max(wire, 0.035), turns, {endTurns}).rotateZ(Math.PI / 2);
+/** Run 15 (Keihin 14): a torsion spring in the plane z: a coil of whole turns (axis along z, centred midway between a and b), with a straight
+ * leg off each end, one bent to end on a and one on b. */
+export function torsionSpring(a, b, z, R = 0.26, wire = 0.045, turns = 4, len = 0.5) {
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = new THREE.Vector3((b[0] - a[0]) / L, (b[1] - a[1]) / L, 0), n = new THREE.Vector3(-d.y, d.x, 0);
+  const M = new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, 1), n, d.clone().negate());
+  const C = new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z);
+  const loc = (x) => new THREE.Vector3(x - len / 2, R, 0).applyMatrix4(M).add(C);
+  const coil = springX(len, R, wire, turns, {endTurns: 0}).translate(-len / 2, 0, 0).applyMatrix4(M).translate(C.x, C.y, C.z);
+  const seg = (p, q) => { const v = q.clone().sub(p); return orient(cylY(wire, 0, v.length(), 0.004), v.toArray(), p.toArray()); };
+  const leg = (p, dir, tip) => {
+    const t = new THREE.Vector3(tip[0], tip[1], z), e = p.clone().addScaledVector(dir, Math.max(0.05, t.clone().sub(p).dot(dir) - 0.25));
+    return merge([seg(p, e), seg(e, t), new THREE.SphereGeometry(wire, 8, 6).translate(e.x, e.y, e.z)]);
+  };
+  return merge([coil, leg(loc(wire), d, b), leg(loc(len - wire), d.clone().negate(), a)]);
+}
 /** Run 15 (correction 31): the real thread pitch in sketch units for a thread of radius r (u): M4 0.7 mm, M5 0.8 mm, M3 0.5 mm... */
 export function threadPitch(r) {
   const m = r * MM;
@@ -65,6 +80,12 @@ function ringsDown(top, room, r, dep = threadDepth(r), p = threadPitch(r)) {
   const n = Math.max(0, Math.min(10, Math.floor(room / p))), pts = [];
   for (let i = 0; i < n; i++) pts.push([top - i * p, r], [top - (i + 0.5) * p, r - dep]);
   return {pts, end: top - n * p};
+}
+/** Thread rings going up from y0 toward y1 (at most 10, at the real pitch): [y, r] points and the y where they end. */
+export function ringsUp(y0, y1, r) {
+  const p = threadPitch(r), d = threadDepth(r), n = Math.max(0, Math.min(10, Math.floor((y1 - y0) / p))), pts = [];
+  for (let i = 0; i < n; i++) pts.push([y0 + i * p, r], [y0 + (i + 0.5) * p, r - d]);
+  return {pts, end: y0 + n * p};
 }
 /** Screw along -Y: pan head on top (y 0..headH), shank down to -len with fine thread rings at the real pitch, at most 10, at the tip. */
 export function screwY(len, rHead, rShank, headH = rHead * 0.7) {

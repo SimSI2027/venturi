@@ -3,7 +3,7 @@
 // Run 8: H = 16.55 cm, top cover (y 8.11) to bowl bottom (y -8.44); bore-axis length 8.5 = 0.51 H. The 2 new photos
 // (carb_7 engine side, carb_8 air-box side) put the ENGINE at -X and the AIR BOX at +X (run 7 had them swapped).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, fastenerY, tappedY, tappedAt, mk, part, mm} from './kit.js';
+import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, fastenerY, tappedY, tappedAt, torsionSpring, mk, part, mm} from './kit.js';
 
 export const BORE_R = mm(19.5); // run 9: the 39 bore (sketch units, baked into mm by toMM)
 // run 8 proportions (carb_7, along the bore), H = top cover to bowl bottom = 16.55 (the bore ring, 4.8 across, is
@@ -335,9 +335,8 @@ export function buildBody(index) {
   A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(apin, steel), mk(arm, A.M.plastic)), 'K12');
   // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
   const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
-  // run 14 (item 6, Keihin 14): a torsion spring: a short coil with a straight leg to each end, not a long compression coil
-  const CL = 1.0, tors = merge([springY(CL, 0.26, 0.05, 7).translate(0, (sL - CL) / 2, 0), cylY(0.05, 0, (sL - CL) / 2 + 0.05, 0.01).translate(-0.26, 0, 0), cylY(0.05, (sL + CL) / 2 - 0.05, sL, 0.01).translate(-0.26, 0, 0)]);
-  const rsp = merge([orient(tors, [sd[0], sd[1], 0], [POST[0], POST[1], SZW]), orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6])]);
+  // run 15 (item 6, Keihin 14): a torsion spring: 4 whole turns round the pivot axis (along z), a straight leg off each end, one bent onto the post and one onto the arm's pin
+  const rsp = merge([torsionSpring(POST, ARM, SZW), orient(cylY(0.1, 0, 0.5), [0, 0, -1], [POST[0], POST[1], -3.6])]);
   // the link arm from the shaft down to the slide's lug (run 11: angled, the shaft now stands 0.7 toward the air box of it)
   const [LGX, LGY] = SLIDE_LUG, LA = Math.atan2(LGX - SHX, SHY - LGY), LL = Math.hypot(LGX - SHX, SHY - LGY) + 0.3;
   // run 14 (item 6, Keihin 16): a flat lever with an eye round the shaft and a forked foot for the slide's lug, the stop screw's hole through it
