@@ -327,14 +327,14 @@ async function main() {
   // are in the tray; REBUILD: the parts not yet fitted are (their slots stay by removal order, so the fitted ones leave gaps).
   const trT = parts.map(() => tween(0, 0.8));
   let trayBox = null;
-  const TRAY_CELL = 11.5, TRAY_FIT = 1.0, tr = new THREE.Vector3(), tu = new THREE.Vector3(), tc = new THREE.Vector3(), tp = new THREE.Vector3();
+  const TRAY_CELL = 10.8, TRAY_FIT = 1.07, tr = new THREE.Vector3(), tu = new THREE.Vector3(), tc = new THREE.Vector3(), tp = new THREE.Vector3();
   {
     const order = parts.filter((p) => Number.isFinite(REMOVED_AT[p.id])).sort((a, b) => REMOVED_AT[a.id] - REMOVED_AT[b.id] || a.k - b.k);
     const bb = new THREE.Box3().setFromObject(partOf['1'].obj).union(new THREE.Box3().setFromObject(partOf['1-bowl'].obj));
     // run 15 (item 9): 1 tidy grid below the carburetor, ROWS rows of square cells filled left to right in removal order; each part is
     // scaled to fit its cell (small ones up, big ones down: p.trayS), so every removed part reads at least 12 px across at 800 x 500. The grid
     // faces the camera (its slots follow the camera's right and up, so it is a straight grid on screen in every view: layTray)
-    const ROWS = 4, COLS = Math.ceil(order.length / ROWS);
+    const ROWS = 5, COLS = Math.ceil(order.length / ROWS);
     trayBox = bb;
     for (const [i, p] of order.entries()) {
       const s = new THREE.Box3().setFromObject(p.obj).getSize(new THREE.Vector3());
@@ -343,6 +343,16 @@ async function main() {
       p.tg = [((i % COLS) + 0.5 - COLS / 2) * TRAY_CELL, Math.floor(i / COLS)];
       p.tray = new THREE.Vector3();
     }
+  }
+  /** A part's hull points relative to its origin, at rest (taken once). */
+  function hullLocal(p) {
+    if (!p.hp) {
+      p.obj.updateWorldMatrix(true, true);
+      const inv = p.obj.matrixWorld.clone().invert();
+      p.hp = [];
+      p.obj.traverse((m) => m.isMesh && hullOf(m).forEach((q) => p.hp.push(q.clone().applyMatrix4(m.matrixWorld).applyMatrix4(inv).applyQuaternion(p.obj.quaternion))));
+    }
+    return p.hp;
   }
   /** The tray's slots for the camera's right and up (the target camera's when useTo): the grid hangs under the carburetor's lowest point along up. */
   function layTray(useTo) {
@@ -357,16 +367,14 @@ async function main() {
       tu.setFromMatrixColumn(camera.matrixWorld, 1);
     }
     trayBox.getCenter(tc);
-    let low = 0;
-    for (let k = 0; k < 8; k++) low = Math.min(low, tp.set(k & 1 ? trayBox.max.x : trayBox.min.x, k & 2 ? trayBox.max.y : trayBox.min.y, k & 4 ? trayBox.max.z : trayBox.min.z).sub(tc).dot(tu));
+    // the lowest point of the body and the bowl (their hulls at rest) along the camera's up; once the bowl is in the tray the grid rises to the body's foot
+    let lowB = 0, low = 0;
+    for (const q of hullLocal(partOf['1'])) lowB = Math.min(lowB, tp.copy(q).add(partOf['1'].rest).sub(tc).dot(tu));
+    for (const q of hullLocal(partOf['1-bowl'])) low = Math.min(low, tp.copy(q).add(partOf['1-bowl'].rest).sub(tc).dot(tu));
+    low = Math.min(lowB, low) + (lowB - Math.min(lowB, low)) * (useTo ? trT[partOf['1-bowl'].k].to : trT[partOf['1-bowl'].k].v);
     for (const p of parts) {
       if (!p.tg) continue;
-      if (!p.hp) { // its hull points relative to its origin, at rest (taken once)
-        p.obj.updateWorldMatrix(true, true);
-        const inv = p.obj.matrixWorld.clone().invert();
-        p.hp = [];
-        p.obj.traverse((m) => m.isMesh && hullOf(m).forEach((q) => p.hp.push(q.clone().applyMatrix4(m.matrixWorld).applyMatrix4(inv).applyQuaternion(p.obj.quaternion))));
-      }
+      hullLocal(p);
       let r0 = Infinity, r1 = -Infinity, u0 = Infinity, u1 = -Infinity;
       for (const q of p.hp) { const a = q.dot(tr), b = q.dot(tu); r0 = Math.min(r0, a); r1 = Math.max(r1, a); u0 = Math.min(u0, b); u1 = Math.max(u1, b); }
       const er = r1 - r0, eu = u1 - u0;

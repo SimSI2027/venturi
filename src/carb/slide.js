@@ -21,11 +21,12 @@ export function buildSlide(index) {
     extrudeXY(front, ZW * 2, 0.05, 6),
     ...[-1, 1].map((sz) => extrudeXY(side, WT, 0.05, 6).translate(0, 0, sz * (ZW - WT / 2))),
     bar(Y1 - WT / 2), bar(Y0 + WT / 2),
-    tubeY(0.3, NH, Y0 + WT, Y1 - WT, 0.02),
     rbox(0.5, 0.5, 1.4, 0.12).translate(0.45, Y1 + 0.1, -0.9),
     ...pins,
   ]);
-  A.add(part([NX, 1.4, 0], mk(valve, anod)), '9', {ex: [0, 0, 0], order: 0.2});
+  // the hollow's floor (the front wall's back face) is shadowed: a near-black liner panel, so the open back reads as a deep cavity
+  const liner = merge([rbox(0.03, Y1 - Y0 - 2 * WT, 2 * (ZW - WT), 0.01).translate(-0.085, (Y0 + Y1) / 2, 0), tubeY(0.3, NH, Y0 + WT, Y1 - WT, 0.02)]); // and the needle's tube
+  A.add(part([NX, 1.4, 0], mk(valve, anod), mk(liner, rubber)), '9', {ex: [0, 0, 0], order: 0.2});
   // 10 rollers: four steel bearings on those pins (outer race with chamfered rims, inner hub), two each side
   const wheel = orient(merge([latheY([[-0.12, 0.22], [-0.12, 0.32], [-0.09, 0.36], [0.09, 0.36], [0.12, 0.32], [0.12, 0.22], [-0.12, 0.22]]), tubeY(0.2, 0.11, -0.15, 0.15)]), [0, 0, 1]);
   const rollers = part([NX + PX, 1.4, 0], ...[-1.1, 1.1].flatMap((y) => [-2.5, 2.5].map((z) => mk(wheel.clone(), steel, 0, y, z))));
