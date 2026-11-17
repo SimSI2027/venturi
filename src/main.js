@@ -326,32 +326,56 @@ async function main() {
   // (or hovering at its step), 1 in its slot; p.tray: the slot as a position of the part's object. TEAR DOWN: the parts of steps before n
   // are in the tray; REBUILD: the parts not yet fitted are (their slots stay by removal order, so the fitted ones leave gaps).
   const trT = parts.map(() => tween(0, 0.8));
+  let trayBox = null;
+  const TRAY_CELL = 11.5, TRAY_FIT = 1.0, tr = new THREE.Vector3(), tu = new THREE.Vector3(), tc = new THREE.Vector3(), tp = new THREE.Vector3();
   {
     const order = parts.filter((p) => Number.isFinite(REMOVED_AT[p.id])).sort((a, b) => REMOVED_AT[a.id] - REMOVED_AT[b.id] || a.k - b.k);
     const bb = new THREE.Box3().setFromObject(partOf['1'].obj).union(new THREE.Box3().setFromObject(partOf['1-bowl'].obj));
-    const GAP = 8, cx = (bb.min.x + bb.max.x) / 2, zc = (bb.min.z + bb.max.z) / 2;
-    const sizes = order.map((p) => new THREE.Box3().setFromObject(p.obj).getSize(new THREE.Vector3()));
-    // the row width that makes the whole tray about 2.4 times wider than tall (rows of mixed heights waste about a third)
-    const WT = Math.max(2.2 * (bb.max.x - bb.min.x), Math.sqrt(2.4 * 1.35 * sizes.reduce((a, s) => a + (s.x + GAP) * (Math.min(s.y, 40) + GAP), 0)));
-    const rows = [];
-    let row = null, x = 0;
-    for (const [oi, p] of order.entries()) {
-      const s = sizes[oi];
-      if (!row || (x > 0 && x + s.x > WT)) rows.push((row = {items: [], h: 0})), (x = 0);
-      row.items.push({p, x, s});
-      row.h = Math.max(row.h, s.y);
-      x += s.x + GAP;
+    // run 15 (item 9): 1 tidy grid below the carburetor, ROWS rows of square cells filled left to right in removal order; each part is
+    // scaled to fit its cell (small ones up, big ones down: p.trayS), so every removed part reads at least 12 px across at 800 x 500. The grid
+    // faces the camera (its slots follow the camera's right and up, so it is a straight grid on screen in every view: layTray)
+    const ROWS = 4, COLS = Math.ceil(order.length / ROWS);
+    trayBox = bb;
+    for (const [i, p] of order.entries()) {
+      const s = new THREE.Box3().setFromObject(p.obj).getSize(new THREE.Vector3());
+      p.th = s.multiplyScalar(0.5); // half its box: layTray scales it to fit its cell as the camera sees it
+      p.trayS = 1;
+      p.tg = [((i % COLS) + 0.5 - COLS / 2) * TRAY_CELL, Math.floor(i / COLS)];
+      p.tray = new THREE.Vector3();
     }
-    let top = bb.min.y - 25;
-    for (const r of rows) {
-      for (const {p, x: ix, s} of r.items) {
-        const slot = new THREE.Vector3(cx - WT / 2 + ix + s.x / 2, top - s.y / 2, zc);
-        p.tray = p.rest.clone().add(slot.sub(p.seat));
+  }
+  /** The tray's slots for the camera's right and up (the target camera's when useTo): the grid hangs under the carburetor's lowest point along up. */
+  function layTray(useTo) {
+    if (!trayBox) return;
+    if (useTo) {
+      const f = autoDir().clone().normalize().negate();
+      tr.crossVectors(f, camera.up).normalize();
+      tu.crossVectors(tr, f);
+    } else {
+      camera.updateMatrixWorld();
+      tr.setFromMatrixColumn(camera.matrixWorld, 0);
+      tu.setFromMatrixColumn(camera.matrixWorld, 1);
+    }
+    trayBox.getCenter(tc);
+    let low = 0;
+    for (let k = 0; k < 8; k++) low = Math.min(low, tp.set(k & 1 ? trayBox.max.x : trayBox.min.x, k & 2 ? trayBox.max.y : trayBox.min.y, k & 4 ? trayBox.max.z : trayBox.min.z).sub(tc).dot(tu));
+    for (const p of parts) {
+      if (!p.tg) continue;
+      if (!p.hp) { // its hull points relative to its origin, at rest (taken once)
+        p.obj.updateWorldMatrix(true, true);
+        const inv = p.obj.matrixWorld.clone().invert();
+        p.hp = [];
+        p.obj.traverse((m) => m.isMesh && hullOf(m).forEach((q) => p.hp.push(q.clone().applyMatrix4(m.matrixWorld).applyMatrix4(inv).applyQuaternion(p.obj.quaternion))));
       }
-      top -= r.h + GAP + 2;
+      let r0 = Infinity, r1 = -Infinity, u0 = Infinity, u1 = -Infinity;
+      for (const q of p.hp) { const a = q.dot(tr), b = q.dot(tu); r0 = Math.min(r0, a); r1 = Math.max(r1, a); u0 = Math.min(u0, b); u1 = Math.max(u1, b); }
+      const er = r1 - r0, eu = u1 - u0;
+      p.trayS = THREE.MathUtils.clamp((TRAY_FIT * TRAY_CELL) / Math.max(er, eu, 1e-3), 0.04, 12); // run 15: the part's size on screen, not its size in the model, fills the cell
+      p.tray.copy(tc).addScaledVector(tr, p.tg[0]).addScaledVector(tu, low - 14 - (p.tg[1] + 0.5) * TRAY_CELL).sub(tp.copy(p.seat).sub(p.rest).multiplyScalar(p.trayS)); // its centre lands on the slot at its scale there
     }
   }
   function poseAll(e, useTo = false) {
+    if (guide.mode) layTray(useTo);
     const m = useTo ? mixT.to : mixT.v;
     for (const a of asms) {
       const g = a.groupAmt(e) * (1 - m);
@@ -360,6 +384,7 @@ async function main() {
         p.obj.position.addScaledVector(p.gOff, (useTo ? wT[p.k].to : wT[p.k].v) * m);
         const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
         if (tw > 0) p.obj.position.lerp(p.tray, tw);
+        p.obj.scale.setScalar(1 + (tw > 0 ? (p.trayS - 1) * tw : 0));
       }
     }
   }
@@ -1066,8 +1091,8 @@ async function main() {
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
-  const settled = () => !view.follow && [mixT, ...wT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
+  const settled = () => !view.follow && [mixT, ...wT, ...trT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
+  const sigOf = () => [st.explode, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -1083,8 +1108,8 @@ async function main() {
     range.style.setProperty('--p', `${(st.explode * 100).toFixed(1)}%`);
     stepT(mixT, now);
     wT.forEach((T) => stepT(T, now));
+    trT.forEach((T) => stepT(T, now)); // run 15 (item 9): the tray tweens were never stepped, so a part only reached the tray on entering a mode
     poseAll(st.explode);
-    parts.forEach((p) => p.obj.scale.set(1, 1, 1));
     placeFloor();
     placeDashes();
     // solo: the selected part flies forward; once home again it is released
@@ -1098,7 +1123,7 @@ async function main() {
     aim(selT, sel ? 1 : 0, now);
     const floor = 0.5 - 0.4 * stepT(selT, now); // the rest of the carburetor fades to 10% opacity
     parts.forEach((p, i) => {
-      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? (trT[i].to > 0.5 ? 0.12 : 0) : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
+      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
       aim(rimT[i], (sel && p === sel) || (!sel && (guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus])) ? 1 : 0, now);
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
