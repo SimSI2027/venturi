@@ -325,7 +325,7 @@ export function makeMaterials() {
     hose: std({color: 0x151618, metalness: 0, roughness: 0.6, envMapIntensity: 0.45}),
     vinyl: std({color: 0x8f989c, metalness: 0, roughness: 0.25, clearcoat: 0.6, clearcoatRoughness: 0.2, envMapIntensity: 0.6}),
     plastic: std({color: 0x161719, metalness: 0, roughness: 0.45, clearcoat: 0.15, envMapIntensity: 0.5}),
-    anod: std({color: 0x0e0f11, metalness: 0, roughness: 0.92, envMapIntensity: 0.05}), // run 14 (item 8): charcoal hard-anodised, so the slide face inside the bore reads dark from the air box
+    anod: std({color: 0x3d4046, metalness: 0.45, roughness: 0.5, envMapIntensity: 0.3}), // run 15 (item 5): hard-anodised grey (run 14 had it charcoal)
     wire: std({color: 0x1a1b1d, metalness: 0, roughness: 0.5, envMapIntensity: 0.4}),
   };
 }

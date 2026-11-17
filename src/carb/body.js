@@ -155,16 +155,13 @@ function latheX(pts, seg = 64) {
 
 // the slide cavity: x SX0..SX1 (the slide is x -0.7..0.3, its plate at -0.88), z +/-SZ (its rollers reach 2.63),
 // open from y SY (below the closed slide's foot) up through the tower top; its 2 side walls are the guide faces
-const SX0 = -0.95, SX1 = 0.55, SZ = 2.75, SY = -0.5;
+const SX0 = -0.95, SX1 = 0.55, SZ = 2.75, SY = -1.9; // run 15 (item 5): the cavity runs down to the bore's floor (-BORE_R), so the slide can sit fully down and close the bore
 /** The body's section across the cavity: the outline with the slot (narrower under the top cover) and the bore's
  * lower half cut out of it, extruded along X. */
 function cavitySection() {
-  const zc = Math.sqrt(BORE_R * BORE_R - SY * SY);
   const T = TOWER.top, ZT = 2.3, YT = T - 1.0;
-  const a0 = Math.atan2(SY, zc), a1 = Math.atan2(SY, -zc);
-  const arc = Array.from({length: 11}, (_, i) => a0 + ((a1 - a0) * (i + 1)) / 12).map((a) => [Math.cos(a) * BORE_R, Math.sin(a) * BORE_R, 0]);
-  const slot = [[ZT, T, 0.05], [ZT, YT, 0.05], [SZ, YT - 0.25, 0.05], [SZ, SY, 0.05], [zc, SY, 0]];
-  const s = rpoly([...HALF, ...slot, ...arc, ...mirror(slot), ...mirror(HALF)], 0.3);
+  const slot = [[ZT, T, 0.05], [ZT, YT, 0.05], [SZ, YT - 0.25, 0.05], [SZ, SY, 0.05]];
+  const s = rpoly([...HALF, ...slot, ...mirror(slot), ...mirror(HALF)], 0.3);
   const g = extrudeXY(s, SX1 - SX0, 0.08, 10, {free: true});
   g.rotateY(Math.PI / 2);
   g.translate((SX0 + SX1) / 2, 0, 0);
