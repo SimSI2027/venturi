@@ -205,7 +205,9 @@ export function buildBody(index) {
   // run 12 (item 6): the 2 cover bolt bosses in the housing, where the cover's bolts (70, linkage.js) go in: the upper one
   // at the engine side, the lower one in the lobe toward the air box; hollow, from the floor out to the cover's gasket face
   for (const [bx, by] of [c3(495, 160), c3(345, 445)]) g.push(orient(tappedY(0.5, mm(2.4), 0, -CUPZ - TZ - 0.1, 0.85), [0, 0, -1], [bx, by, -TZ])); // run 14: M5 tapped, 9 mm deep
-  g.push(slabZ(SHIELD, -TZ - 0.15, 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 8, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
+  // run 14 (item 7, cmp_4): the pocket is 8 mm deep (floor face at -3.65, rim at the cover's face -4.4) with a rib along its wall: a ledge
+  // 0.23 wide and 3.6 mm high on the wall's inner face, standing from the floor
+  g.push(slabZ(SHIELD, -3.5, 0.3), slabZ(inset(SHIELD, 0.35), -3.82, 0.34, [inset(SHIELD, 0.58)], 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 8, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
   const SF = SENS + 0.22;
@@ -296,13 +298,17 @@ export function buildBody(index) {
   ]));
   const ARM = [-0.54, 3.34]; // the arm's pin (x, y): mine_4's spring's upper end
   const aL = Math.hypot(ARM[0] - SHX, ARM[1] - SHY), aA = Math.atan2(ARM[1] - SHY, ARM[0] - SHX);
-  const arm = merge([rbox(aL, 0.42, 0.12, 0.05).translate(aL / 2, 0, 0), cylY(0.4, -0.06, 0.06).rotateX(Math.PI / 2)]).rotateZ(aA).translate(0, 0, WZ + 0.07);
+  // run 14 (item 7): the lever below the wheel is black plastic, a paddle from an eye round the shaft to a foot with the pin's hole, between
+  // the pocket floor and the wheel (z -3.65 to -3.8)
+  const lv = rpoly([[0, -0.42, 0.4], [aL, -0.5, 0.45], [aL, 0.5, 0.45], [0, 0.42, 0.4]], 0.4);
+  lv.holes.push(circ(0, 0, 0.23), circ(aL, 0, 0.1));
+  const arm = extrudeXY(lv, 0.15, 0.04, 10, {free: true}).rotateZ(aA).translate(0, 0, -3.725 - 0);
   const apin = orient(cylY(0.09, 0, 0.32), [0, 0, -1], [ARM[0] - SHX, ARM[1] - SHY, WZ + 0.07]);
   const cream = A.M.plastic.clone();
   cream.color.set(0xd9d2b0); // pale cream, as the owner's photos show it (run 11's brass was too saturated)
   cream.roughness = 0.55;
   const pulley = mk(orient(wheel, [0, 0, -1], [0, 0, WZ]), cream);
-  A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(merge([arm, apin]), steel)), 'K12');
+  A.add(part([SHX, SHY, 0], shaft, pulley, mk(orient(slots, [0, 0, -1], [0, 0, WZ]), A.M.rubber), mk(apin, steel), mk(arm, A.M.plastic)), 'K12');
   // the return spring (Keihin 14): from the arm's pin down to a post on the cup's floor, toward the air box (mine_4)
   const POST = [0.6, 2.74], sd = [ARM[0] - POST[0], ARM[1] - POST[1]], sL = Math.hypot(...sd), SZW = WZ - 0.15;
   // run 14 (item 6, Keihin 14): a torsion spring: a short coil with a straight leg to each end, not a long compression coil
