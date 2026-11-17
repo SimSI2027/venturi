@@ -6,9 +6,12 @@
 // fiche and the manual's drawings: no real dimensions.
 import * as THREE from 'three';
 import {rbox, extrudeXY, rpoly, circ, spring as springX, smooth, merge, at} from '../lib/geo.js';
+/** rpoly with each corner's steps following its turn and radius (run 15): for the big castings only. */
+export const rpolyA = (pts, r, path) => rpoly(pts, r, path, true);
 import {MM} from '../stage.js';
 
 export {THREE, rbox, extrudeXY, rpoly, circ, merge, at, smooth};
+
 const Y = new THREE.Vector3(0, 1, 0);
 /** A real size in mm, as sketch units. */
 export const mm = (v) => v / MM;

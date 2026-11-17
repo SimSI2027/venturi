@@ -3,7 +3,7 @@
 // Run 8: H = 16.55 cm, top cover (y 8.11) to bowl bottom (y -8.44); bore-axis length 8.5 = 0.51 H. The 2 new photos
 // (carb_7 engine side, carb_8 air-box side) put the ENGINE at -X and the AIR BOX at +X (run 7 had them swapped).
 import {Asm} from '../lib/asm.js';
-import {THREE, rbox, extrudeXY, rpoly, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, fastenerY, tappedY, tappedAt, torsionSpring, mk, part, mm} from './kit.js';
+import {THREE, rbox, extrudeXY, rpoly, rpolyA, circ, merge, at, latheY, cylY, tubeY, hexY, orient, springY, screwY, fastenerY, tappedY, tappedAt, torsionSpring, mk, part, mm} from './kit.js';
 
 export const BORE_R = mm(19.5); // run 9: the 39 bore (sketch units, baked into mm by toMM)
 // run 8 proportions (carb_7, along the bore), H = top cover to bowl bottom = 16.55 (the bore ring, 4.8 across, is
@@ -89,9 +89,9 @@ export const RIM = [[-2.0, -3.45], [-0.2, -3.5], [1.3, -3.45], [2.0, -3.45], [2.
   [-3.35, -2.9], [-3.25, -3.3, 0.3], [-2.9, -3.45]].map(([x, z, r = 0.2]) => [FX(x), ZM(ZS(z)), r]);
 /** An outline in (x, z), extruded along Y (thickness t, centred at y), rounded edges, an optional hole outline. */
 export function slabY(pts, y, t, hole = null, r = 0.3) {
-  const s = rpoly(pts, r);
-  if (hole) s.holes.push(rpoly(hole, 0.5, new THREE.Path()));
-  return extrudeXY(s, t, 0.08, 8, {free: true}).rotateX(Math.PI / 2).translate(0, y, 0);
+  const s = rpolyA(pts, r);
+  if (hole) s.holes.push(rpolyA(hole, 0.5, new THREE.Path()));
+  return extrudeXY(s, t, 0.08, 16, {free: true}).rotateX(Math.PI / 2).translate(0, y, 0); // run 15 (item 8): corners at 16 steps again
 }
 const mirror = (h) => h.slice().reverse().map(([z, y, r]) => [-z, y, r]);
 export const OUTLINE = [...HALF, ...mirror(HALF)];
@@ -138,10 +138,10 @@ export function slabZ(pts, z, dz, holes = [], r = 0.3) {
 
 /** An outline in (z, y), extruded along X from x0 to x1 with rounded edges, the bore cut through. */
 function outlineX(pts, x0, x1, holeR) {
-  const s = rpoly(pts, 0.3);
-  // run 14 (triangle budget): the bore's circle is 72 explicit points (not counted by curveSegments), the outline's rounded corners 8 steps
+  const s = rpolyA(pts, 0.3);
+  // run 14 (triangle budget): the bore's circle is 72 explicit points (not counted by curveSegments), the outline's rounded corners 8 steps (run 15, item 8: 16)
   if (holeR) { const h = new THREE.Path(); for (let i = 0; i < 72; i++) { const a = (i / 72) * Math.PI * 2; i ? h.lineTo(Math.cos(a) * holeR, Math.sin(a) * holeR) : h.moveTo(Math.cos(a) * holeR, Math.sin(a) * holeR); } h.closePath(); s.holes.push(h); }
-  const g = extrudeXY(s, x1 - x0, 0.12, 8, {free: true});
+  const g = extrudeXY(s, x1 - x0, 0.12, 16, {free: true});
   g.rotateY(Math.PI / 2); // depth -> x, shape x -> -z
   g.translate((x0 + x1) / 2, 0, 0);
   return g;
@@ -161,8 +161,8 @@ const SX0 = -0.95, SX1 = 0.55, SZ = 2.75, SY = -1.9; // run 15 (item 5): the cav
 function cavitySection() {
   const T = TOWER.top, ZT = 2.3, YT = T - 1.0;
   const slot = [[ZT, T, 0.05], [ZT, YT, 0.05], [SZ, YT - 0.25, 0.05], [SZ, SY, 0.05]];
-  const s = rpoly([...HALF, ...slot, ...mirror(slot), ...mirror(HALF)], 0.3);
-  const g = extrudeXY(s, SX1 - SX0, 0.08, 10, {free: true});
+  const s = rpolyA([...HALF, ...slot, ...mirror(slot), ...mirror(HALF)], 0.3);
+  const g = extrudeXY(s, SX1 - SX0, 0.08, 16, {free: true});
   g.rotateY(Math.PI / 2);
   g.translate((SX0 + SX1) / 2, 0, 0);
   return g;
@@ -195,8 +195,8 @@ export function buildBody(index) {
   // cable side (-Z): the cable-wheel housing, a cup in the shield outline round the throttle wheel, out to CUPZ;
   // the cover (65) closes it
   // run 9 (carb_8): the wheel housing reads curved from the air-box end: its outer rim rounded off (bevel 0.3)
-  const cupS = rpoly(SHIELD, 0.3);
-  cupS.holes.push(rpoly(inset(SHIELD, 0.35), 0.21, new THREE.Path()));
+  const cupS = rpolyA(SHIELD, 0.3);
+  cupS.holes.push(rpolyA(inset(SHIELD, 0.35), 0.21, new THREE.Path()));
   // run 11: bevel 0.1 (was 0.3): on the 0.35 wall a 0.3 bevel from both the outline and the hole crossed, and the
   // cup triangulated as a solid face over the throttle wheel at the cover's plane (since run 9)
   // run 12 (item 6): the 2 cover bolt bosses in the housing, where the cover's bolts (70, linkage.js) go in: the upper one
@@ -204,7 +204,7 @@ export function buildBody(index) {
   for (const [bx, by] of [c3(495, 160), c3(345, 445)]) g.push(orient(tappedY(0.5, mm(2.4), 0, -CUPZ - TZ - 0.1, 0.85), [0, 0, -1], [bx, by, -TZ])); // run 14: M5 tapped, 9 mm deep
   // run 14 (item 7, cmp_4): the pocket is 8 mm deep (floor face at -3.65, rim at the cover's face -4.4) with a rib along its wall: a ledge
   // 0.23 wide and 3.6 mm high on the wall's inner face, standing from the floor
-  g.push(slabZ(SHIELD, -3.5, 0.3), slabZ(inset(SHIELD, 0.35), -3.82, 0.34, [inset(SHIELD, 0.58)], 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 8, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
+  g.push(slabZ(SHIELD, -3.5, 0.3), slabZ(inset(SHIELD, 0.35), -3.82, 0.34, [inset(SHIELD, 0.58)], 0.3), extrudeXY(cupS, -CUPZ - TZ, 0.1, 16, {free: true}).translate(0, 0, (CUPZ - TZ) / 2));
   // sensor side (+Z): the sensor housing in the plate's outline, out to SENS + 0.22, where the flat cover plate (59)
   // and its gasket (61) sit
   const SF = SENS + 0.22;
@@ -294,13 +294,14 @@ export function buildBody(index) {
   // inside: the cavity's 2 guide faces (machined strips on its engine-side wall, where the 4 rollers run), the needle jet bore in the bore floor
   // (a machined ring round the nozzle's top), the accelerator pump nozzle aimed into the bore toward the engine
   const guides = [-1, 1].map((sz) => rbox(0.02, 6.0, 0.5, 0.008).translate(SX1 - 0.012, 3.2, sz * 2.5));
-  const boreM = mk(merge([ring(-SP, SX0), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
+  const LIP = mm(5); // run 15 (item 8): the bore's wall is bright only within 5 mm of each lip, dark beyond
+  const boreM = mk(merge([ring(-SP, -SP + LIP), ring(ADAPT - LIP, ADAPT), ...guides, tubeY(0.45, 0.29, -BORE_R - 0.07, -BORE_R + 0.05).translate(-0.2, 0, 0)]), bore);
   // run 14 (item 8): the air-box half of the bore is dark inside (owner's mine_1: black); the engine half stays bright machined steel
   const boreDark = A.M.bore.clone();
   boreDark.color.set(0x0b0c0e);
   boreDark.metalness = 0.1;
   boreDark.roughness = 0.9;
-  const boreD = mk(ring(SX1, ADAPT), boreDark);
+  const boreD = mk(merge([ring(-SP + LIP, SX0), ring(SX1, ADAPT - LIP)]), boreDark);
   const nozzle = mk(orient(merge([tubeY(0.11, 0.05, 0, 0.55), cylY(0.17, 0, 0.12)]), [0.55, 0.85, 0], [-2.0, -BORE_R + 0.02, 0]), brass);
   // throttle shaft across the tower top, its lift lever down to the slide's lug, and on its -Z end (in the cup,
   // under the cable cover) the throttle wheel with its cable groove and the return spring behind it

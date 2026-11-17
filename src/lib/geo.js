@@ -70,7 +70,7 @@ export function threadPts(x0, x1, r, d, count) {
 }
 
 /** Polygon with filleted corners. pts = [[x, y, r?], ...]. Works for Shape and Path (holes). */
-export function rpoly(pts, rdef = 0.15, path = new THREE.Shape()) {
+export function rpoly(pts, rdef = 0.15, path = new THREE.Shape(), adaptive = false) {
   const n = pts.length;
   for (let i = 0; i < n; i++) {
     const p = pts[i];
@@ -85,7 +85,11 @@ export function rpoly(pts, rdef = 0.15, path = new THREE.Shape()) {
     const p2 = [p[0] + ((b[0] - p[0]) / db) * rb, p[1] + ((b[1] - p[1]) / db) * rb];
     if (i === 0) path.moveTo(p1[0], p1[1]);
     else path.lineTo(p1[0], p1[1]);
-    if (r > 0) path.quadraticCurveTo(p[0], p[1], p2[0], p2[1]);
+    if (r > 0 && adaptive) { // run 15: the corner's steps follow its turn and its radius (16 for a right angle at r >= 0.3), as straight pieces
+      const ux = (p[0] - p1[0]) / (ra || 1), uy = (p[1] - p1[1]) / (ra || 1), vx = (p2[0] - p[0]) / (rb || 1), vy = (p2[1] - p[1]) / (rb || 1);
+      const turn = Math.acos(Math.max(-1, Math.min(1, ux * vx + uy * vy))), steps = Math.max(2, Math.ceil(16 * (turn / (Math.PI / 2)) * Math.min(1, 0.25 + r / 0.4)));
+      for (let k = 1; k <= steps; k++) { const t = k / steps, s = 1 - t; path.lineTo(s * s * p1[0] + 2 * s * t * p[0] + t * t * p2[0], s * s * p1[1] + 2 * s * t * p[1] + t * t * p2[1]); }
+    } else if (r > 0) path.quadraticCurveTo(p[0], p[1], p2[0], p2[1]);
   }
   path.closePath();
   return path;
