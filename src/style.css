@@ -291,10 +291,12 @@ html, body { background: var(--iw-bg); }
 .vt-modes .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
 .vt-modes .s { display: none; }
 .iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pills { display: none; }
-.vt-step { position: absolute; left: 28px; top: 112px; width: 300px; padding: 14px 16px 12px; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
+.vt-step { position: absolute; left: 28px; top: 112px; width: 300px; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
   font-variant-caps: normal; letter-spacing: 0.03em; opacity: 0; pointer-events: none; transform: translateY(-4px); z-index: 4;
   transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
-  max-height: calc(100% - 112px - 120px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
+  max-height: calc(100% - 112px - 120px); }
+/* run 17 (item 9): the card's text scrolls in .vt-sb above the Back / Done / Next bar, which is its own row, opaque, so no text ever sits behind it */
+.vt-sb { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 6px; scrollbar-width: thin; scrollbar-color: #3a3730 transparent; }
 .vt-step.show { opacity: 1; pointer-events: auto; transform: none; }
 .vt-step.show.away { opacity: 0; pointer-events: none; }
 .vt-sh { display: flex; align-items: baseline; gap: 8px; }
@@ -318,8 +320,8 @@ html, body { background: var(--iw-bg); }
 .vt-prog i.d { background: #c9a24b; opacity: 1; }
 .vt-prog i.c { outline: 1px solid var(--iw-fg); outline-offset: 1px; }
 .vt-pl { margin-top: 5px; font-size: 13px; color: var(--iw-dim); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
-.vt-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px -16px -12px; padding: 8px 16px 12px;
-  position: sticky; bottom: -12px; background: rgba(14, 15, 18, 0.96); }
+.vt-nav { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 16px 12px;
+  background: #0e0f12; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .vt-nav .iw-btn { font-size: 15px; padding: 5px 16px; }
 .vt-nav .iw-btn:disabled { opacity: 0.35; cursor: default; border-color: var(--iw-line); }
 .vt-nav label { display: flex; align-items: center; gap: 6px; font-size: 15px; letter-spacing: 0.08em; cursor: pointer; }
@@ -350,12 +352,13 @@ html, body { background: var(--iw-bg); }
   .vt-modes .l { display: none; }
   .vt-modes .s { display: inline; }
   .vt-modes .iw-btn i { display: none; }
-  .vt-step { left: 12px; right: 12px; width: auto; top: auto; bottom: 84px; max-height: 42vh; padding: 10px 12px; }
+  .vt-step { left: 12px; right: 12px; width: auto; top: auto; bottom: 84px; max-height: 42vh; }
+  .vt-sb { padding: 10px 12px 4px; }
   .vt-sh b { font-size: 24px; }
   .vt-st { font-size: 18px; margin: 4px 0 6px; }
   .vt-note, .vt-call { font-size: 14px; }
   .vt-prog { margin-top: 6px; }
-  .vt-nav { margin: 6px -12px -10px; padding: 6px 12px 10px; bottom: -10px; }
+  .vt-nav { padding: 6px 12px 10px; }
 }
 /* run 3: one easing for every UI transition; the "?" controls card */
 .iw, .iw * { transition-timing-function: cubic-bezier(.65, 0, .35, 1); }

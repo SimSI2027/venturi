@@ -390,7 +390,7 @@ export function createStage(canvas) {
     }
     return null;
   };
-  const S = {THREE, renderer, scene, camera, composer, outline, noOutline, size, resize, project, select, setTier, degrade, crossfade, key, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
+  const S = {THREE, renderer, scene, camera, composer, outline, noOutline, size, resize, project, select, setTier, degrade, crossfade, key, rim, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
   S.render = () => composer.render();
   return S;
 }

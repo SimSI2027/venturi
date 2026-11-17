@@ -129,14 +129,14 @@ export function createGuide({el, ui, body, go, onPart}) {
     const N = M.steps.length;
     const names = partLine(s.parts);
     card.innerHTML =
-      `<div class="vt-sh"><span>${esc(M.label)}</span><b>${nn(s.n)}</b><i>/ ${N}</i></div>` +
+      `<div class="vt-sb"><div class="vt-sh"><span>${esc(M.label)}</span><b>${nn(s.n)}</b><i>/ ${N}</i></div>` +
       `<div class="vt-st">${esc(s.title)}</div>` +
       (s.added ? `<div class="vt-add">${esc(ADDED_STEP)}</div>` : '') +
       (names.length ? `<div class="vt-sp">${s.parts.map((id, k) => `<button data-id="${esc(id)}">${esc(names[k])}</button>`).join('')}</div>` : '') +
       (s.note ? `<div class="vt-note">${esc(s.note)}</div>` : '') +
       s.calls.map((c) => `<div class="vt-call">${esc(c)}</div>`).join('') +
       `<div class="vt-prog" style="--n:${N}">${M.steps.map((t) => `<i class="${isDone(G.mode, t.n) ? 'd' : ''}${t.n === s.n ? ' c' : ''}"></i>`).join('')}</div>` +
-      `<div class="vt-pl">${count(G.mode)} of ${N} done</div>` +
+      `<div class="vt-pl">${count(G.mode)} of ${N} done</div></div>` +
       `<div class="vt-nav"><button class="iw-btn" data-go="-1"${s.n === 1 ? ' disabled' : ''}>Back</button><label><input type="checkbox"${isDone(G.mode, s.n) ? ' checked' : ''}> Done</label><button class="iw-btn" data-go="1"${s.n === N ? ' disabled' : ''}>Next</button></div>`;
     card.classList.add('show');
   }

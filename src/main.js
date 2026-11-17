@@ -722,6 +722,25 @@ async function main() {
   const autoLoose = () => (bare() ? subjectPts(hoseAsm.group) : []);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
+  // run 17 (item 9): the lights sit fixed in the room, so a guided step seen from below or from the cable side lit the castings at 37-42% against 49% in
+  // EXPLORE's first view. In a guided step the whole rig turns by the angle between that first view and the step's view, once per step (the key's shadow
+  // is redrawn once), so the castings are lit the way they are in EXPLORE.
+  const EXPOSURE = S.renderer.toneMappingExposure;
+  const RIG = [S.key, S.rim, S.under, S.cool];
+  const RIG0 = RIG.map((l) => l.position.clone());
+  const rigQ = new THREE.Quaternion();
+  let rigKey = '';
+  function turnRig() {
+    const k = guide.mode ? `${guide.mode}${guide.n}` : '';
+    if (k === rigKey) return;
+    rigKey = k;
+    const d = (guide.mode ? guideDir() : HERO_DIR).clone().normalize();
+    rigQ.setFromUnitVectors(HERO_DIR.clone().normalize(), d);
+    // measured at 800 x 500 on HIGH: with the rig turned the castings still read 42-46% from the cable side and 44-46% from above and below (EXPLORE 45%)
+    S.renderer.toneMappingExposure = EXPOSURE * (guide.mode ? (d.z < -0.3 ? 1.18 : d.y > 0.8 ? 1.09 : 1.05) : 1);
+    RIG.forEach((l, i) => l.position.copy(RIG0[i]).applyQuaternion(rigQ));
+    S.renderer.shadowMap.needsUpdate = true;
+  }
   const followFrom = (dur = 0.9) => (view.follow = {from: {t: controls.target.clone(), p: camera.position.clone()}, t0: performance.now(), dur: dur * 1000});
   function flyTo(dur = 1.2) {
     view.user = false;
@@ -1207,6 +1226,7 @@ async function main() {
     if (solo.part && solo.T.v <= 0 && solo.T.to === 0) solo.part = null;
     if (solo.part) placeSolo(solo.T.v);
 
+    turnRig();
     // dimming: a selection dims every other part; a pill dims every other group
     const sel = solo.part && solo.T.to > 0 ? solo.part : null;
     aim(selT, sel ? 1 : 0, now);
