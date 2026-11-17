@@ -341,7 +341,7 @@ const CK = {
   jet: 'Bent, worn or damaged: replace. Blocked: blow out with compressed air.',
   six: 'Check (manual 6-6).',
 };
-export const CHECKS = {'1': CK.body, '1-bowl': CK.body, '21': 'Float or tang damaged: replace.', '23': CK.valve, K36: CK.valve, '9': CK.slide, '11': CK.slide,
+export const CHECKS = {'1': CK.body, '1-bowl': CK.body, '21': 'Float or tang damaged: replace.', '23': CK.valve, K36: CK.valve, '9': CK.slide, '11': 'Scratched, worn or damaged: replace.',
   '48': 'Bent, worn or damaged: replace. Clip groove worn or loose: replace.', '1-mainjet': CK.jet, '17': CK.jet, '18': CK.jet, '19': CK.jet, '20': CK.jet, '77': CK.jet,
   '28': CK.six, '78': CK.six, '30': CK.six, '79': CK.six};
 export const checkLine = (id) => (CHECKS[id] ? (/^Check/.test(CHECKS[id]) ? CHECKS[id] : `Check: ${CHECKS[id]}`) : null);
