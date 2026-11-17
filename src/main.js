@@ -1180,7 +1180,7 @@ async function main() {
     const gOut = sel ? [] : guide.mode ? curParts().map((p) => p.obj).filter((o) => o.visible) : [];
     const gLab = gOut[0] || null;
     if (!ph && gLab && hovered !== gLab) anchor.copy(gLab.worldToLocal(new THREE.Box3().setFromObject(gLab).getCenter(new THREE.Vector3())));
-    setHover(sel ? null : ph || gLab);
+    setHover(sel ? null : ph || (S.size.w < 480 ? null : gLab)); // run 15 (item 10): on a phone the step panel names the part (its first button), no 3D label over the carburetor
     guideLab = !ph && !!gLab && hovered === gLab;
     const olKey = [hovered, ...gOut].map((o) => o?.id).join();
     if (olKey !== lastOl) S.select([hovered, ...gOut].filter((o, k, a) => o && a.indexOf(o) === k)), (lastOl = olKey), olVer++;
