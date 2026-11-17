@@ -53,12 +53,26 @@ export function hexY(r, y0, y1) {
 export const oring = (R, r) => new THREE.TorusGeometry(R, Math.max(r, 0.045), 14, Math.max(24, Math.round(R * 40))).rotateX(Math.PI / 2); // run 14: 14 sides round the section (the creased normals broke 10 into a bevelled ring)
 /** Coil spring along +Y from 0 to len. */
 export const springY = (len, R, wire, turns) => springX(len, R, Math.max(wire, 0.035), turns, {endTurns: 1}).rotateZ(Math.PI / 2);
-/** Screw along -Y: pan head on top (y 0..headH), threaded shank down to -len. Slot across the head. */
+/** Run 15 (correction 31): the real thread pitch in sketch units for a thread of radius r (u): M4 0.7 mm, M5 0.8 mm, M3 0.5 mm... */
+export function threadPitch(r) {
+  const m = r * MM;
+  return mm(m <= 1.1 ? 0.4 : m <= 1.35 ? 0.45 : m <= 1.75 ? 0.5 : m <= 2.25 ? 0.7 : m <= 2.75 ? 0.8 : m <= 3.5 ? 1.0 : m <= 4.5 ? 1.25 : 1.5);
+}
+/** A thread's depth: 12% of the radius, never over 0.4 mm. */
+export const threadDepth = (r) => Math.min(mm(0.4), r * 0.12);
+/** Thread rings from y = top down to the bottom (or the tenth ring): returns [y, r] points down the shank (crest r, root r - depth) and the y where they stop. */
+function ringsDown(top, room, r, dep = threadDepth(r), p = threadPitch(r)) {
+  const n = Math.max(0, Math.min(10, Math.floor(room / p))), pts = [];
+  for (let i = 0; i < n; i++) pts.push([top - i * p, r], [top - (i + 0.5) * p, r - dep]);
+  return {pts, end: top - n * p};
+}
+/** Screw along -Y: pan head on top (y 0..headH), shank down to -len with fine thread rings at the real pitch, at most 10, at the tip. */
 export function screwY(len, rHead, rShank, headH = rHead * 0.7) {
   const pts = [[headH, 0], [headH, rHead * 0.7], [headH * 0.75, rHead * 0.95], [headH * 0.3, rHead], [0, rHead], [0, rShank]];
-  const n = Math.max(3, Math.round(len / (rShank < 0.15 ? 0.2 : rShank < 0.25 ? 0.17 : 0.13))); // run 13: shanks under 3 mm across: fewer thread rings; run 14: M4 and up a little coarser
-  for (let i = 0; i < n; i++) pts.push([-(i / n) * (len - 0.1), rShank], [-((i + 0.5) / n) * (len - 0.1), rShank * 0.86]);
-  pts.push([-len + 0.06, rShank * 0.86], [-len, rShank * 0.6], [-len, 0]);
+  const body = len - 0.1, p = threadPitch(rShank), n = Math.max(0, Math.min(10, Math.floor(body / p)));
+  const top0 = -(body - n * p); // run 15: the rings sit at the tip, the plain shank under the head
+  const t = ringsDown(top0, n * p + 1e-6, rShank), tipR = n ? rShank - threadDepth(rShank) : rShank;
+  pts.push(n ? t.pts[0] : [top0, rShank], ...t.pts.slice(1), [t.end, tipR], [-len + 0.06, tipR], [-len, rShank * 0.6], [-len, 0]);
   return latheY(pts.reverse(), segs(rHead)); // bottom to top: outward normals
 }
 /** Hex-head bolt along -Y, flange washer under the head. */
@@ -138,10 +152,11 @@ export function jetY(len, r, hexR = r * 1.35, hexH = 0.25) {
   const head = extrudeXY(hex, hexH, 0.03, 12, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, hexH / 2, 0);
   return merge([head, threadTubeY(len, r, bore)]);
 }
-/** A threaded tube along -Y from y 0 down to -len: outer radius ro (the thread's rings down to 0.86 ro), bore ri, open at both ends. */
-export function threadTubeY(len, ro, ri, pitch = ro < 0.15 ? 0.2 : 0.15) {
-  const n = Math.max(3, Math.round(len / pitch)), step = len / n, pts = [[-len, ri], [-len, ro * 0.9]];
-  for (let k = 0; k < n; k++) pts.push([-len + (k + 0.3) * step, ro * 0.86], [-len + (k + 0.75) * step, ro]);
+/** A threaded tube along -Y from y 0 down to -len: outer radius ro (fine rings at the real pitch, at most 10, the crest ro, the root 12% less), bore ri, open at both ends. */
+export function threadTubeY(len, ro, ri, pitch = threadPitch(ro)) {
+  const dep = threadDepth(ro), n = Math.max(0, Math.min(10, Math.floor(len / pitch))), y0 = -len + n * pitch;
+  const pts = [[-len, ri], [-len, ro - dep]];
+  for (let k = 0; k < n; k++) pts.push([-len + (k + 0.5) * pitch, ro - dep], [-len + (k + 1) * pitch, ro]);
   pts.push([0, ro], [0, ri]); // the loop goes up the outer wall (outward normals), across the top, down the bore
   return latheY(pts, 24);
 }
@@ -172,33 +187,36 @@ export function diaphragmY(R, t, pr) {
 
 // ---- run 14 (items 2-4): real fastener heads with a drive recess at least 1 mm deep, flat seats, through and threaded holes
 export const DRIVE_DEPTH = mm(1.15);
-/** The drive recess outline (a hole Path, radius r about the axis): hex socket, 6-lobe Torx or Phillips cross. */
+/** The drive recess outline (a hole Path, radius r about the axis): hex socket, 6-lobe Torx, flat slot or Phillips cross. */
 function driveHole(kind, r) {
   const p = new THREE.Path();
   const pts = [];
   if (kind === 'hex') for (let i = 0; i < 6; i++) pts.push([Math.cos((i * Math.PI) / 3) * r, Math.sin((i * Math.PI) / 3) * r]);
   else if (kind === 'torx') for (let i = 0; i < 48; i++) { const a = (i / 48) * Math.PI * 2, k = 0.5 + 0.5 * Math.cos(6 * a); pts.push([Math.cos(a) * r * (0.72 + 0.28 * k ** 0.6), Math.sin(a) * r * (0.72 + 0.28 * k ** 0.6)]); }
-  else if (kind === 'slot') pts.push([r, -r * 0.2], [-r, -r * 0.2], [-r, r * 0.2], [r, r * 0.2]);
-  else { // cross: 2 slots r long and 0.3 r wide
-    const w = r * 0.3, l = r;
+  else if (kind === 'slot') pts.push([r, -r * 0.22], [-r, -r * 0.22], [-r, r * 0.22], [r, r * 0.22]);
+  else { // cross: 2 slots r long and 0.4 r wide (run 15: wider, so it shows at small heads)
+    const w = r * 0.2, l = r;
     pts.push([l, -w], [w, -w], [w, -l], [-w, -l], [-w, -w], [-l, -w], [-l, w], [-w, w], [-w, l], [w, l], [w, w], [l, w]);
   }
   pts.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
   p.closePath();
   return p;
 }
-/** A fastener head along +Y, base at y 0, top at headH: a solid body, then a ring on it whose hole is the drive recess
- * (depth DRIVE_DEPTH, floored by the body), the ring's outer top edge rounded. drive: 'hex' | 'torx' | 'cross'. */
+/** A fastener head along +Y, base at y 0, top at headH: a lathe body with a chamfered rim, a flat top ring round the recess, and
+ * the recess itself (depth DRIVE_DEPTH) as the hole of a bevel-free extrusion, over a conical floor so the drive reads at any size.
+ * drive: 'hex' | 'torx' | 'cross' | 'slot'. */
 export function headY(rHead, headH, drive = 'cross', depth = DRIVE_DEPTH) {
-  const top = Math.max(0.03, headH - depth), seg = segs(rHead);
-  const body = latheY([[0, 0], [0, rHead - 0.02], [0.02, rHead], [top, rHead], [top, 0]], seg);
-  const ring = new THREE.Shape();
-  // the ring's outline is the lathe body's own polygon (same vertices), so the two never show corners past each other
-  for (let i = 0; i < seg; i++) { const f = (i / seg) * Math.PI * 2, x = Math.sin(f) * rHead, y = -Math.cos(f) * rHead; i ? ring.lineTo(x, y) : ring.moveTo(x, y); }
-  ring.closePath();
-  ring.holes.push(driveHole(drive, rHead * (drive === 'hex' ? 0.55 : drive === 'torx' ? 0.5 : drive === 'slot' ? 0.9 : 0.62)));
-  const r = extrudeXY(ring, headH - top, 0.04, rHead < 0.2 ? 8 : 16, {free: true, bevelSegments: 1}).rotateX(-Math.PI / 2).translate(0, (top + headH) / 2, 0);
-  return merge([body, r]);
+  const top = Math.max(0.03, headH - depth), seg = segs(rHead), ch = Math.min(0.03, rHead * 0.15);
+  const Rr = rHead * (drive === 'hex' ? 0.55 : drive === 'torx' ? 0.5 : drive === 'slot' ? 0.9 : 0.62), dip = Math.min(top * 0.9, Rr * 0.5);
+  const R2 = Rr * 1.2; // the extruded inner disc and the rim's annulus meet at this radius
+  const body = latheY([[0, 0], [0, rHead - 0.02], [0.02, rHead], [top, rHead], [top, R2], [top, Rr], [top - dip, 0]], seg);
+  const rim = latheY([[top, R2], [top, rHead], [headH - ch, rHead], [headH, rHead - ch], [headH, R2], [top, R2]], seg);
+  const disc = new THREE.Shape();
+  for (let i = 0; i < seg; i++) { const f = (i / seg) * Math.PI * 2, x = Math.sin(f) * R2, y = -Math.cos(f) * R2; i ? disc.lineTo(x, y) : disc.moveTo(x, y); }
+  disc.closePath();
+  disc.holes.push(driveHole(drive, Rr));
+  const d = new THREE.ExtrudeGeometry(disc, {depth: headH - top, bevelEnabled: false, curveSegments: 1}).rotateX(-Math.PI / 2).translate(0, top, 0);
+  return merge([body, rim, d]);
 }
 /** A screw or bolt along -Y: a real head (base y 0, top headH) with its drive recess and a threaded shank down to -len. */
 export function fastenerY(len, rHead, rShank, headH, drive = 'cross') {
@@ -207,10 +225,10 @@ export function fastenerY(len, rHead, rShank, headH, drive = 'cross') {
 /** A boss along Y from y0 up to y1 (outer radius ro) with a threaded blind hole (thread radius ri, the thread's rings
  * between ri and 0.86 ri) of the given depth from the top; the floor closes it. */
 export function tappedY(ro, ri, y0, y1, depth) {
-  const n = Math.max(3, Math.round(depth / 0.15));
+  const dep = threadDepth(ri), p = threadPitch(ri), n = Math.max(0, Math.min(10, Math.floor((depth - 0.06) / p)));
   const pts = [[y0, 0], [y0, ro], [y1, ro], [y1, ri + 0.02]];
-  for (let i = 0; i < n; i++) pts.push([y1 - (i / n) * (depth - 0.06), ri], [y1 - ((i + 0.5) / n) * (depth - 0.06), ri * 0.86]);
-  pts.push([y1 - depth, ri * 0.86], [y1 - depth, 0]);
+  for (let i = 0; i < n; i++) pts.push([y1 - i * p, ri], [y1 - (i + 0.5) * p, ri - dep]);
+  pts.push([y1 - Math.max(n * p, 0.02), ri - dep], [y1 - depth, ri - dep], [y1 - depth, 0]);
   return latheY(pts, segs(ro));
 }
 /** A plate in the XZ plane (axis Y): outline pts [x, z, r], round through-holes [[x, z, r]] , centred at height yc, thickness t. */

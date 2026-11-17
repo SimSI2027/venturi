@@ -31,6 +31,6 @@ export function buildFloat(index) {
   scr.absarc(0, 0, 0.16, 0, Math.PI * 2, false);
   [[0, 0], ...Array.from({length: 6}, (_, i) => [Math.cos((i * Math.PI) / 3) * 0.09, Math.sin((i * Math.PI) / 3) * 0.09])].forEach(([x, y]) => scr.holes.push(circ(x, y, 0.03)));
   A.add(part([1.2, -4.15, 0], mk(merge([tubeY(0.16, 0.12, 0, 0.3), extrudeXY(scr, 0.05, 0.01, 12, {free: true}).rotateX(-Math.PI / 2).translate(0, 0.28, 0)]), steel)), 'K44', {ex: [2.6, 2.4, 0], order: 0.8});
-  A.add(part([1.2, -4.45, 0.52], mk(fastenerY(0.35, 0.17, 0.08, 0.16, 'cross').rotateX(Math.PI), steel)), 'K38', {ex: [1.2, -0.6, 1.4], order: 0.68});
+  A.add(part([1.2, -4.45, 0.52], mk(fastenerY(0.35, 0.17, 0.08, 0.16, 'slot').rotateX(Math.PI), steel)), 'K38', {ex: [1.2, -0.6, 1.4], order: 0.68});
   return lift(A, UY);
 }
