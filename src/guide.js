@@ -33,7 +33,7 @@ for (const s of STEPS_B) for (const id of s.parts) {
 for (const id of KPIECES) if (PIECES[id].step) (REMOVED_AT[id] = PIECES[id].step), (FITTED_AT[id] = N_B + 1 - PIECES[id].step);
 
 // v2: the steps were renumbered in run 6 (2 added steps), so the run-5 ticks would land on the wrong steps
-const KEY = {done: 'venturi.done.v2', notes: 'venturi.notes.v1', off: 'venturi.off.v1', step: 'venturi.step.v2'};
+const KEY = {done: 'venturi.done.v2', notes: 'venturi.notes.v1', off: 'venturi.off.v1', step: 'venturi.step.v2', fin: 'venturi.fin.v3', mig: 'venturi.mig.v51'};
 function load(k, fallback) {
   try {
     const v = JSON.parse(localStorage.getItem(k));
@@ -54,9 +54,21 @@ function save(k, v) {
  * onPart(id): a part named on the card was clicked.
  */
 export function createGuide({el, ui, body, go, onPart}) {
-  const done = load(KEY.done, {});
+  // run 24 (correction 51): progress follows position. Each mode saves its current step (last) and whether Done was ticked on its last step (fin);
+  // on step n, steps 1 to n-1 are done (and step n too when fin), however step n was reached. The run-23 ticks (venturi.done.v2) are cleared once.
+  try {
+    if (!localStorage.getItem(KEY.mig)) {
+      localStorage.removeItem(KEY.done);
+      localStorage.setItem(KEY.mig, '1');
+    }
+  } catch (e) {}
   const last = load(KEY.step, {});
-  for (const k of Object.keys(MODES)) done[k] = Array.isArray(done[k]) ? done[k].filter((n) => typeof n === 'number') : [];
+  const fin = load(KEY.fin, {});
+  for (const k of Object.keys(MODES)) {
+    const N = MODES[k].steps.length;
+    last[k] = Number.isInteger(last[k]) ? Math.min(Math.max(1, last[k]), N) : 1;
+    fin[k] = fin[k] === true && last[k] === N;
+  }
   const G = {mode: null, n: 1, last};
 
   // the step card
@@ -95,15 +107,8 @@ export function createGuide({el, ui, body, go, onPart}) {
     }, 250);
   });
 
-  const isDone = (m, n) => done[m].includes(n);
-  function setDone(m, n, v) {
-    done[m] = done[m].filter((k) => k !== n);
-    if (v) done[m].push(n);
-    save(KEY.done, done);
-    render();
-    G.onProgress?.();
-  }
-  const count = (m) => done[m].length;
+  const count = (m) => last[m] - 1 + (fin[m] ? 1 : 0);
+  const isDone = (m, n) => n <= count(m);
   G.progress = (m) => `${count(m)}/${MODES[m].steps.length}`;
 
   function renderList() {
@@ -118,7 +123,7 @@ export function createGuide({el, ui, body, go, onPart}) {
     const r = e.target.closest('.vt-srow');
     if (!r) return;
     const n = Number(r.dataset.n);
-    if (e.target.matches('input')) return setDone(G.mode, n, e.target.checked);
+    fin[G.mode] = false; // a click on a row or its checkbox goes to that step: steps n to 29 are not done
     go(G.mode, n);
   });
 
@@ -146,19 +151,19 @@ export function createGuide({el, ui, body, go, onPart}) {
     if (b?.dataset.id) return onPart(b.dataset.id);
     if (b?.dataset.go) return Number(b.dataset.go) > 0 ? G.next() : go(G.mode, G.n - 1);
   });
-  // run 23 (correction 50): Next marks the current step done and moves on; Back moves back and unticks nothing
   G.next = () => {
     const {mode, n} = G;
-    if (!mode || n >= MODES[mode].steps.length) return;
-    if (!isDone(mode, n)) setDone(mode, n, true);
-    go(mode, n + 1);
+    if (mode && n < MODES[mode].steps.length) go(mode, n + 1);
   };
-  // Done marks the step and moves on to the next one
+  // Done ticks the current step and moves to the next; on the last step it marks all of them done
   card.addEventListener('change', (e) => {
     if (!e.target.matches('input')) return;
     const {mode, n} = G;
-    setDone(mode, n, e.target.checked);
-    if (e.target.checked && n < MODES[mode].steps.length) go(mode, n + 1);
+    if (n < MODES[mode].steps.length) return go(mode, n + 1);
+    fin[mode] = e.target.checked;
+    save(KEY.fin, fin);
+    render();
+    G.onProgress?.();
   });
 
   function render() {
@@ -170,10 +175,13 @@ export function createGuide({el, ui, body, go, onPart}) {
     G.mode = m;
     if (m) {
       G.n = Math.min(Math.max(1, n || 1), MODES[m].steps.length);
+      if (G.n !== last[m]) fin[m] = false;
       last[m] = G.n;
       save(KEY.step, last);
+      save(KEY.fin, fin);
     }
     render();
+    G.onProgress?.();
   };
   G.step = () => (G.mode ? MODES[G.mode].steps[G.n - 1] : null);
   G.card = card;
