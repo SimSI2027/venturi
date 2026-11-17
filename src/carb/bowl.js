@@ -9,10 +9,11 @@
 // housing lobe on the cable side under the round 3-screw pump cover (pump.js). Built in carb space (sketch units).
 import {Asm} from '../lib/asm.js';
 import {THREE, merge, tubeY, hexY, orient, oring, screwY, fastenerY, tappedY, extrudeXY, rpoly, circ, hose, rbox, mk, part, mm, M4_HOLE} from './kit.js';
-import {HT, FLANGE, RIM, EARS, PLAN, inset} from './body.js';
+import {HT, RIM, EARS, PLAN, inset} from './body.js';
 
 // heights (carb space): the joint, the top lip under the gasket, the flange band, the belly's 2 floors, the boss
-export const BY = {lip: HT.joint - 0.1, band: -4.45, ear: -5.05, shallow: -6.4, deep: -7.35, boss: -8.42}; // run 10: deep floor 0.3 and plug boss 0.42 lower (carb_7: boss foot 90 under the bore)
+export const BY = {lip: HT.joint - 0.1, band: -4.45, ear: -5.05, shallow: -6.4, deep: -7.35, boss: -8.42};
+BY.earBot = BY.lip - mm(4); // run 15 (item 2): the 4 screw ears are 4 mm thick tabs at the joint (M4 x 12 = ear 4 + gasket 1 + 7 into the body's tapped holes) // run 10: deep floor 0.3 and plug boss 0.42 lower (carb_7: boss foot 90 under the bore)
 // run 10 (item 5): placed from the 4 screws of views 1 and 3, each keeping only its place relative to the screws in
 // carb_12 (scratch/bowlplan.mjs: carb_12's px cast onto the plane at the part's own height)
 export const PUMP = [0.77, -3.7]; // the pump's axis (x, z): its housing lobe out of the belly's cable side
@@ -81,7 +82,13 @@ export function buildBowl(index) {
   const g = merge([
     tier(RIM, BY.lip, BY.lip - 0.3, 0.08, BOX), // the top lip in the joint's outline, open
     tier(BOX, BY.lip - 0.25, BY.band, 0.1, inset(BOX, 0.32)), // the upper box: straight walls
-    tier(FLANGE, BY.band, BY.ear, 0.15, inset(BOX, 0.32), 0.25, EARS.map(([x, z]) => [x, z, M4_HOLE])), // the flange band stepping out, the 4 screw ears at its corners, each with its 4.5 mm through-hole (run 14)
+    tier(inset(RIM, -0.1), BY.band, BY.ear, 0.15, inset(BOX, 0.32)), // the flange band stepping out (run 15: no ears on it any more)
+    ...EARS.map(([x, z]) => { // run 15 (item 2): the 4 ears, 4 mm thick at the joint, each with its 4.5 mm through-hole
+      const sx = x > -0.5 ? 1 : -1, sz = z > 0 ? 1 : -1, x0 = x - sx * 0.35, x1 = x + sx * 0.6, z0 = z - sz * 0.35, z1 = z + sz * 0.6;
+      const q = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+      if (sx * sz < 0) q.reverse();
+      return tier(q, BY.lip, BY.earBot, 0.06, null, 0.4, [[x, z, M4_HOLE]]);
+    }),
     taper(tier(BELLY, BY.ear, BY.shallow, 0.12, inset(BELLY, 0.3))), // the belly's walls (run 12: tapering toward the drain)
     taper(tier(BELLY, BY.shallow + 0.32, BY.shallow, 0.25)), // its floor at the shallow end
     taper(tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3)), // the deeper step under the jets
@@ -94,7 +101,7 @@ export function buildBowl(index) {
   ]);
   // the drain nipple (pipe 71 goes in it), the machined mating face round the top lip
   // run 14 (item 4): the flat machined seat under each screw head: a washer face round each ear hole, 0.5 mm proud of the band's foot
-  const seats = merge(EARS.map(([x, z]) => tubeY(mm(4.6), M4_HOLE, BY.ear - 0.05, BY.ear + 0.02, 0.015).translate(x, 0, z)));
+  const seats = merge(EARS.map(([x, z]) => tubeY(mm(4.6), M4_HOLE, BY.earBot - 0.05, BY.earBot + 0.02, 0.015).translate(x, 0, z)));
   const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep - 0.2).translate(DX, 0, DZ);
   const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.04, BOX);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
@@ -116,7 +123,7 @@ export function buildBowl(index) {
   A.add(part([0, HT.joint - 0.05, 0], mk(tier(RIM, 0.05, -0.05, 0.03, inset(RIM, 0.3)), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
   // 5 screws: 4 Phillips pan heads, M4 x 12, up through the corner ears of the flange band
   const sc = fastenerY(mm(12), mm(3.5), mm(2), mm(2.6), 'cross').rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)
-  A.add(part([0, BY.ear - 0.02, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
+  A.add(part([0, BY.earBot - 0.02, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
   // 26 drain screw: a slotted screw up into its boss on the shallow end
   A.add(part([SX, BY.shallow - 0.45, SZ], mk(fastenerY(mm(9), mm(3.2), mm(2.5), mm(2.4), 'cross').rotateX(Math.PI), steel)), '26', {ex: [0, -2.4, 0], order: 0.1, axis: [0, -1, 0]});
   // 38 the big hex bottom plug (main jet access) under the boss: a recessed face with 6 spokes (carb_12), 37 its

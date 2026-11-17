@@ -232,9 +232,9 @@ export function buildBody(index) {
   // shows under it
   g.push(rbox(0.95, 1.9, 1.4, 0.3).translate(-3.95, -3.15 + UY, 0));
   g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
-  // run 14 (item 4): the 4 bowl screws thread up into 4 posts hanging from this flange to the bowl's ears (their tops at -4.45);
-  // each post is tapped from below, 10 mm deep, 7.4 mm across the thread (M4)
-  for (const [ex, ez] of EARS) g.push(tappedY(0.42, mm(1.85), 0, BOT + 0.2 + 4.45, mm(10)).rotateX(Math.PI).translate(ex, BOT + 0.2, ez));
+  // run 15 (item 2): the 4 bowl screws thread up into 4 tapped holes in the flange (M4: thread 7.4 mm across, 8 mm deep, open at
+  // the bottom), each in a round boss at the flange's corner: no posts
+  for (const [ex, ez] of EARS) g.push(tappedY(0.55, mm(1.85), 0, 0.95, mm(8)).rotateX(Math.PI).translate(ex, BOT + 0.95, ez));
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
   g.push(slabY(RIM, BOT + 0.2, 0.4));
   // the projection on the engine spigot (-X) that keys into the joint slot
