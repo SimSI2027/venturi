@@ -26,8 +26,9 @@ UV_MM = 10.66     # mm per UV unit (the page's grain scale; the material repeat 
 RIPPLE = 0.07    # mm
 CREASE = math.radians(35)
 WELD = 3e-3       # mm: union mode, how far apart a piece's own seam vertices (float rounding in three's lathes and extrusions) still weld
-BEVEL = 1.0       # mm: union mode, bevel offset on the seams
-BEVEL_SEG = 3
+BEVEL = 0.8       # mm: union mode, bevel offset on the seams (pilot 3)
+BEVEL_SEG = 2
+DISSOLVE = math.radians(0.5)  # union mode: planar dissolve of flat areas after the bevel
 SEAM_MIN = math.radians(5)  # a seam between 2 near-coplanar faces has nothing to round
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -510,7 +511,11 @@ def union(cid):
                 seams.append(e)
     log(cid, 'seam edges', len(seams), 'of', nseam_all, 'between different pieces (the rest are nearly flat)')
     bmesh.ops.bevel(bm, geom=seams, offset=BEVEL, offset_type='OFFSET', segments=BEVEL_SEG, profile=0.5, affect='EDGES', clamp_overlap=True, loop_slide=True)
-    bmesh.ops.triangulate(bm, faces=bm.faces)
+    n_bev = len(bm.faces)
+    # pilot 3: planar dissolve, faces under DISSOLVE apart merge; boundaries stay, so no outline moves
+    bmesh.ops.dissolve_limit(bm, angle_limit=DISSOLVE, use_dissolve_boundaries=False, verts=bm.verts, edges=bm.edges)
+    bmesh.ops.triangulate(bm, faces=bm.faces, quad_method='BEAUTY', ngon_method='BEAUTY')
+    log(cid, 'bevel', n_bev, 'faces -> planar dissolve', len(bm.faces), 'tris')
     bm.to_mesh(work.data); bm.free()
     work.data.attributes.remove(work.data.attributes['piece'])
     finish(work)
