@@ -10,6 +10,8 @@ const creased = new WeakMap(); // shared geometries are processed once
 const TEX = ['map', 'bumpMap', 'normalMap', 'roughnessMap'];
 // run 22: a triangle with a neighbour in the same plane (within 0.5 deg) is a flat face: its 3 normals are its face normal,
 // so a flat face next to a gentle curve no longer shades in diagonal bands. Positions, indices and triangle count do not change.
+// run 23: the same rule for the other 3 castings: the float chamber, the top cover and cable cover 65 (the body is part 1)
+const FLAT_PARTS = new Set(['body:1', 'bowl:1-bowl', 'top:1-top', 'linkage:65']);
 const FLAT = Math.cos(THREE.MathUtils.degToRad(0.5));
 function flatten(g) {
   const P = g.attributes.position, N = g.attributes.normal, nt = P.count / 3;
@@ -168,7 +170,7 @@ export class Asm {
       const map = new Map();
       part.obj.traverse((o) => {
         if (!o.isMesh) return;
-        o.geometry = crease(o.geometry, this.key === 'body' && part.id === '1');
+        o.geometry = crease(o.geometry, FLAT_PARTS.has(`${this.key}:${part.id}`));
         if (!map.has(o.material)) map.set(o.material, cloneMat(o.material));
         o.material = map.get(o.material);
         for (const k of TEX) {
