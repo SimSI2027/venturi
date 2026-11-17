@@ -289,7 +289,8 @@ async function main() {
     const gd = new THREE.Vector3(...GROUPS[asms.indexOf(p.asm)].dir);
     p.ax = (p.axis || p.asm.axis || (gd.lengthSq() > 1e-8 ? gd.normalize() : new THREE.Vector3(0, 1, 0))).clone();
     p.gOff = p.ax.clone().multiplyScalar(OFF);
-    const b = new THREE.Box3().setFromObject(p.obj);
+    if (p.legs) p.legV = p.legs.map((v) => v.clone().multiplyScalar(OFF)); // item 5: a path in legs (first along p.ax)
+    const b =new THREE.Box3().setFromObject(p.obj);
     const s = b.getSize(new THREE.Vector3());
     p.seat = carb.worldToLocal(b.getCenter(new THREE.Vector3()));
     p.ext = 0.5 * (Math.abs(p.ax.x) * s.x + Math.abs(p.ax.y) * s.y + Math.abs(p.ax.z) * s.z);
@@ -304,13 +305,25 @@ async function main() {
   carb.add(dashes);
   compile(dashes);
   const dv = new THREE.Vector3();
+  /** The guided hover offset of p at w (0-1 of its path): 1 straight leg along its axis, or its legs one after the other by length. */
+  function hoverAt(p, w, out = new THREE.Vector3()) {
+    if (!p.legV) return out.copy(p.gOff).multiplyScalar(w);
+    let r = w * p.legV.reduce((a, v) => a + v.length(), 0);
+    out.set(0, 0, 0);
+    for (const v of p.legV) {
+      const L = v.length(), k = Math.min(r, L);
+      out.addScaledVector(v, k / L);
+      if ((r -= k) <= 0) break;
+    }
+    return out;
+  }
   function placeDashes() {
     const arr = dashGeo.attributes.position.array;
     let k = 0;
     if (guide.mode) for (const p of curParts()) {
       const w = wT[p.k].v * mixT.v;
       if (w < 0.03 || hT[p.k].v > 0.5 || p === solo.part) continue;
-      const L = Math.max(OFF * w - p.ext, 0.25 * MM); // from the seat to the part's near face
+      const L = Math.max(Math.min(hoverAt(p, w, dv).length(), p.legV ? p.legV[0].length() : OFF) - p.ext, 0.25 * MM); // (with legs: the dashes stay on the first) from the seat to the part's near face
       for (let s = 0; s < L && k < MAXD; s += DASH[0] + DASH[1], k++) {
         dv.copy(p.seat).addScaledVector(p.ax, s).toArray(arr, k * 6);
         dv.copy(p.seat).addScaledVector(p.ax, Math.min(L, s + DASH[0])).toArray(arr, k * 6 + 3);
@@ -461,6 +474,7 @@ async function main() {
       if (e.dataset.t !== t) (e.dataset.t = t), (e.firstChild.textContent = t);
     }
   }
+  const hOff = new THREE.Vector3();
   function poseAll(e, useTo = false) {
     if (guide.mode) layTray(useTo);
     const m = useTo ? mixT.to : mixT.v;
@@ -468,7 +482,7 @@ async function main() {
       const g = a.groupAmt(e) * (1 - m);
       a.poseEach((p) => [g, Asm.partAmt(p, e) * (1 - m)]);
       for (const p of a.parts) {
-        p.obj.position.addScaledVector(p.gOff, (useTo ? wT[p.k].to : wT[p.k].v) * m);
+        p.obj.position.add(hoverAt(p, (useTo ? wT[p.k].to : wT[p.k].v) * m, hOff));
         const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
         if (tw > 0) p.obj.position.lerp(p.tray, tw);
         p.obj.scale.setScalar(1 + (tw > 0 ? (p.trayS - 1) * tw : 0));

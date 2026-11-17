@@ -76,7 +76,7 @@ export class Asm {
    * explode. rot: fan-out rotation [rx, ry, rz]. order: 0..1 stagger inside the part phase (first off = 0).
    * axis: the way it really comes off its seat, when not the group's direction (the guided modes use it).
    */
-  add(obj, id, {ex = [0, 0, 0], rot = null, order = 0, axis = null} = {}) {
+  add(obj, id, {ex = [0, 0, 0], rot = null, order = 0, axis = null, legs = null} = {}) {
     obj.userData.part = id;
     obj.userData.asm = this.key;
     this.group.add(obj);
@@ -90,6 +90,7 @@ export class Asm {
       rot: rot ? new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)) : null,
       order,
       axis: axis ? new THREE.Vector3(...axis).normalize() : null, // its real fitting axis, off its seat (null: the group's)
+      legs: legs ? legs.map(([d, k]) => new THREE.Vector3(...d).normalize().multiplyScalar(k)) : null, // guided path in legs, each a direction times a number of 0.3-body-length hovers (null: 1 straight leg along axis)
       U: {dim: {value: 1}, rim: {value: 0}, cap: {value: capTint(id)}},
       mats: new Set(),
     };

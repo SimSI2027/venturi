@@ -346,7 +346,7 @@ export function buildBody(index) {
   const yb = -(LL - 0.15), kS = rpoly([[-0.25, 0.15], [0.25, 0.15], [0.25, yb], [0.13, yb], [0.13, yb + 0.4], [-0.13, yb + 0.4], [-0.13, yb], [-0.25, yb]], 0.05);
   kS.holes.push(circ(0, yb + 0.6, 0.09));
   const kArm = merge([extrudeXY(kS, 0.22, 0.04, 8, {free: true}).rotateY(Math.PI / 2).translate(0, 0, -0.9), orient(tubeY(0.42, 0.23, -0.25, 0.25, 0.03), [0, 0, 1], [0, 0, -0.9])]).rotateZ(LA);
-  A.add(part([SHX, SHY, 0], mk(kArm, steel)), 'K16', {axis: [0, 0, -1]});
+  A.add(part([SHX, SHY, 0], mk(kArm, steel)), 'K16', {axis: [0, 0, 1], legs: [[[0, 0, 1], 1.4], [[0, 1, 0], 0.6]]}); // item 5: -Z ran through the cable wheel, washer and spring; it slides off the shaft's +Z end (1.4 hovers, the end of the shaft plus its eye), then lifts away
   A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(fastenerY(0.45, 0.17, 0.08, 0.16, 'cross'), [1, 0, 0]), steel)), 'K18', {axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(rsp, steel)), 'K14', {axis: [0, 0, -1]});
   A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15', {axis: [0, 0, -1]});
