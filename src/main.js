@@ -527,6 +527,8 @@ async function main() {
     const fMax = Math.max(...fs);
     let R = TRAY_ROWS, lo = fMax;
     if (fMax > 0) (R = fs.findIndex((f) => f >= 0.6 * fMax) + 1), (lo = fs[R - 1]);
+    // run 26 (item 5): from step 20 on (19 groups or more in the tray) 1 row fewer where it fits: more columns, smaller cells, a shorter tray
+    if (fMax > 0 && seq.filter((g) => g.ps.some((p) => trT[p.k].to > 0.5)).length >= 19 && R > 1 && fs[R - 2] > 0) (R -= 1), (lo = fs[R - 1]);
     else lo = bestF(TRAY_ROWS, (f) => trayFit(f, seq, sz).H <= TRAY_H) || 0.01;
     const L = trayFit(lo, seq, sz, R);
     const top = low - gapMM, boxes = [];
@@ -543,8 +545,9 @@ async function main() {
           p.tray.copy(tc).addScaledVector(tr, px + it.w / 2).addScaledVector(tu, top - (y + TRAY_PAD + rhh / 2)).sub(tp.copy(p.seat).sub(p.rest).multiplyScalar(it.s));
           px += it.w + TRAY_GAP;
         }
-        const h = rhh + TRAY_LB + 2 * TRAY_PAD, c = (a, b) => new THREE.Vector3().copy(tc).addScaledVector(tr, a).addScaledVector(tu, top - b);
-        boxes.push({n: g.n, pts: [c(x, y), c(x + g.w, y), c(x + g.w, y + h), c(x, y + h)]});
+        // run 26 (item 5): each box is as tall as its own group (centred in the row like its parts), so its number sits right under them
+        const y0 = y + (rhh - g.h) / 2, h = g.h + TRAY_LB + 2 * TRAY_PAD, c = (a, b) => new THREE.Vector3().copy(tc).addScaledVector(tr, a).addScaledVector(tu, top - b);
+        boxes.push({n: g.n, pts: [c(x, y0), c(x + g.w, y0), c(x + g.w, y0 + h), c(x, y0 + h)]});
         x += g.w + TRAY_GG;
       }
       y += rhh + TRAY_LB + 2 * TRAY_PAD + TRAY_RG;
@@ -557,12 +560,14 @@ async function main() {
     trayUI.classList.toggle('on', !!L && !(solo.part && solo.T.to > 0)); // run 23 (item 6): 0% while a part is clicked alone
     if (!L) return;
     camera.updateMatrixWorld();
-    const cur = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
+    // run 26 (item 5): a group's box and number show only once all its parts have landed (the current step's parts are never in the tray:
+    // its box was drawn empty while they hovered), and the brass outline marks the step that landed last (TEAR DOWN: the one before)
+    const last = guide.mode === 'teardown' ? guide.n - 1 : -1;
     for (const b of L.boxes) {
       const g = trayGroups.find((q) => q.n === b.n), e = trayEls.get(b.n);
-      const show = b.n === cur || g.ps.some((p) => trT[p.k].to > 0.5);
+      const show = g.ps.every((p) => trT[p.k].to > 0.5 && trT[p.k].v > 0.98);
       e.classList.toggle('show', show);
-      e.classList.toggle('on', b.n === cur);
+      e.classList.toggle('on', b.n === last);
       if (!show) continue;
       let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
       for (const q of b.pts) { const o = S.project(q); x0 = Math.min(x0, o.x); x1 = Math.max(x1, o.x); y0 = Math.min(y0, o.y); y1 = Math.max(y1, o.y); }
@@ -1578,7 +1583,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, trayLay, trayT: (p) => trT[p.k].v, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, trayLay, trayGroups, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
