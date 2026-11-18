@@ -351,6 +351,9 @@ export function buildBody(index) {
   A.add(part([0, 0, 0], mk(rsp, steel)), 'K14', {axis: [0, 0, -1]});
   A.add(part([SHX, SHY, -TZ - 0.3], mk(orient(tubeY(0.42, 0.23, 0, 0.06), [0, 0, -1]), steel)), 'K15', {axis: [0, 0, -1]});
   const nips = mk(merge(nipG), brass);
+  // run 26 (item 7): pressed into the casting, so they stay at TEAR DOWN step 29; the hover card says so (main.js setHover)
+  nozzle.userData.note = 'Accelerator pump nozzle';
+  nips.userData.note = 'Air vent nipples (hoses 57, 58)';
   // run 10 (item 7): the accelerator pump linkage as the Keihin FCR-MX diagram draws it (its 64-67, 72), replacing
   // run 9's T-bar: a cast boss on the body's cable side under the cable cup, a pivot pin out of it with a washer at its
   // end, and the 2 torsion springs on the pin (pieces of reference 1, as the T-bar was), one behind each link lever

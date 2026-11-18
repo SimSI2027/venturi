@@ -1071,11 +1071,12 @@ async function main() {
       if (!root) continue;
       const p = partOf[root.userData.part];
       if (solo.part && solo.T.to > 0) {
-        if (p === solo.part) return root;
+        if (p === solo.part) return (pickMesh = h.object), root;
         continue;
       }
       if (dim[parts.indexOf(p)] > 0.4 || !root.visible || (secOn && CLIP.distanceToPoint(h.point) < 0)) continue;
       anchor.copy(root.worldToLocal(h.point.clone()));
+      pickMesh = h.object;
       return root;
     }
     return null;
@@ -1139,15 +1140,20 @@ async function main() {
   });
 
   const cardPos = {side: 'r'};
+  // run 26 (item 7): a piece pressed into its part (body.js: the brass pump nozzle and vent nipples of reference 1) names itself on hover,
+  // so the brass still showing on the bare body at TEAR DOWN step 29 says why it stays
+  let pickMesh = null, hoverNote = '';
   function setHover(h) {
-    if (h === hovered) return;
+    const note = (h && pickMesh?.userData.partRoot === h && pickMesh.userData.note) || '';
+    if (h === hovered && note === hoverNote) return;
     hovered = h;
+    hoverNote = note;
     cardPos.side = 'r';
     card.classList.toggle('show', !!h);
     if (h) {
       const i = info(h.userData.part);
-      card.children[0].textContent = nameOf(h.userData.part);
-      card.children[1].textContent = `${nn(groupIndex(i.group))} · ${GROUPS[groupIndex(i.group)].label}`;
+      card.children[0].textContent = note || nameOf(h.userData.part);
+      card.children[1].textContent = note ? `Pressed into ${nameOf(h.userData.part)} · stays in` : `${nn(groupIndex(i.group))} · ${GROUPS[groupIndex(i.group)].label}`;
     }
   }
   const hoverPts = [];
