@@ -61,7 +61,7 @@ export const PLATE59 = [[-1.8, 6.9], [3.6, 6.9], [3.6, -0.2], [1.8, -0.2], [1.8,
 // lower block round the bore, a ledge at the shoulder, the tower with a rib band and a step in under the top cover;
 // the casting is symmetric about the bore's vertical plane, so the left half is its mirror (28 points in all)
 const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.2], [3.6, 2.45, 0.12], [3.6, 2.95, 0.12], [3.3, 3.2, 0.15],
-  [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.3]];
+  [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.08]]; // run 26 (item 12): top corner 0.3 -> 0.08, so the 2.7 mm wall keeps a flat gasket face
 // the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
 // run 9: the trace stays as run 8 drew it from carb_12 / carb_bottom (74 long along the bore): pressing it to the
@@ -159,8 +159,10 @@ const SX0 = -0.95, SX1 = 0.55, SZ = 2.75, SY = -1.9; // run 15 (item 5): the cav
 /** The body's section across the cavity: the outline with the slot (narrower under the top cover) and the bore's
  * lower half cut out of it, extruded along X. */
 function cavitySection() {
-  const T = TOWER.top, ZT = 2.3, YT = T - 1.0;
-  const slot = [[ZT, T, 0.05], [ZT, YT, 0.05], [SZ, YT - 0.25, 0.05], [SZ, SY, 0.05]];
+  // run 26 (item 12, manual 6-6 'throttle valve movement'): the well runs straight up to the gasket face (it narrowed to 2.3 under the top
+  // cover), so its side walls are 3.0 - SZ = 2.7 mm thick at the top
+  const T = TOWER.top;
+  const slot = [[SZ, T, 0.05], [SZ, SY, 0.05]];
   const s = rpolyA([...HALF, ...slot, ...mirror(slot), ...mirror(HALF)], 0.3);
   const g = extrudeXY(s, SX1 - SX0, 0.08, 16, {free: true});
   g.rotateY(Math.PI / 2);
@@ -180,6 +182,23 @@ export function buildBody(index) {
   for (const [x0, x1] of [[-2.6, SX0], [SX1, BODY_AF]]) g.push(outlineX(LOW, x0, x1, BORE_R));
   for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(outlineX(OUTLINE, x0, x1, BORE_R + 0.05));
   g.push(cavitySection());
+  // run 26 (item 12): the well's 4 plan corners rounded to 4 mm: a concave fillet column in each, from the bore's top to the gasket face
+  const FR = mm(4);
+  for (const [cx, cz, sx, sz] of [[SX0, -SZ, 1, 1], [SX1, -SZ, -1, 1], [SX1, SZ, -1, -1], [SX0, SZ, 1, -1]]) {
+    const f = new THREE.Shape();
+    f.moveTo(0, 0); f.lineTo(FR, 0);
+    for (let k = 1; k < 8; k++) { const a = (k / 8) * (Math.PI / 2); f.lineTo(FR - FR * Math.sin(a), FR - FR * Math.cos(a)); }
+    f.lineTo(0, FR); f.closePath();
+    const col = new THREE.ExtrudeGeometry(f, {depth: TT - BORE_R + 0.02, bevelEnabled: false, curveSegments: 8});
+    // shape (u, v) -> plan (x, z) = (cx + sx u, cz + sz v); depth along y from the bore's top
+    col.rotateX(-Math.PI / 2).scale(sx, 1, -sz).translate(cx, BORE_R - 0.01, cz);
+    const cg = col.index ? col.toNonIndexed() : col;
+    if (sx * sz > 0) for (const k of ['position', 'normal', 'uv']) { // the scale's determinant -sx sz < 0 flips the winding: swap 2 corners
+      const a = cg.attributes[k], n = a.itemSize;
+      for (let t = 0; t < a.count; t += 3) for (let j = 0; j < n; j++) { const v = a.array[(t + 1) * n + j]; a.array[(t + 1) * n + j] = a.array[(t + 2) * n + j]; a.array[(t + 2) * n + j] = v; }
+    }
+    g.push(cg);
+  }
   // the tower's ribs and bosses (carb_7, carb_8, carb_11): the top cover's 2 bolt bosses down the middle of the
   // engine and air-box faces, 2 vertical ribs on the engine face, 2 round bosses on the air-box face, a rib band
   // round both faces at the outline's band height
@@ -251,6 +270,11 @@ export function buildBody(index) {
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
   const bowlFace = mk(rbox(5.9, 0.02, 6.0, 0.008).translate(-0.45, BOT - 0.005, -0.2), machined);
+  // run 26 (item 12): the machined face gasket 2 seals on, round the well, and the tops of the top cover's 2 tapped bolt bosses
+  const gS = rpolyA([[TX0 + 0.1, -2.94], [TX1 - 0.1, -2.94], [TX1 - 0.1, 2.94], [TX0 + 0.1, 2.94]], 0.15);
+  gS.holes.push(rpolyA([[SX0, -SZ], [SX1, -SZ], [SX1, SZ], [SX0, SZ]], FR, new THREE.Path()));
+  const gasketFace = mk(merge([extrudeXY(gS, 0.02, 0.005, 8, {free: true}).rotateX(Math.PI / 2).translate(0, TT + 0.006, 0),
+    ...[-1, 1].map((sx) => tubeY(0.48, mm(1.85) + 0.02, TT - 0.004, TT + 0.016).translate(CX + sx * BOLT_X, 0, 0))]), machined);
   // (run 11: the needle valve seat in it is Keihin 36, a piece of 23 in float.js)
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
@@ -364,7 +388,7 @@ export function buildBody(index) {
   const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
   // run 11: its washer (Keihin 69), E-clip (70) and the 2 torsion springs (66, 67) are linkage.js pieces now
   const link = mk(orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), steel);
-  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks, rpost);
+  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks, rpost, gasketFace);
   A.add(body, '1');
   return A;
 }
