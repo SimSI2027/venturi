@@ -180,7 +180,13 @@ export function buildBody(index) {
   const [SHX, SHY] = SHAFT;
   const LOW = clipY(OUTLINE, 3.1);
   for (const [x0, x1] of [[-2.6, SX0], [SX1, BODY_AF]]) g.push(outlineX(LOW, x0, x1, BORE_R));
-  for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(outlineX(OUTLINE, x0, x1, BORE_R + 0.05));
+  // run 26 (item 17, mine_2 / mine_3): 1.5 deg of draft on the tower's tall engine and air-box faces above the shoulder (y 3.2): each leans
+  // in by tan 1.5 deg a unit of height, 1.1 mm at the top (the cable and sensor faces keep their housings' mating planes)
+  const DRAFT = Math.tan(THREE.MathUtils.degToRad(1.5)), TCX = (TX0 + TX1) / 2;
+  const draftX = (geo) => { const p = geo.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i); if (y > 3.2 && (x < TX0 + 0.13 || x > TX1 - 0.13)) p.setX(i, x + Math.sign(TCX - x) * DRAFT * (y - 3.2)); } return geo; };
+  for (const [x0, x1] of [[TX0, SX0], [SX1, TX1]]) g.push(draftX(outlineX(OUTLINE, x0, x1, BORE_R + 0.05)));
+  // the die's parting line: a bead 0.3 mm proud and 0.6 mm high along both sides of the lower block, under the housings
+  for (const z of [-3.17, 3.17]) g.push(rbox(BODY_AF + 2.6, 0.06, 0.06, 0.02).translate((BODY_AF - 2.6) / 2, -1.2, z));
   g.push(cavitySection());
   // run 26 (item 12): the well's 4 plan corners rounded to 4 mm: a concave fillet column in each, from the bore's top to the gasket face
   const FR = mm(4);
