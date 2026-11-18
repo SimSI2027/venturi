@@ -252,7 +252,16 @@ export function buildBody(index) {
   g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
   // run 15 (item 2): the 4 bowl screws thread up into 4 tapped holes in the flange (M4: thread 7.4 mm across, 8 mm deep, open at
   // the bottom), each in a round boss at the flange's corner: no posts
-  for (const [ex, ez] of EARS) g.push(tappedY(0.55, mm(1.85), 0, 0.95, mm(8)).rotateX(Math.PI).translate(ex, BOT + 0.95, ez));
+  // run 26 (item 15, mine_1 / mine_3 / mine_6): flush ears, not round posts: each a rounded-square lobe of the flange on the bowl ear's own
+  // footprint (bowl.js), flush with the mating face and 7.5 mm thick, the M4 tapped through it (7 mm of the screw's 12)
+  for (const [ex, ez] of EARS) {
+    const sx = ex > -0.5 ? 1 : -1, sz = ez > 0 ? 1 : -1, x0 = ex - sx * 0.35, x1 = ex + sx * 0.6, z0 = ez - sz * 0.35, z1 = ez + sz * 0.6;
+    const q = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+    if (sx * sz < 0) q.reverse();
+    const s = rpolyA(q, 0.4);
+    s.holes.push(circ(ex, ez, 0.3));
+    g.push(extrudeXY(s, 0.7, 0.06, 12, {free: true}).rotateX(Math.PI / 2).translate(0, BOT + 0.35, 0), tappedY(0.3, mm(1.85), 0, 0.7, 0.66).rotateX(Math.PI).translate(ex, BOT + 0.7, ez));
+  }
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
   g.push(slabY(RIM, BOT + 0.2, 0.4));
   // the projection on the engine spigot (-X) that keys into the joint slot
