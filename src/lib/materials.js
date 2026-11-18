@@ -323,12 +323,25 @@ export function makeMaterials() {
   const grain = castNormal();
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
   const cast = std({color: 0x7a7d83, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
-    normalMap: grain, normalScale: new THREE.Vector2(0.5, 0.5)}); // run 13 (item 9): grain 0.35 -> 0.5 on the rough faces
-  // run 23: the grain's strength follows each vertex's aGrain (1 on flat faces, lower on round bosses and cylinders under 15 mm: asm.js)
+    normalMap: grain, normalScale: new THREE.Vector2(1, 1)});
+  // run 26 (item 4): the grain is triplanar in the mesh's own (part) space, 256 texels to 64 mm (0.25 mm a texel), at strength 1 on every
+  // as-cast face: no uv, so a round cap or boss shows the same grain as a flat face (its radial uv gave radial speckle). Whiteout blend
+  // of the 3 projections, weighted by the 4th power of the object-space normal; back faces flip it (both sides are drawn).
   cast.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aGrain;\nvarying float vGrain;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvGrain = aGrain;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vGrain;')
-      .replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps.replace('mapN.xy *= normalScale;', 'mapN.xy *= normalScale * vGrain;'));
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vTriP;\nvarying vec3 vTriN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvTriP = position / 64.0;\nvTriN = normal;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vTriP;\nvarying vec3 vTriN;\nuniform mat3 normalMatrix;')
+      .replace('#include <normal_fragment_maps>', `{
+        vec3 on = normalize(vTriN) * faceDirection, bw = pow(abs(on), vec3(4.0));
+        bw /= bw.x + bw.y + bw.z;
+        vec3 tx = texture2D(normalMap, vTriP.zy).xyz * 2.0 - 1.0, ty = texture2D(normalMap, vTriP.xz).xyz * 2.0 - 1.0, tz = texture2D(normalMap, vTriP.xy).xyz * 2.0 - 1.0;
+        tx.xy *= normalScale; ty.xy *= normalScale; tz.xy *= normalScale;
+        tx = vec3(tx.xy + on.zy, abs(tx.z) * on.x);
+        ty = vec3(ty.xy + on.xz, abs(ty.z) * on.y);
+        tz = vec3(tz.xy + on.xy, abs(tz.z) * on.z);
+        vec3 pn = normalize(tx.zyx * bw.x + ty.xzy * bw.y + tz.xyz * bw.z);
+        // keep the interpolated (smooth) normal and add only the grain's tilt
+        normal = normalize(normal + normalize(normalMatrix * pn) - normalize(normalMatrix * on));
+      }`);
   };
   cast.customProgramCacheKey = () => 'cast-grain';
   return {
