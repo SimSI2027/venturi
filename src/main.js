@@ -430,6 +430,7 @@ async function main() {
   // rebuild order) in TRAY_ROWS rows hanging under the carburetor, 1 small step number under each group, the current step's group outlined in
   // brass. Parts keep their true relative scale (one factor f for all, as large as the tray's height allows), except that none shows smaller
   // than TRAY_MIN mm across on screen (12 px at 800 x 500). The tray faces the camera: its slots follow the camera's right and up (layTray).
+  let trayMin = 11.8; // run 28: the cell floor in use (TRAY_MIN, or 10 px when the tray would need another row)
   const TRAY_MIN = 11.8, TRAY_GAP = 0.8, TRAY_GG = 2, TRAY_PAD = 0.4, TRAY_LB = 6.4, TRAY_RG = 0.3, TRAY_ROWS = 5, TRAY_H = 97;
   const tr = new THREE.Vector3(), tu = new THREE.Vector3(), tc = new THREE.Vector3(), tp = new THREE.Vector3();
   let trayBox = null;
@@ -485,6 +486,7 @@ async function main() {
     return bn;
   }
   const benched = (p) => bT[p.k].to > 0.5;
+  let wasBench = false, trayBack = 0; // run 28 (item 4): the tray's numbers return 1.1 s after a bench step
   const bV = new THREE.Vector3();
   /** The bench offset and the ride along its root's hover, added to p's pose (and to its seat for the dashes). */
   function benchAdd(p, useTo, out) {
@@ -511,7 +513,7 @@ async function main() {
     const gs = seq.map((g) => {
       const items = g.ps.map((p) => {
         const [er, eu] = sz.get(p);
-        const s = THREE.MathUtils.clamp(Math.max(f, TRAY_MIN / Math.max(er, eu, 1e-3)), 0.04, 30);
+        const s = THREE.MathUtils.clamp(Math.max(f, trayMin / Math.max(er, eu, 1e-3)), 0.04, 30);
         return {p, s, w: er * s, h: eu * s};
       });
       return {n: g.n, items, w: items.reduce((a, i) => a + i.w, 0) + TRAY_GAP * (items.length - 1) + 2 * TRAY_PAD, h: Math.max(...items.map((i) => i.h))};
@@ -596,14 +598,14 @@ async function main() {
       for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (ok(m, R)) lo = m; else hi = m; }
       return lo;
     };
-    const fs = [];
-    for (let R = 1; R <= TRAY_ROWS; R++) fs.push(bestF(R, okAt));
-    const fMax = Math.max(...fs);
-    let R = TRAY_ROWS, lo = fMax;
-    if (fMax > 0) (R = fs.findIndex((f) => f >= 0.6 * fMax) + 1), (lo = fs[R - 1]);
-    // run 26 (item 5): from step 20 on (19 groups or more in the tray) 1 row fewer where it fits: more columns, smaller cells, a shorter tray
-    if (fMax > 0 && seq.filter((g) => g.ps.some((p) => trT[p.k].to > 0.5)).length >= 19 && R > 1 && fs[R - 2] > 0) (R -= 1), (lo = fs[R - 1]);
-    else lo = bestF(TRAY_ROWS, (f) => trayFit(f, seq, sz).H <= TRAY_H) || 0.01;
+    // run 28 (item 4, correction 63): columns before rows, at the scale the TRAY_ROWS-row tray takes (f0: the largest f whose rows fit TRAY_H;
+    // cells never grow over it, and none is under TRAY_MIN mm, which is 21 px or more at every size swept). The fewest rows that fit the
+    // usable width at f0 win, so a row is added only when the columns no longer fit: a shorter tray, never a taller one. In mm on the tray's
+    // plane only (no pixel floor), so the tray the camera framed is the tray it lands on.
+    trayMin = Math.max(TRAY_MIN, 10 * mmPx);
+    const f0 = bestF(TRAY_ROWS, (f) => trayFit(f, seq, sz).H <= TRAY_H) || 0.01;
+    let R = TRAY_ROWS, lo = f0;
+    for (let r = 1; r < TRAY_ROWS; r++) if (okAt(f0, r)) { R = r; break; }
     const L = trayFit(lo, seq, sz, R);
     const top = low - gapMM, boxes = [];
     let y = 0;
@@ -631,7 +633,7 @@ async function main() {
   /** The tray's step numbers and the brass outline of the current step's group, placed from the layout the parts were laid by (run 16, item 5). */
   function drawTrayUI() {
     const L = guide.mode ? trayLay.v : null;
-    trayUI.classList.toggle('on', !!L && !(solo.part && solo.T.to > 0)); // run 23 (item 6): 0% while a part is clicked alone
+    trayUI.classList.toggle('on', !!L && !(solo.part && solo.T.to > 0) && !benchNow() && performance.now() > trayBack); // run 23 (item 6): 0% while a part is clicked alone (run 28: and at a bench step)
     if (!L) return;
     camera.updateMatrixWorld();
     // run 26 (item 5): a group's box and number show only once all its parts have landed (the current step's parts are never in the tray:
@@ -718,7 +720,9 @@ async function main() {
     const s = guide.step();
     const cur = new Set(s ? [...s.parts, ...s.moves] : []); // run 11: with the Keihin pieces riding on them
     const n = guide.n;
-    benchTargets(now, enter || !guide.mode);
+    const bnch = benchTargets(now, enter || !guide.mode);
+    if (!bnch && wasBench) trayBack = now + 1100;
+    wasBench = !!bnch;
     parts.forEach((p, i) => {
       let w = 0;
       let h = 0;
@@ -735,7 +739,10 @@ async function main() {
       const tray = h && !benched(p) ? 1 : 0; // run 13: what was hidden now goes to the tray (run 28: unless it is held on the bench)
       h = 0;
       const wasHidden = hT[i].v > 0.5;
-      aim(hT[i], 0, now);
+      // run 28 (item 4): at a bench step the camera is on the bench and the tray, below it out of the frame, fades out; leaving it, the tray
+      // comes back once the camera has turned back to the body (0.8 s), so it never sweeps up under the mode buttons
+      const hTo = tray && bnch ? 1 : 0;
+      aim(hT[i], hTo, !hTo && hT[i].to === 1 && tray ? now + 800 : now);
       if (enter || !guide.mode) hold(trT[i], guide.mode ? tray : 0);
       else aim(trT[i], tray, now, quick ? QUICK : 0.8);
       if (!guide.mode) return;
@@ -1668,7 +1675,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, trayLay, trayGroups, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, trayLay, trayGroups, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {

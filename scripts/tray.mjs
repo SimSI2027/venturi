@@ -23,9 +23,9 @@ for (const [W, H] of sizes) {
       const mv = await page.evaluate(() => new Promise((res) => { let empty = 0, frames = 0, minD = Infinity; const V = window.VENTURI, T = V.THREE, v = new T.Vector3(), bx = new T.Box3(), t0 = performance.now();
         const dockT = () => Math.min(document.querySelector('.iw-dock').getBoundingClientRect().top, document.querySelector('.vt-foot').getBoundingClientRect().top);
         const loop = () => { frames++;
-          for (const b of V.trayLay.v?.boxes || []) { const e = [...document.querySelectorAll('.vt-tg')][V.trayGroups.findIndex((g) => g.n === b.n)]; if (!e || !e.classList.contains('show')) continue; const g = V.trayGroups.find((g) => g.n === b.n); if (g.ps.some((p) => V.trayT(p) < 0.98)) { empty++; break; } }
+          for (const b of V.trayLay.v?.boxes || []) { const e = [...document.querySelectorAll('.vt-tg')][V.trayGroups.findIndex((g) => g.n === b.n)]; if (!e || !e.classList.contains('show') || !e.parentNode.classList.contains('on')) continue; const g = V.trayGroups.find((g) => g.n === b.n); if (g.ps.some((p) => !V.benched(p) && V.trayT(p) < 0.98)) { empty++; break; } }
           let lo = -Infinity, who = ''; for (const p of V.parts) { if (!p.tray || V.trayT(p) < 0.98 || !p.obj.visible) continue; bx.setFromObject(p.obj); for (let i = 0; i < 8; i++) { v.set(i & 1 ? bx.max.x : bx.min.x, i & 2 ? bx.max.y : bx.min.y, i & 4 ? bx.max.z : bx.min.z).project(V.camera); if (v.z < 1 && (-v.y * 0.5 + 0.5) * innerHeight > lo) (lo = (-v.y * 0.5 + 0.5) * innerHeight), (who = 'part ' + p.id + ' t=' + V.trayT(p).toFixed(2)); } }
-          for (const e of document.querySelectorAll('.vt-tg.show')) if (e.getBoundingClientRect().bottom > lo) (lo = e.getBoundingClientRect().bottom), (who = 'box ' + e.textContent + ' h=' + Math.round(e.getBoundingClientRect().height) + ' tray ' + getComputedStyle(e.parentNode).opacity);
+          for (const e of document.querySelectorAll('.vt-tray.on .vt-tg.show')) if (e.getBoundingClientRect().bottom > lo) (lo = e.getBoundingClientRect().bottom), (who = 'box ' + e.textContent + ' h=' + Math.round(e.getBoundingClientRect().height) + ' tray ' + getComputedStyle(e.parentNode).opacity);
           if (dockT() - lo < minD) (minD = dockT() - lo), (window.__WHO = who + ' at ' + Math.round(performance.now() - t0) + ' ms');
           if (performance.now() - t0 < 1800) requestAnimationFrame(loop); else res({empty, frames, minD: Math.round(minD), who: window.__WHO}); }; loop(); }));
       emptyT += mv.empty; if (mv.minD < moveW.d) moveW = {d: mv.minD, n, who: mv.who};
@@ -39,7 +39,7 @@ for (const [W, H] of sizes) {
           b.setFromObject(p.obj);
           for (let i = 0; i < 8; i++) { v.set(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(cam); lo = Math.max(lo, (-v.y * 0.5 + 0.5) * innerHeight); }
         }
-        for (const e of document.querySelectorAll('.vt-tg.show')) lo = Math.max(lo, e.getBoundingClientRect().bottom);
+        for (const e of document.querySelectorAll('.vt-tray.on .vt-tg.show')) lo = Math.max(lo, e.getBoundingClientRect().bottom); // run 28: a hidden tray (bench steps) covers nothing
         const dock = document.querySelector('.iw-dock').getBoundingClientRect().top, foot = document.querySelector('.vt-foot').getBoundingClientRect().top;
         return {lo: Math.round(lo), dock: Math.round(dock - lo), foot: Math.round(foot - lo), rows: V.trayLay.v?.rows, f: +(V.trayLay.v?.f || 0).toFixed(2)};
       });
