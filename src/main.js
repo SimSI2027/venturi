@@ -1307,7 +1307,7 @@ async function main() {
     return MASK;
   }
   /** The free spot (card top-left, px) nearest the hit point a: {x, y}, or null when the mask is empty of room. */
-  function freeSpot(cw, ch, a, U) {
+  function freeSpot(cw, ch, a, U, bl = []) {
     const M = carbMask(), sc = M.sc, P = 8, E = 8;
     const hit = (x, y) => {
       const x0 = Math.max(0, Math.floor((x - P) * sc)), x1 = Math.min(M.w, Math.ceil((x + cw + P) * sc)), y0 = Math.max(0, Math.floor((y - P) * sc)), y1 = Math.min(M.h, Math.ceil((y + ch + P) * sc));
@@ -1317,12 +1317,28 @@ async function main() {
     let best = null;
     for (let y = U.t + E; y <= U.b - ch - E; y += 6) {
       for (let x = U.l + E; x <= U.r - cw - E; x += 6) {
+        if (overlaps(x, y, cw, ch, bl)) continue; // run 28 (item 5): never under the step card, the part card or the side panel
         const c = hit(x, y);
         const d = Math.hypot(x + cw / 2 - a.x, y + ch / 2 - a.y);
         if (!best || c < best.c || (c === best.c && d < best.d)) best = {x, y, c, d};
       }
     }
     return best;
+  }
+  // run 28 (item 5): the boxes a label (hover or step) never sits under, 0 px at every size: the step card, the part card and the side panel
+  // when they show (4 px clear of them)
+  const blockers = () => [guide.card, detail, panel].filter((e) => e.offsetParent && (e === panel || (e.classList.contains('show') && !e.classList.contains('away')))).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+  const overlaps = (x, y, cw, ch, bl) => bl.some((r) => x < r.right + 4 && x + cw > r.left - 4 && y < r.bottom + 4 && y + ch > r.top - 4);
+  /** The card at spot (top-left, px), its leader from the hit point a into the card's near edge. */
+  function cardAt(spot, a, cw, ch) {
+    const cx = Math.min(spot.x + cw, Math.max(spot.x, a.x)), cy = Math.min(spot.y + ch, Math.max(spot.y, a.y));
+    const ex = a.x < spot.x ? spot.x : a.x > spot.x + cw ? spot.x + cw : cx, ey = a.y < spot.y ? spot.y : a.y > spot.y + ch ? spot.y + ch : cy;
+    card.classList.toggle('flip', spot.x + cw / 2 < a.x);
+    card.style.transform = `translate(${spot.x.toFixed(1)}px, ${spot.y.toFixed(1)}px)`;
+    lLine.setAttribute('points', `${a.x.toFixed(1)},${a.y.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`);
+    for (const c of [lDot, lHalo]) (c.setAttribute('cx', a.x), c.setAttribute('cy', a.y));
+    const vis = a.visible ? 'visible' : 'hidden';
+    for (const c of [lLine, lDot, lHalo]) c.setAttribute('visibility', vis);
   }
   /** Name card 40 px clear of the part's screen bounds; the leader runs from the hit point into the card's near edge. */
   function drawLeader() {
@@ -1333,19 +1349,10 @@ async function main() {
     // run 23 (item 7): the name card keeps clear of the open side panel (docked beside the view, or opened over it when wide enough to matter)
     const pr = panel.offsetParent ? panel.getBoundingClientRect() : null;
     const cw = card.offsetWidth, ch = card.offsetHeight, W = pr && pr.left > 0.5 * S.size.w ? pr.left : S.size.w, H = S.size.h, G = 42, E = 8;
+    const bl = blockers();
     if (guideLab) {
-      const spot = freeSpot(cw, ch, a, usable());
-      if (spot) {
-        const cx = Math.min(spot.x + cw, Math.max(spot.x, a.x)), cy = Math.min(spot.y + ch, Math.max(spot.y, a.y));
-        const ex = a.x < spot.x ? spot.x : a.x > spot.x + cw ? spot.x + cw : cx, ey = a.y < spot.y ? spot.y : a.y > spot.y + ch ? spot.y + ch : cy;
-        card.classList.toggle('flip', spot.x + cw / 2 < a.x);
-        card.style.transform = `translate(${spot.x.toFixed(1)}px, ${spot.y.toFixed(1)}px)`;
-        lLine.setAttribute('points', `${a.x.toFixed(1)},${a.y.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`);
-        for (const c of [lDot, lHalo]) (c.setAttribute('cx', a.x), c.setAttribute('cy', a.y));
-        const vis = a.visible ? 'visible' : 'hidden';
-        for (const c of [lLine, lDot, lHalo]) c.setAttribute('visibility', vis);
-        return;
-      }
+      const spot = freeSpot(cw, ch, a, usable(), bl);
+      if (spot) return cardAt(spot, a, cw, ch);
     }
     const lift = W < 720 ? 20 : 32;
     const fits = {r: B.x1 + G + cw <= W - E, l: B.x0 - G - cw >= E, t: B.y0 - G - ch >= E, b: B.y1 + G + ch <= H - E};
@@ -1363,20 +1370,25 @@ async function main() {
       const U = usable();
       fits.t = fits.t && B.y0 - G - ch >= U.t;
       fits.b = fits.b && B.y1 + G + ch <= U.b;
-      if (!order.some((k) => fits[k])) fits[order.slice().sort((p, q) => room[q] - room[p])[0]] = true;
     }
-    const side = fits[cardPos.side] && order.includes(cardPos.side) ? cardPos.side : order.find((k) => fits[k]) || Object.keys(room).sort((p, q) => room[q] - room[p])[0];
-    cardPos.side = side;
     const cl = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const at = (k) => (k === 'r' || k === 'l' ? [k === 'r' ? B.x1 + G : B.x0 - G - cw, cl(a.y - lift - ch / 2, E, H - ch - E)] : [cl(a.x - cw / 2, E, W - cw - E), k === 't' ? B.y0 - G - ch : B.y1 + G]);
+    // run 28 (item 5): a side whose card would sit under a card or the panel does not fit; the label moves to the other side of its part
+    for (const k of Object.keys(fits)) fits[k] = fits[k] && !overlaps(...at(k), cw, ch, bl);
+    if (!['r', 'l', 't', 'b'].some((k) => fits[k])) {
+      // no side of the part is free: the nearest spot in the window clear of them
+      const spot = freeSpot(cw, ch, a, {l: 0, t: 0, r: W, b: H}, bl);
+      if (spot) return cardAt(spot, a, cw, ch);
+    }
+    const side = fits[cardPos.side] && order.includes(cardPos.side) ? cardPos.side : order.find((k) => fits[k]) || ['r', 'l', 't', 'b'].find((k) => fits[k]) || Object.keys(room).sort((p, q) => room[q] - room[p])[0];
+    cardPos.side = side;
     let x, y, pts;
     if (side === 'r' || side === 'l') {
-      x = side === 'r' ? B.x1 + G : B.x0 - G - cw;
-      y = cl(a.y - lift - ch / 2, E, H - ch - E);
+      [x, y] = at(side);
       const cy = y + ch / 2;
       pts = [[a.x, a.y], [side === 'r' ? B.x1 + 14 : B.x0 - 14, cy], [side === 'r' ? x : x + cw, cy]];
     } else {
-      y = side === 't' ? B.y0 - G - ch : B.y1 + G;
-      x = cl(a.x - cw / 2, E, W - cw - E);
+      [x, y] = at(side);
       const cx = x + cw / 2;
       pts = [[a.x, a.y], [cx, side === 't' ? B.y0 - 14 : B.y1 + 14], [cx, side === 't' ? y + ch : y]];
     }
