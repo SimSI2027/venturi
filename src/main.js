@@ -294,6 +294,7 @@ async function main() {
   controls.maxPolarAngle = Math.PI * 0.9; // low enough to look up at the jets (the floor is one-sided)
   controls.zoomSpeed = 0.9;
   let lastInput = performance.now();
+  let lastDockH = -1;
   controls.addEventListener('start', () => {
     lastInput = performance.now();
     view.user = true;
@@ -1506,6 +1507,9 @@ async function main() {
     lead.classList.toggle('show', !!hovered);
     if (hovered) drawLeader();
     drawTrayUI();
+    // run 25 (item 7): the part and circuit card keeps clear of the dock, however tall it is now (circuits row, the 2-row sliders at 390 px)
+    const dockH = Math.round((detail.offsetParent || document.body).getBoundingClientRect().bottom - dock.getBoundingClientRect().top);
+    if (dockH !== lastDockH) ui.style.setProperty('--dock-h', `${(lastDockH = dockH)}px`);
 
     // shadows follow the parts, not the camera: re-rendered when the explode moves, and once when a solo move
     // settles (never every frame while a part flies or spins: that pass alone would pass the 350k triangle budget)
