@@ -1,7 +1,8 @@
 // node scripts/account.mjs  (run 15, item 11): checks every clickable part of docs/index.html and writes scratch/account.txt, 1 line each:
 // mesh (has triangles), card (clicking it shows a card with its group, fits-into and step), row (a parts-panel row), td / rb (the number of
 // tear-down / rebuild steps it is in: exactly 1, the body 0), tray (a tray slot), seat (the gap in mm from its surface to the surface of the part
-// it fits into, at rest, both sampled every 1.5 mm; at most 2), fits (names an existing part). Prints the failures and the count.
+// it fits into, at rest, both sampled every 1.5 mm; at most 2), fits (names an existing part), home (run 25: THROTTLE 0% after 100% leaves it
+// within 0.1 mm of home). Prints the failures and the count.
 // Run 16 (correction 34): the body and the 4 throttle shaft parts (K12, K14, K15, K18; run 17: K16 rides in step 9) stay in the body: 0 tear-down steps, 0 rebuild steps, 0 tray slots, card
 // 'Stays in the body: not in the manual's removal list'; every other part no step of the manual's list names keeps its step and its card says 'not named in the manual's list'.
 import fs from 'node:fs';
@@ -73,6 +74,20 @@ const gaps = await page.evaluate(({ids, fits}) => {
   }
   return out;
 }, {ids, fits});
+// 1b. run 25 (item 8): THROTTLE to 100% and back to 0%: every part's box (8 corners, so a turn shows too) back within 0.1 mm of home
+const boxes = () => page.evaluate(() => Object.fromEntries(window.VENTURI.parts.map((p) => { const b = new window.VENTURI.THREE.Box3().setFromObject(p.obj); return [p.id, [...b.min.toArray(), ...b.max.toArray()]]; })));
+const setThrottle = async (t) => {
+  await page.evaluate((t) => { const r = document.querySelector('.vt-th'); r.value = String(t); r.dispatchEvent(new Event('input')); }, t);
+  await page.waitForFunction(() => window.VENTURI.settled(), null, {timeout: 20000});
+  await page.waitForTimeout(100);
+};
+const home0 = await boxes();
+await setThrottle(1);
+const open1 = await boxes();
+await setThrottle(0);
+const back0 = await boxes();
+const thMoved = ids.filter((id) => open1[id].some((v, i) => Math.abs(v - home0[id][i]) > 0.1));
+const thHome = Object.fromEntries(ids.map((id) => [id, Math.max(...back0[id].map((v, i) => Math.abs(v - home0[id][i])))]));
 // 2. the cards, by clicking each part
 const cards = {};
 for (const id of ids) {
@@ -106,11 +121,13 @@ for (const id of ids) {
     tray: stays ? !r.tray : r.tray,
     seat: isBody ? true : gaps[id] !== null && gaps[id] <= 2,
     fits: isBody ? !f : !!f && ids.includes(f),
+    home: thHome[id] <= 0.1, // run 25 (item 8): THROTTLE 0% after 100%
   };
   const bad = Object.keys(checks).filter((k) => !checks[k]);
   if (bad.length) fails.push(id);
-  lines.push(`${id.padEnd(9)} mesh ${r.meshes}/${r.tris}t  card ${checks.card ? 'y' : 'N'}  row ${checks.row ? 'y' : 'N'}  td ${r.td}  rb ${r.rb}  tray ${checks.tray ? 'y' : 'N'}  seat ${isBody ? '-' : gaps[id] === null ? 'none' : gaps[id] + 'mm'}  fits ${isBody ? '-' : f}${bad.length ? '   FAIL: ' + bad.join(',') : ''}`);
+  lines.push(`${id.padEnd(9)} mesh ${r.meshes}/${r.tris}t  card ${checks.card ? 'y' : 'N'}  row ${checks.row ? 'y' : 'N'}  td ${r.td}  rb ${r.rb}  tray ${checks.tray ? 'y' : 'N'}  seat ${isBody ? '-' : gaps[id] === null ? 'none' : gaps[id] + 'mm'}  fits ${isBody ? '-' : f}  home ${thHome[id].toFixed(3)}mm${bad.length ? '   FAIL: ' + bad.join(',') : ''}`);
 }
+lines.push(`# THROTTLE 100%: ${thMoved.length} parts moved (${thMoved.join(' ')}); back at 0%: worst ${Math.max(...Object.values(thHome)).toFixed(4)} mm from home`);
 lines.push(`# ${ids.length} parts checked, ${fails.length} failures${fails.length ? ': ' + fails.join(' ') : ''}; console errors: ${errs.length ? errs.slice(0, 3).join(' | ') : 'none'}`);
 fs.writeFileSync('scratch/account.txt', lines.join('\n') + '\n');
 console.log(lines.filter((l) => /FAIL|^#/.test(l)).join('\n'));
