@@ -71,6 +71,15 @@ async function main() {
     jobs.push(S.renderer.compileAsync(o, camera, lit).then(bump));
     S.renderer.setRenderTarget(null);
   };
+  /** Run 25 (item 6): a screw or bolt (its fiche or piece name says so) has its steel and zinc as a slightly warm plated silver; on its own
+   * copies of the materials, so springs, needle and rollers keep their steel, and no shader variant is added. */
+  function platedFinish(p) {
+    if (!/screw|bolt/i.test(nameOf(p.id))) return;
+    for (const m of p.mats) {
+      const h = m.color.getHex();
+      if (h === 0xa7adb5 || h === 0xb7b39c) m.color.setHex(0xbab5ab), (m.roughness = 0.3);
+    }
+  }
   const carb = new THREE.Group();
   scene.add(carb);
   const asms = GROUPS.map((g, i) => {
@@ -78,6 +87,7 @@ async function main() {
     carb.add(a.group);
     a.finalize();
     a.parts.forEach(applyAO); // run 25 (item 5): the 4 castings' baked recess shading, before their shaders compile
+    a.parts.forEach(platedFinish);
     compile(a.group);
     return a;
   });

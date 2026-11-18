@@ -307,6 +307,18 @@ export function castNormal(size = 256, strength = 1.6) {
  * normal map), machined faces smoother and brighter, brass jets, steel screws/springs/needle/rollers, black rubber,
  * black plastic, hard-anodised grey slide. One set per assembly (each part clones its own for dimming).
  */
+/** Run 25 (item 6): brass with a light roughness variation, +/-15% from a smooth value noise on the part's own coordinates (about 4 mm cells). */
+function brassVar(m) {
+  m.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vBrP;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvBrP = position * 0.25;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBrP;\nfloat brH(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }\nfloat brN(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(mix(brH(i), brH(i + vec3(1, 0, 0)), f.x), mix(brH(i + vec3(0, 1, 0)), brH(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(brH(i + vec3(0, 0, 1)), brH(i + vec3(1, 0, 1)), f.x), mix(brH(i + vec3(0, 1, 1)), brH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor *= 0.85 + 0.3 * brN(vBrP);');
+  };
+  m.customProgramCacheKey = () => 'brass-var';
+  return m;
+}
+
 export function makeMaterials() {
   const grain = castNormal();
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
@@ -324,11 +336,12 @@ export function makeMaterials() {
     cast,
     machined: std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}),
     bore: std({color: 0xb6b5b1, metalness: 0.8, roughness: 0.26, envMapIntensity: 0.5}), // run 13 (item 9): brighter machined bore
-    brass: std({color: 0xc9a24b, metalness: 1, roughness: 0.3}),
+    brass: brassVar(std({color: 0xc9a24b, metalness: 1, roughness: 0.3})),
     steel: std({color: 0xa7adb5, metalness: 1, roughness: 0.32}),
     steelDark: std({color: 0x5c626b, metalness: 1, roughness: 0.38}),
     zinc: std({color: 0xb7b39c, metalness: 1, roughness: 0.36}), // zinc-plated screws and clips
-    rubber: std({color: 0x121314, metalness: 0, roughness: 0.78, envMapIntensity: 0.4, sheen: 0.3, sheenRoughness: 0.8, sheenColor: new THREE.Color(0x2a2c30)}),
+    // run 25 (item 6): a satin sheen (was roughness 0.78, sheen 0.3 at 0.8, #2a2c30): a soft lighter rim at grazing angles, still no gloss
+    rubber: std({color: 0x121314, metalness: 0, roughness: 0.66, envMapIntensity: 0.4, sheen: 0.55, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x3a3d42)}),
     hose: std({color: 0x151618, metalness: 0, roughness: 0.6, envMapIntensity: 0.45}),
     vinyl: std({color: 0x8f989c, metalness: 0, roughness: 0.25, clearcoat: 0.6, clearcoatRoughness: 0.2, envMapIntensity: 0.6}),
     plastic: std({color: 0x161719, metalness: 0, roughness: 0.45, clearcoat: 0.15, envMapIntensity: 0.5}),
