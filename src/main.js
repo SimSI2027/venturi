@@ -403,7 +403,7 @@ async function main() {
       // run 22 (item 3): the dashes follow every leg of the path; a finished leg is dashed to its end, the leg it is on from the seat to the part's near face
       const legs = p.legV || [p.gOff];
       let r = w * legs.reduce((a, v) => a + v.length(), 0);
-      dv.copy(p.seat);
+      benchAdd(p, false, dv.copy(p.seat)); // run 28: from its seat on the bench
       for (let i = 0; i < legs.length && r > 0; i++) {
         const Ll = legs[i].length(), dir = legs[i].clone().divideScalar(Ll), last = r <= Ll;
         const L = last ? Math.max(r - p.extL[i], i ? 0 : 0.25 * MM) : Ll;
@@ -447,6 +447,52 @@ async function main() {
       if (!g || g.n !== n) trayGroups.push((g = {n, ps: []}));
       g.ps.push(p);
     }
+  }
+  // run 28 (correction 62): a part that comes off a sub-assembly already off the body is shown on that sub-assembly, held on the bench beside
+  // the body, never on the body. BENCH: root -> the steps that take parts off it (the slide 9: plate 11, needle holder 14, jet needle 48; the
+  // float chamber: accelerator jet 77). At such a step the root and what still rides on it leave the tray for a bench spot beside the body,
+  // open side up at the same scale (floor level, 15 mm clear of the body as it stands), and the step's parts lift off it there. At the
+  // root's own step what rides on it goes with it (ride). The bowl's screws 5 are loose once it is off. REBUILD mirrors it step for step.
+  const BENCH = {'9': [11, 12, 13], '1-bowl': [19]}, LOOSE = new Set(['5']);
+  const ridesOn = (id, root) => { for (let f = id, k = 0; f && k < 9; f = info(f).fits, k++) if (f === root) return true; return false; };
+  const benchOf = new Map(); // root id -> {steps, set: [parts riding on it from its step on], off: the bench offset (carb space)}
+  for (const [root, steps] of Object.entries(BENCH)) {
+    const r = REMOVED_AT[root], set = parts.filter((p) => !LOOSE.has(p.id) && REMOVED_AT[p.id] >= r && (p.id === root || ridesOn(p.id, root)));
+    const ids = new Set(set.map((p) => p.id)), bb = new THREE.Box3(), rest = new THREE.Box3();
+    for (const p of set) bb.union(new THREE.Box3().setFromObject(p.obj));
+    for (const p of parts) if (!ids.has(p.id) && !(REMOVED_AT[p.id] < steps[0])) rest.union(new THREE.Box3().setFromObject(p.obj));
+    const off = new THREE.Vector3(0, FLOOR_Y + 0.3 * MM - bb.min.y, rest.max.z + 15 * MM - bb.min.z); // the carb group is never moved: its space is the world's
+    benchOf.set(root, {r, steps, set, off});
+  }
+  /** The bench at the current step: {root, at: the tear-down step shown, set} or null. */
+  const benchNow = (useTo) => {
+    if (!guide.mode) return null;
+    const n = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
+    for (const [root, b] of benchOf) if (b.steps.includes(n)) return {root, b, n};
+    return null;
+  };
+  const bT = parts.map(() => tween(0, 0.8)), rideT = parts.map(() => tween(0, 0.6)), rideOf = parts.map(() => null);
+  for (const [root, b] of benchOf) for (const p of b.set) if (p.id !== root && REMOVED_AT[p.id] > b.r) rideOf[p.k] = partOf[root];
+  /** Each part's bench target (1: on the bench) and ride target (1: rides its root's hover) for the current step. */
+  function benchTargets(now, snap) {
+    const bn = benchNow(), n = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
+    parts.forEach((p, i) => {
+      const on = !!bn && bn.b.set.includes(p) && (REMOVED_AT[p.id] === bn.b.r || REMOVED_AT[p.id] >= bn.n);
+      const ro = rideOf[i], ride = !!guide.mode && !!ro && REMOVED_AT[ro.id] === n;
+      if (snap) hold(bT[i], on ? 1 : 0), hold(rideT[i], ride ? 1 : 0);
+      else aim(bT[i], on ? 1 : 0, now), aim(rideT[i], ride ? 1 : 0, now);
+    });
+    return bn;
+  }
+  const benched = (p) => bT[p.k].to > 0.5;
+  const bV = new THREE.Vector3();
+  /** The bench offset and the ride along its root's hover, added to p's pose (and to its seat for the dashes). */
+  function benchAdd(p, useTo, out) {
+    const T = bT[p.k], R = rideT[p.k], b = useTo ? T.to : T.v, r = useTo ? R.to : R.v;
+    if (b > 0) for (const [, q] of benchOf) if (q.set.includes(p)) out.addScaledVector(q.off, b);
+    const ro = rideOf[p.k];
+    if (r > 0 && ro) out.add(hoverAt(ro, (useTo ? wT[ro.k].to : wT[ro.k].v) * (useTo ? mixT.to : mixT.v) * r, bV));
+    return out;
   }
   const trayUI = el('div', 'vt-tray', null, ui);
   const trayEls = new Map(trayGroups.map((g) => [g.n, el('div', 'vt-tg', '<b></b>', trayUI)]));
@@ -593,7 +639,7 @@ async function main() {
     const last = guide.mode === 'teardown' ? guide.n - 1 : -1;
     for (const b of L.boxes) {
       const g = trayGroups.find((q) => q.n === b.n), e = trayEls.get(b.n);
-      const show = g.ps.every((p) => trT[p.k].to > 0.5 && trT[p.k].v > 0.98);
+      const show = g.ps.some((p) => !benched(p)) && g.ps.every((p) => benched(p) || (trT[p.k].to > 0.5 && trT[p.k].v > 0.98)); // run 28: the parts on the bench do not count
       e.classList.toggle('show', show);
       e.classList.toggle('on', b.n === last);
       if (!show) continue;
@@ -654,6 +700,7 @@ async function main() {
       for (const p of a.parts) p.obj.position.add(hoverAt(p, (useTo ? wT[p.k].to : wT[p.k].v) * m, hOff)), p.obj.scale.setScalar(1);
     }
     poseThrottle(useTo ? thT.to : thT.v);
+    for (const p of parts) benchAdd(p, useTo, p.obj.position); // run 28 (correction 62)
     if (guide.mode) layTray(useTo); // run 25 (item 2): laid from the poses above, so it clears the hovering parts too
     for (const p of parts) {
       const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
@@ -671,6 +718,7 @@ async function main() {
     const s = guide.step();
     const cur = new Set(s ? [...s.parts, ...s.moves] : []); // run 11: with the Keihin pieces riding on them
     const n = guide.n;
+    benchTargets(now, enter || !guide.mode);
     parts.forEach((p, i) => {
       let w = 0;
       let h = 0;
@@ -684,7 +732,7 @@ async function main() {
         h = !cur.has(p.id) && f > n ? 1 : 0;
       }
       gRim[i] = cur.has(p.id) ? 1 : 0;
-      const tray = h; // run 13: what was hidden now goes to the tray
+      const tray = h && !benched(p) ? 1 : 0; // run 13: what was hidden now goes to the tray (run 28: unless it is held on the bench)
       h = 0;
       const wasHidden = hT[i].v > 0.5;
       aim(hT[i], 0, now);
@@ -923,7 +971,9 @@ async function main() {
     const cur = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
     return (guide.mode && trayLay.to?.boxes.find((b) => b.n === cur)?.pts) || [];
   };
-  const autoSubject = () => (guide.mode ? [...curParts().map((p) => p.obj), ...flightPts(), ...trayCur(), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
+  // run 28 (correction 62): at a bench step the camera frames the sub-assembly on the bench and the parts lifting off it
+  const benchSubject = () => { const bn = benchNow(); return bn && [...bn.b.set.filter((p) => benched(p)).map((p) => p.obj), ...curParts().map((p) => p.obj)]; };
+  const autoSubject = () => (guide.mode && benchNow() ? benchSubject() : guide.mode ? [...curParts().map((p) => p.obj), ...flightPts(), ...trayCur(), partOf['1'].obj, ...parts.filter((p) => p.tray && trT[p.k].to > 0.5).map((p) => p.obj)] : focus >= 0 ? asms[focus].group : bare() ? asms.filter((a) => a !== hoseAsm).map((a) => a.group) : carb);
   const autoLoose = () => (bare() ? subjectPts(hoseAsm.group) : []);
   const autoKeep = () => (focus >= 0 || guide.mode ? [] : ground());
   const autoDir = () => swayDir(view.base || (guide.mode ? guideDir() : focus >= 0 ? groupDir(focus) : HERO_DIR), SWAY * view.env.v * Math.sin(view.phase));
@@ -1336,7 +1386,7 @@ async function main() {
   let carbFloor = FLOOR_Y;
   let poseKey = NaN; // changes only when a carburetor part moves (the shadow pass follows it)
   function placeFloor() {
-    poseKey = st.explode + thT.v * 31 + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + hT.reduce((s, T) => s + T.v, 0) * 23;
+    poseKey = st.explode + thT.v * 31 + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + hT.reduce((s, T) => s + T.v, 0) * 23 + bT.reduce((s, T) => s + T.v, 0) * 29 + rideT.reduce((s, T) => s + T.v, 0) * 37;
     if (floorKey === poseKey) return;
     floorKey = poseKey;
     let lo = Infinity;
@@ -1440,8 +1490,8 @@ async function main() {
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
-  const settled = () => !view.follow && [thT, mixT, ...wT, ...trT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, thT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
+  const settled = () => !view.follow && [thT, mixT, ...wT, ...trT, ...bT, ...rideT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
+  const sigOf = () => [st.explode, thT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...bT.map((t) => t.v), ...rideT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -1462,6 +1512,7 @@ async function main() {
     thRange.style.setProperty('--p', `${(thT.v * 100).toFixed(1)}%`);
     const vis = thT.v > 0 && circ >= 0 ? 'Throttle and circuits: visual only · ' : thT.v > 0 ? 'Throttle: visual only · ' : circ >= 0 ? 'Circuits: visual only · ' : '';
     if (foot.dataset.v !== vis) foot.dataset.v = vis;
+    bT.forEach((T) => stepT(T, now)), rideT.forEach((T) => stepT(T, now)); // run 28 (correction 62): the bench
     trT.forEach((T) => stepT(T, now)); // run 15 (item 9): the tray tweens were never stepped, so a part only reached the tray on entering a mode
     poseAll(st.explode);
     placeFloor();
