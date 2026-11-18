@@ -86,6 +86,7 @@ class MSRenderPass extends RenderPass {
   }
 }
 
+const REFLECT = 0.12; // the floor's mirror strength
 export function createStage(canvas) {
   // every tier draws through the composer (MSAA scene pass, SMAA last), so the canvas itself needs none
   const renderer = new THREE.WebGLRenderer({canvas, antialias: false, alpha: true, powerPreference: 'high-performance', preserveDrawingBuffer: false});
@@ -148,7 +149,7 @@ export function createStage(canvas) {
     uBase: {value: new THREE.Color(0.011, 0.012, 0.014)},
     uPool: {value: new THREE.Color(0.05, 0.042, 0.032)},
     uC: {value: new THREE.Vector2(0, 0)}, // the carburetor's centre over the floor
-    uStrength: {value: 0.12},
+    uStrength: {value: REFLECT},
     uR: {value: new THREE.Vector2(45 * MM, 240 * MM)},
     uS: {value: MM}, // footprint scale: the carburetor in mm
   };
@@ -258,11 +259,15 @@ export function createStage(canvas) {
   // noOutline: left out of the outline's depth pass (main.js: the ATV prop; the outline then draws over it)
   const noOutline = [];
   const olRender = outline.render.bind(outline);
+  // run 26 (item 2): the bench tray's parts also leave the depth pre-pass (they sit beside the carburetor, never in
+  // front of a step's parts); at TEAR DOWN step 29 that pass drew the whole tray again, +177 draw calls a frame
   outline.render = (...args) => {
-    const vis = noOutline.map((o) => o.visible);
-    noOutline.forEach((o) => (o.visible = false));
+    const sel = new Set(outline.selectedObjects);
+    const skip = S.outlineSkip ? [...noOutline, ...S.outlineSkip().filter((o) => !sel.has(o))] : noOutline;
+    const vis = skip.map((o) => o.visible);
+    skip.forEach((o) => (o.visible = false));
     olRender(...args);
-    noOutline.forEach((o, i) => (o.visible = vis[i]));
+    skip.forEach((o, i) => (o.visible = vis[i]));
   };
   composer.addPass(outline);
   const vig = new ShaderPass(Vignette);
@@ -340,6 +345,13 @@ export function createStage(canvas) {
   const setTier = (t) => {
     S.tier = t;
     const hi = t === 'high';
+    // run 26 (item 2, correction 56): HIGH on a named discrete GPU takes back every cut but the pixel ratio, so a
+    // reflection or shadow cut taken on MEDIUM no longer stays in force after a click on HIGH
+    if (hi && S.discrete) {
+      for (const k of ['ssao', 'reflection', 'shadowmap', 'shadows']) delete S.cut[k];
+      floorR.material.uniforms.uStrength.value = REFLECT;
+      if (!renderer.shadowMap.enabled) (renderer.shadowMap.enabled = true), scene.traverse((o) => o.material && [o.material].flat().forEach((m) => (m.needsUpdate = true)));
+    }
     const sm = hi && !S.cut.shadowmap ? 4096 : 1024;
     key.shadow.mapSize.set(sm, sm);
     key.shadow.radius = hi ? 40 : 22; // texels: ~2 world units of blur on high, ~5 on low
@@ -373,15 +385,16 @@ export function createStage(canvas) {
     setTimeout(() => c.remove(), 700);
   };
   const degrade = () => {
+    const hiLock = S.tier === 'high' && S.discrete; // correction 56: there only the pixel ratio may drop
     const steps = [
       ['ssao', () => ao.enabled, () => (ao.enabled = false)],
-      ['reflection', () => floorR.visible, () => (floorR.material.uniforms.uStrength.value = 0)],
+      ['reflection', () => floorR.visible && floorR.material.uniforms.uStrength.value > 0, () => (floorR.material.uniforms.uStrength.value = 0)],
       ['shadowmap', () => key.shadow.mapSize.x > 1024, () => ((key.shadow.mapSize.x = key.shadow.mapSize.y = 1024), disposeShadow())],
       ['dpr', () => renderer.getPixelRatio() > 1, () => 0],
       ['shadows', () => renderer.shadowMap.enabled, () => ((renderer.shadowMap.enabled = false), scene.traverse((o) => o.material && [o.material].flat().forEach((m) => (m.needsUpdate = true))))],
     ];
     for (const [k, live, off] of steps) {
-      if (S.cut[k]) continue;
+      if (S.cut[k] || (hiLock && k !== 'dpr')) continue;
       S.cut[k] = true;
       if (!live()) continue;
       crossfade();

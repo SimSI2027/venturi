@@ -122,7 +122,9 @@ async function main() {
   el('div', 'iw-rule', null, ui);
   const hint =el('div', 'iw-hint', null, ui);
   const dropped = [];
-  const setHint = () => (hint.textContent = `13 groups · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.map((k) => ' · ' + k).join('')}`);
+  const STEP = {ssao: 'no SSAO', reflection: 'no reflection', shadowmap: 'shadow map 1024', dpr: 'DPR 1', shadows: 'no shadows'};
+  // run 26 (item 2): the line lists only the cuts still in force (HIGH on a discrete GPU takes back all but the pixel ratio)
+  const setHint = () => (hint.textContent = `13 groups · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.filter((k) => S.cut[k]).map((k) => ' · ' + STEP[k]).join('')}`);
   const foot = el('div', 'vt-foot', NOTICE, ui);
 
   const TIERS = ['high', 'med', 'low'];
@@ -137,6 +139,7 @@ async function main() {
   const gpu = String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
   const discrete = /\b(rtx|gtx)\b|radeon\s*rx\b|\barc\b|apple\s*m\d/i.test(gpu);
   const phone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600;
+  S.discrete = discrete; // correction 56: HIGH here may only lower the pixel ratio
   S.setTier(forced || stored || (phone ? 'low' : discrete ? 'high' : 'med'));
   window.__PROBE = {gpu, discrete, tier: S.tier};
   const showQ = () => [...qSeg.children].forEach((b) => b.classList.toggle('on', b.dataset.t === S.tier));
@@ -625,6 +628,7 @@ async function main() {
     }
   }
   S.reflectSkip = () => (guide.mode ? parts.filter((p) => p.tray && trT[p.k].v > 0.3).map((p) => p.obj) : []); // run 25 (item 2): the tray casts 0 floor reflection
+  S.outlineSkip = S.reflectSkip; // run 26 (item 2): nor a second draw in the outline's depth pre-pass
   /**
    * Each part's target for the current step. TEAR DOWN: steps before n hidden, step n's parts 0.3 body-lengths
    * out on their fitting axis, later parts in place. REBUILD: steps before n in place, step n's parts hovering off their seat (home in
@@ -1373,7 +1377,6 @@ async function main() {
   const inflight = [];
   const cpuOf = new Map();
   const cost = [];
-  const STEP = {ssao: 'no SSAO', reflection: 'no reflection', shadowmap: 'shadow map 1024', dpr: 'DPR 1', shadows: 'no shadows'};
   const sample = (at, ms, e) => {
     if (e !== epoch || !window.__READY || still) return;
     cost.push([at, ms]);
@@ -1382,7 +1385,7 @@ async function main() {
     const med = cost.map((c) => c[1]).sort((a, b) => a - b)[cost.length >> 1];
     if (med <= 20) return;
     const k = S.degrade();
-    if (k) dropped.push(STEP[k]), setHint();
+    if (k) dropped.push(k), setHint();
     epoch++;
     cost.length = 0;
   };
