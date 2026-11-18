@@ -95,7 +95,13 @@ export function buildBowl(index) {
     tier(BOSS, BY.deep + 0.1, BY.boss, 0.2, null, 0.1), // the plug boss
     tier(PASS, BY.deep + 0.05, BY.deep - 0.38, 0.12, null, 0.1), // the curled passage
     tier(DSB, BY.shallow + 0.05, BY.shallow - 0.45, 0.12, null, 0.05), // the drain screw's boss
-    tier(LOBE, BY.ear - 0.25, PYW, 0.2, null, 0.1), // the pump housing lobe
+    // run 26 (item 14): the pump housing lobe, its lower 6.4 mm hollow: the pump chamber's well, open under cover 27 (pump.js)
+    tier(LOBE, BY.ear - 0.25, PYW + 0.6, 0.2, null, 0.1),
+    tier(LOBE, PYW + 0.6, PYW, 0.1, null, 0.1, [[PX, PZ, 1.25]]),
+    // inside, on the flat floor (top at BY.shallow + 0.32, walls 3.2-3.4 mm): the boss round plug 38's thread at the centre, and the
+    // drain passage's port toward drain screw 26
+    tubeY(0.95, 0.55, BY.shallow + 0.3, BY.shallow + 0.62).translate(QX, 0, QZ),
+    tubeY(0.32, 0.15, BY.shallow + 0.3, BY.shallow + 0.45).translate(SX, 0, SZ),
     tier(NIPB, BY.deep + 0.1, BY.deep - 0.3, 0.1, null, 0.05), // the drain nipple's boss
     tier(RG, BY.lip - 0.4, BY.ear - 0.3, 0.06, null, 0.1), // the pump rod's guide
   ]);
@@ -104,6 +110,8 @@ export function buildBowl(index) {
   const seats = merge(EARS.map(([x, z]) => tubeY(mm(4.6), M4_HOLE, BY.earBot - 0.05, BY.earBot + 0.02, 0.015).translate(x, 0, z)));
   const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep - 0.2).translate(DX, 0, DZ);
   const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.04, BOX);
+  // run 26 (item 14): the inner rim gasket 25 (RIM to 0.3 in) seals against, 0.4 mm proud just inside it
+  const rim = tier(inset(RIM, 0.3), BY.lip + 0.04, BY.lip, 0.01, inset(RIM, 0.4), 0.15);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
   // run 10 (item 7): the Keihin diagram's thin pump rod (its 72), 2 mm, a ball end up in link lever 41's arm (linkage.js)
   // run 15 (item 7): the rod has a chamfered foot with thread rings, a retaining groove and a collar under the ball
@@ -115,7 +123,7 @@ export function buildBowl(index) {
   const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.5], [1.0, IY + 0.3, IZ - 0.05], [1.0, IY + 0.85, IZ], [1.0, IT, IZ]], 0.36, 0.2), orient(hexY(0.5, 0, 0.3), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.42, 0.2, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]); // overlay round 1 (carb_8): 8 across
   // overlay round 2 (carb_7, carb_8): the cast boss the inlet comes out of, on the upper box's sensor side
   const iboss = rbox(1.4, 1.1, 1.0, 0.3).translate(1.0, IY, z0 + 0.35);
-  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   // run 11 (item 3): Keihin pieces of reference 1 with their own meshes: the fuel joint (83) with its 3 O-rings (85)
   // in the boss, the pump rod (72) with its U-ring (52) on the guide's top
   A.add(part([0, 0, 0], mk(inlet, brass)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});
