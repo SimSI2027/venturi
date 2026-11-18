@@ -262,14 +262,22 @@ export function buildBody(index) {
   // the underside (every fitted jet sits in its own boss): the main jet tower round the needle jet (open below:
   // spacer and main jet hex show), the pilot jet and starter jet bosses, the needle valve seat boss, the 2 float
   // pin posts either side of the float's hinge
-  g.push(tubeY(0.98, 0.8, -5.2 + UY, BOT + 0.05).translate(-0.2, 0, 0));
-  g.push(cylY(0.32, -5.0 + UY, BOT + 0.05).translate(0.7, 0, 1.1));
-  g.push(cylY(0.32, -4.75 + UY, BOT + 0.05).translate(-1.7, 0, -0.8));
-  g.push(tubeY(0.4, 0.2, -4.45 + UY, BOT + 0.05).translate(1.2, 0, 0));
-  for (const z of [-1.35, 1.35]) g.push(rbox(0.5, 1.15, 0.36, 0.1).translate(1.8, -4.52 + UY, z));
+  // run 26 (item 13, manual 6-2 and carb_main): the main jet tower closes at the joint round the needle jet's bore (17 passes through it,
+  // 0.28 across its tube), the hex of 17 and the spacer below inside the tower
+  g.push(tubeY(0.98, 0.8, -5.2 + UY, BOT + 0.05).translate(-0.2, 0, 0), tubeY(0.8, 0.31, BOT - 0.2, BOT + 0.05).translate(-0.2, 0, 0));
+  // the pilot jet (18) and starter jet (19) each in its own threaded boss, tapped 8 mm up from the boss's foot (were solid cylinders)
+  for (const [x, z, y0, r, hr] of [[0.7, 1.1, -5.0 + UY, 0.42, mm(2.6)], [-1.7, -0.8, -4.75 + UY, 0.36, mm(1.9)]]) { const h = BOT + 0.05 - y0; g.push(tappedY(r, hr, 0, h, Math.min(mm(8), h - 0.1)).rotateX(Math.PI).translate(x, BOT + 0.05, z)); }
+  g.push(tubeY(0.4, 0.2, -4.45 + UY, BOT + 0.05).translate(1.2, 0, 0)); // the needle valve seat boss, bored through
+  // the 2 float pin posts, each with the pin's cross hole (22 runs along Z at y -3.23, 0.1 across)
+  for (const z of [-1.35, 1.35]) g.push(slabZ([[1.55, -3.6], [2.05, -3.6], [2.05, -2.43], [1.55, -2.43]], z, 0.36, [[1.8, -3.23, 0.115]], 0.1));
+  // the accelerator pump outlet: a bored stub on the cable side of the joint, over the pump housing (bowl.js PUMP), where its passage goes up
+  g.push(tubeY(0.24, 0.1, BOT - 0.25, BOT + 0.05).translate(0.77, 0, -2.75));
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
-  const bowlFace = mk(rbox(5.9, 0.02, 6.0, 0.008).translate(-0.45, BOT - 0.005, -0.2), machined);
+  // run 26 (item 13): the mating face is the flange's rim only (it was a solid 5.9 x 6.0 plate drawn over every boss and hole), in 2 machined
+  // bands 0.6 mm proud with the groove gasket 25 (an O-ring loop, RIM to 0.3 in) lies in between them
+  const band = (o, h) => { const s = rpolyA(o, 0.2); s.holes.push(rpolyA(h, 0.15, new THREE.Path())); return extrudeXY(s, 0.06, 0.012, 8, {free: true}).rotateX(Math.PI / 2).translate(0, BOT - 0.025, 0); };
+  const bowlFace = mk(merge([band(RIM, inset(RIM, 0.06)), band(inset(RIM, 0.3), inset(RIM, 0.42))]), machined);
   // run 26 (item 12): the machined face gasket 2 seals on, round the well, and the tops of the top cover's 2 tapped bolt bosses
   const gS = rpolyA([[TX0 + 0.1, -2.94], [TX1 - 0.1, -2.94], [TX1 - 0.1, 2.94], [TX0 + 0.1, 2.94]], 0.15);
   gS.holes.push(rpolyA([[SX0, -SZ], [SX1, -SZ], [SX1, SZ], [SX0, SZ]], FR, new THREE.Path()));
