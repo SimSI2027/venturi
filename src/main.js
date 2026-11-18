@@ -475,13 +475,13 @@ async function main() {
   const bT = parts.map(() => tween(0, 0.8)), rideT = parts.map(() => tween(0, 0.6)), rideOf = parts.map(() => null);
   for (const [root, b] of benchOf) for (const p of b.set) if (p.id !== root && REMOVED_AT[p.id] > b.r) rideOf[p.k] = partOf[root];
   /** Each part's bench target (1: on the bench) and ride target (1: rides its root's hover) for the current step. */
-  function benchTargets(now, snap) {
+  function benchTargets(now, snap, quick) {
     const bn = benchNow(), n = guide.mode === 'rebuild' ? N_B + 1 - guide.n : guide.n;
     parts.forEach((p, i) => {
       const on = !!bn && bn.b.set.includes(p) && (REMOVED_AT[p.id] === bn.b.r || REMOVED_AT[p.id] >= bn.n);
       const ro = rideOf[i], ride = !!guide.mode && !!ro && REMOVED_AT[ro.id] === n;
       if (snap) hold(bT[i], on ? 1 : 0), hold(rideT[i], ride ? 1 : 0);
-      else aim(bT[i], on ? 1 : 0, now), aim(rideT[i], ride ? 1 : 0, now);
+      else aim(bT[i], on ? 1 : 0, now, quick ? QUICK : 0.8), aim(rideT[i], ride ? 1 : 0, now, quick ? QUICK : 0.6); // run 28: a step change settles in QUICK
     });
     return bn;
   }
@@ -720,8 +720,8 @@ async function main() {
     const s = guide.step();
     const cur = new Set(s ? [...s.parts, ...s.moves] : []); // run 11: with the Keihin pieces riding on them
     const n = guide.n;
-    const bnch = benchTargets(now, enter || !guide.mode);
-    if (!bnch && wasBench) trayBack = now + 1100;
+    const bnch = benchTargets(now, enter || !guide.mode, quick);
+    if (!bnch && wasBench) trayBack = now + (quick ? 450 : 1100);
     wasBench = !!bnch;
     parts.forEach((p, i) => {
       let w = 0;
@@ -742,7 +742,8 @@ async function main() {
       // run 28 (item 4): at a bench step the camera is on the bench and the tray, below it out of the frame, fades out; leaving it, the tray
       // comes back once the camera has turned back to the body (0.8 s), so it never sweeps up under the mode buttons
       const hTo = tray && bnch ? 1 : 0;
-      aim(hT[i], hTo, !hTo && hT[i].to === 1 && tray ? now + 800 : now);
+      if (!hTo && hT[i].to === 1 && tray) aim(hT[i], 0, now + (quick ? 100 : 800), quick ? 0.35 : hT[i].dur); // a step change (Next) settles in 0.45 s
+      else aim(hT[i], hTo, now);
       if (enter || !guide.mode) hold(trT[i], guide.mode ? tray : 0);
       else aim(trT[i], tray, now, quick ? QUICK : 0.8);
       if (!guide.mode) return;

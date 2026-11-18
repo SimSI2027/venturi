@@ -361,7 +361,8 @@ export function buildBody(index) {
   const rmid = (BORE_R + RA) / 2;
   const wins = merge(Array.from({length: 10}, (_, i) => rbox(0.03, mm(3.0), mm(2.2), 0.02).translate(WX0 + 0.012, WMID, 0).rotateX(((i + 0.5) * Math.PI * 2) / 10 - Math.PI / 2))); // run 14: the dark floor of each window, on the flange's face
   const fx = AF + mm(2.5) + 0.04, fr = RA + FL * 0.55;
-  const holes = merge([-1, 1].map((k) => cylY(mm(1.1), 0, 0.03, 0.005).rotateZ(-Math.PI / 2).translate(fx, -fr * Math.cos(k * 0.2), -fr * Math.sin(k * 0.2) * 1)));
+  const holes = merge([-1, 0, 1].map((k) => // run 28 (item 10, D1 line 1): 3 small holes, as mine_1 shows
+     cylY(mm(1.1), 0, 0.03, 0.005).rotateZ(-Math.PI / 2).translate(fx, -fr * Math.cos(k * 0.2), -fr * Math.sin(k * 0.2) * 1)));
   const adapterMarks = mk(merge([wins, holes]), A.M.rubber);
   // the bore itself: machined, brighter than the casting, open to the slide cavity between SX0 and SX1
   const ring = (x0, x1) => latheX([[x0, BORE_R + 0.002], [x1, BORE_R + 0.002], [x1, BORE_R - 0.03], [x0, BORE_R - 0.03]], 64);

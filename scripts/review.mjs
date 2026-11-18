@@ -247,7 +247,7 @@ M.push(`bore shows through from the air-box end with the slide out: ${bore ? `${
       const e = els[i];
       if (!e || !e.classList.contains('show')) return;
       let x0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-      for (const p of g.ps) { b.setFromObject(p.obj); for (let k = 0; k < 8; k++) { v.set(k & 1 ? b.max.x : b.min.x, k & 2 ? b.max.y : b.min.y, k & 4 ? b.max.z : b.min.z).project(V.camera); const x = (v.x * 0.5 + 0.5) * innerWidth, y = (-v.y * 0.5 + 0.5) * innerHeight; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }
+      for (const p of g.ps) p.obj.traverse((m) => { if (!m.isMesh) return; const a = m.geometry.attributes.position; for (let k = 0; k < a.count; k += 3) { v.fromBufferAttribute(a, k).applyMatrix4(m.matrixWorld).project(V.camera); const x = (v.x * 0.5 + 0.5) * innerWidth, y = (-v.y * 0.5 + 0.5) * innerHeight; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }); // run 28: mesh points, not the world box's corners (TEAR DOWN 20's oblique camera from below swelled the box)
       const r = e.querySelector('b').getBoundingClientRect(), cx = (r.left + r.right) / 2;
       n++;
       if (r.top - y1 >= -3 && r.top - y1 <= 16 && cx >= x0 - 2 && cx <= x1 + 2) ok++;
