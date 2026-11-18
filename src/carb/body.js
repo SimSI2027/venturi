@@ -227,7 +227,9 @@ export function buildBody(index) {
   g.push(orient(merge([cylY(0.45, STARTER.z, STARTER.face, 0.06), cylY(0.53, STARTER.face - 0.25, STARTER.face, 0.06)]), [0, 0, 1], [STARTER.x, STARTER.armY, 0]));
   // pilot screw: a lug under the engine spigot (-X), outside the bowl's lip, with a bored boss; its O-ring (51)
   // shows under it
-  g.push(rbox(0.95, 1.9, 1.4, 0.3).translate(-3.95, -3.15 + UY, 0));
+  // run 26 (item 11): its top stops at the engine spigot's outside (y -RE): from y -0.68 it stood 12 mm up into the bore, where 42 of 315 rays
+  // along the bore stopped
+  g.push(rbox(0.95, 0.85, 1.4, 0.3).translate(-3.95, -3.05 + 0.85 / 2, 0));
   g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
   // run 15 (item 2): the 4 bowl screws thread up into 4 tapped holes in the flange (M4: thread 7.4 mm across, 8 mm deep, open at
   // the bottom), each in a round boss at the flange's corner: no posts
