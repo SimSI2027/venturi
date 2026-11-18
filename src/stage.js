@@ -13,7 +13,7 @@ import {CopyShader} from 'three/addons/shaders/CopyShader.js';
 import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {Reflector} from 'three/addons/objects/Reflector.js';
-import {setEnvironment} from './lib/materials.js';
+import {setEnvironment, grainAniso} from './lib/materials.js';
 
 // The background is a CSS gradient (#15171c -> #07080a) behind a transparent canvas, so its
 // colours are exact on both tiers; the floor fades to transparent into it.
@@ -229,7 +229,7 @@ export function createStage(canvas) {
   ao.updateGtaoMaterial({radius: 1.5 * MM, distanceExponent: 1, distanceFallOff: 1, thickness: 1.5 * MM, scale: 2.5, samples: 16});
   ao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16});
   ao.blendIntensity = 1;
-  // half resolution: the largest GPU pass; AO is soft, the blend samples it bilinearly
+  // half resolution: the largest GPU pass; AO is soft, the blend samples it bilinearly (run 28: full resolution measured no better under the sway)
   const aoSize = ao.setSize.bind(ao);
   ao.setSize = (w, h) => aoSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
   const aoRender = ao.render.bind(ao);
@@ -346,6 +346,7 @@ export function createStage(canvas) {
   };
   const setTier = (t) => {
     S.tier = t;
+    grainAniso(t); // run 28 (item 3)
     const hi = t === 'high';
     // run 26 (item 2, correction 56): HIGH on a named discrete GPU takes back every cut but the pixel ratio, so a
     // reflection or shadow cut taken on MEDIUM no longer stays in force after a click on HIGH

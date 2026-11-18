@@ -259,6 +259,11 @@ function makeMaterialsIronwood() {
 }
 
 let castTex = null;
+/** Run 28 (item 3): the grain's anisotropic filtering per tier (8 HIGH, 4 MED, 2 LOW), set by the stage's setTier. */
+export function grainAniso(tier) {
+  const n = {high: 8, med: 4, low: 2}[tier] || 4;
+  if (castTex && castTex.anisotropy !== n) Object.assign(castTex, {anisotropy: n, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, needsUpdate: true});
+}
 /** Fine casting grain: a tangent-space normal map from a few octaves of value noise (sand-cast aluminium). */
 export function castNormal(size = 256, strength = 1.6) {
   if (castTex) return castTex;
@@ -334,7 +339,12 @@ export function makeMaterials() {
         vec3 on = normalize(vTriN) * faceDirection, bw = pow(abs(on), vec3(4.0));
         bw /= bw.x + bw.y + bw.z;
         vec3 tx = texture2D(normalMap, vTriP.zy).xyz * 2.0 - 1.0, ty = texture2D(normalMap, vTriP.xz).xyz * 2.0 - 1.0, tz = texture2D(normalMap, vTriP.xy).xyz * 2.0 - 1.0;
-        tx.xy *= normalScale; ty.xy *= normalScale; tz.xy *= normalScale;
+        // run 28 (item 3): the grain fades out where 1 texel covers under 1 pixel (texels a pixel 0.5 -> 1: grain 1 -> 0), each projection's
+        // footprint from its own 2 axes' screen derivatives; below 1 texel a pixel the mip chain and the 8x / 4x anisotropy filter it
+        vec3 gdx = dFdx(vTriP) * 256.0, gdy = dFdy(vTriP) * 256.0;
+        float tpp = dot(bw, vec3(max(length(gdx.zy), length(gdy.zy)), max(length(gdx.xz), length(gdy.xz)), max(length(gdx.xy), length(gdy.xy))));
+        vec2 gs = normalScale * (1.0 - smoothstep(0.5, 1.0, tpp));
+        tx.xy *= gs; ty.xy *= gs; tz.xy *= gs;
         tx = vec3(tx.xy + on.zy, abs(tx.z) * on.x);
         ty = vec3(ty.xy + on.xz, abs(ty.z) * on.y);
         tz = vec3(tz.xy + on.xy, abs(tz.z) * on.z);
