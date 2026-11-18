@@ -119,9 +119,12 @@ function look(m, U) {
     sh.uniforms.uRim = U.rim;
     sh.uniforms.uSec = SEC;
     sh.uniforms.uCap = U.cap;
+    // run 25 (item 5): every part mesh carries aAO, the baked recess shading (1 where none is baked: src/lib/ao.js), so the 4 castings need
+    // no shader variant of their own; it darkens the lit result on front faces only (the SECTION's cut faces keep their flat tint)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aAO;\nvarying float vAO;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvAO = aAO;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uDim;\nuniform float uRim;\nuniform float uSec;\nuniform vec3 uCap;')
-      .replace('#include <opaque_fragment>', 'outgoingLight = outgoingLight * uDim * (1.0 + 0.15 * uRim);\n' + NO_BLOOM + '\nif (!gl_FrontFacing) { if (uSec < 0.5) discard; outgoingLight = uCap; diffuseColor.a = 1.0; }\n#include <opaque_fragment>');
+      .replace('#include <common>', '#include <common>\nuniform float uDim;\nuniform float uRim;\nuniform float uSec;\nuniform vec3 uCap;\nvarying float vAO;')
+      .replace('#include <opaque_fragment>', 'outgoingLight = outgoingLight * uDim * (1.0 + 0.15 * uRim);\nif (gl_FrontFacing) outgoingLight *= vAO;\n' + NO_BLOOM + '\nif (!gl_FrontFacing) { if (uSec < 0.5) discard; outgoingLight = uCap; diffuseColor.a = 1.0; }\n#include <opaque_fragment>');
   };
   m.customProgramCacheKey = () => key + '|look';
 }
@@ -219,6 +222,7 @@ export class Asm {
         if (!o.isMesh) return;
         o.geometry = crease(o.geometry, FLAT_PARTS.has(`${this.key}:${part.id}`));
         if (o.material.normalMap) grainOf(o.geometry);
+        if (!o.geometry.attributes.aAO) o.geometry.setAttribute('aAO', new THREE.BufferAttribute(new Uint8Array(o.geometry.attributes.position.count).fill(255), 1, true)); // run 25 (item 5)
         if (!map.has(o.material)) map.set(o.material, cloneMat(o.material));
         o.material = map.get(o.material);
         for (const k of TEX) {

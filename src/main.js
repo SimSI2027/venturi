@@ -23,6 +23,7 @@ import {buildJets} from './carb/jets.js';
 import {buildMixture} from './carb/mixture.js';
 import {buildBody, BORE_R, SHAFT, SLIDE_LUG} from './carb/body.js';
 import {toMM} from './carb/kit.js';
+import {applyAO} from './lib/ao.js';
 import {createGuide, MODES, REMOVED_AT, FITTED_AT} from './guide.js';
 
 const MARKS = {parsed: performance.now()};
@@ -76,6 +77,7 @@ async function main() {
     const a = toMM(BUILD[g.key](i)); // run 9: baked into mm (1 unit = 1 mm)
     carb.add(a.group);
     a.finalize();
+    a.parts.forEach(applyAO); // run 25 (item 5): the 4 castings' baked recess shading, before their shaders compile
     compile(a.group);
     return a;
   });
