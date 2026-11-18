@@ -26,7 +26,13 @@ export function buildSlide(index) {
   ]);
   // the hollow's floor (the front wall's back face) is shadowed: a near-black liner panel, so the open back reads as a deep cavity
   const liner = merge([rbox(0.03, Y1 - Y0 - 2 * WT, 2 * (ZW - WT), 0.01).translate(-0.085, (Y0 + Y1) / 2, 0), tubeY(0.3, NH, Y0 + WT, Y1 - WT, 0.02)]); // and the needle's tube
-  A.add(part([NX, 1.4, 0], mk(valve, anod), mk(liner, rubber)), '9', {ex: [0, 0, 0], order: 0.2});
+  // run 27 (round 2, D1 line 1): the liner matte black with no sheen (rubber's satin sheen lit it grey down the bore from the air-box end)
+  const matte = rubber.clone();
+  matte.color.set(0x070708);
+  matte.sheen = 0;
+  matte.roughness = 0.95;
+  matte.envMapIntensity = 0.1;
+  A.add(part([NX, 1.4, 0], mk(valve, anod), mk(liner, matte)), '9', {ex: [0, 0, 0], order: 0.2});
   // 10 rollers: four steel bearings on those pins (outer race with chamfered rims, inner hub), two each side
   const wheel = orient(merge([latheY([[-0.12, 0.22], [-0.12, 0.32], [-0.09, 0.36], [0.09, 0.36], [0.12, 0.32], [0.12, 0.22], [-0.12, 0.22]]), tubeY(0.2, 0.11, -0.15, 0.15)]), [0, 0, 1]);
   const rollers = part([NX + PX, 1.4, 0], ...[-1.1, 1.1].flatMap((y) => [-2.5, 2.5].map((z) => mk(wheel.clone(), steel, 0, y, z))));
@@ -38,7 +44,8 @@ export function buildSlide(index) {
   s.holes.push(circ(0, 0.3, NH), circ(1.5, -0.85, 0.16));
   const g11 = extrudeXY(s, 0.12, 0.04, 6, {free: true});
   g11.rotateY(Math.PI / 2);
-  A.add(part([NX - 0.56, 1.6, 0], mk(g11, machined), mk(orient(tubeY(0.3, 0.14, -0.08, 0.08), [1, 0, 0]), machined, 0, 0.3, 0)), '11', {ex: [-2.4, 0, 0], order: 0.3});
+  // run 27 (round 1, D1 line 1): dark steel, so the bore reads dark inside from the air-box end as in mine_1 (machined, it lit the bore grey)
+  A.add(part([NX - 0.56, 1.6, 0], mk(g11, A.M.steelDark), mk(orient(tubeY(0.3, 0.14, -0.08, 0.08), [1, 0, 0]), A.M.steelDark, 0, 0.3, 0)), '11', {ex: [-2.4, 0, 0], order: 0.3});
   // run 14 (item 6, Keihin 22): the seal is a rubber frame round the plate (4.6 x 3.2 outside, a 4.0 x 2.7 window), proud of it
   const fr = rpoly([[-2.3, -1.6], [2.3, -1.6], [2.3, 1.6], [-2.3, 1.6]], 0.35);
   fr.holes.push(rpoly([[-2.0, -1.35], [2.0, -1.35], [2.0, 1.35], [-2.0, 1.35]], 0.2, new THREE.Path()));

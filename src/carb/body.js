@@ -293,7 +293,10 @@ export function buildBody(index) {
   // (the needle jet 17 inside it, the spacer and main jet below its face), with the pilot jet 18 beside it on the engine side and the starter jet
   // 19 in a lobe toward the air box and the cable side
   const JB = [[-1.42, -0.42, 0.4], [-0.5, -0.66, 0.4], [0.2, -1.2, 0.35], [0.98, -1.2, 0.35], [1.02, -0.4, 0.35], [0.45, 0.64, 0.55], [-1.42, 0.45, 0.4]];
-  g.push(slabY(JB, (BOT + 0.52 + JF) / 2, BOT + 0.52 - JF, null, 0.35));
+  // (round 1, D2 line 4: bored for the needle jet's stack, the pilot jet and the starter jet, each hole open at the face)
+  const jbS = rpolyA(JB, 0.35);
+  jbS.holes.push(circ(JETS.main[0], JETS.main[1], 0.3), circ(JETS.pilot[0], JETS.pilot[1], 0.15), circ(JETS.starter[0], JETS.starter[1], 0.13));
+  g.push(extrudeXY(jbS, BOT + 0.52 - JF, 0.08, 16, {free: true}).rotateX(Math.PI / 2).translate(0, (BOT + 0.52 + JF) / 2, 0));
   // the needle valve seat boss (bored through) and the 2 float pin posts at the air-box end (under_1), each post with the pin's cross hole
   g.push(tubeY(0.4, 0.2, -4.45 + UY, BOT + 0.52).translate(SEAT[0], 0, SEAT[1]));
   for (const z of [-1.2, 1.2]) g.push(slabZ([[1.55, -3.6], [2.05, -3.6], [2.05, BOT + 0.52], [1.55, BOT + 0.52]], z, 0.36, [[1.8, -3.23, 0.115]], 0.1));

@@ -40,6 +40,8 @@ const tmp = (n) => `scratch/_rv_${n}.png`;
 
 // --- sheet A
 const HIDE = {4: ['65', '66', '67', '70', '68', '69']}; // mine_4 has the cable cover off
+const PBOX = fs.existsSync('scratch/photobox27.json') ? JSON.parse(fs.readFileSync('scratch/photobox27.json', 'utf8')) : {};
+const FRAMED = [];
 const sizes = {};
 for (const k of ['1', '3', '4', '6']) {
   const c = CAM[k];
@@ -62,6 +64,47 @@ for (const k of ['1', '3', '4', '6']) {
     cam.lookAt(t);
     cam.updateMatrixWorld();
   }, {c, f, h, hide: HIDE[k] || []});
+  // run 27 (item 11): framed to the photo's carburetor box (scratch/photobox27.json, photo px of scratch/own/m<k>.jpg, read off sheet A round 0):
+  // the model's box (every shown vertex but the hoses, projected) scaled to the photo box's width by the camera's distance and centred on it
+  if (PBOX[k]) {
+    const fr = await page.evaluate(({b, f, h}) => {
+      const V = window.VENTURI, T = V.THREE, cam = V.camera, v = new T.Vector3();
+      const hoses = new Set(V.asms.find((a) => a.key === 'hoses').parts.map((p) => p.id));
+      const ms = [];
+      V.parts.forEach((p) => !hoses.has(p.id) && p.obj.traverse((m) => m.isMesh && m.visible && ms.push(m)));
+      const box = () => {
+        cam.updateMatrixWorld();
+        let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        for (const m of ms) {
+          const a = m.geometry.attributes.position;
+          m.updateMatrixWorld();
+          for (let i = 0; i < a.count; i += 2) {
+            v.fromBufferAttribute(a, i).applyMatrix4(m.matrixWorld).project(cam);
+            const x = (v.x * 0.5 + 0.5) * 800, y = (-v.y * 0.5 + 0.5) * h;
+            if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+          }
+        }
+        return [x0, y0, x1, y1];
+      };
+      const tb = b.map((q) => q * f), tw = tb[2] - tb[0], tcx = (tb[0] + tb[2]) / 2, tcy = (tb[1] + tb[3]) / 2;
+      const dir = new T.Vector3(), right = new T.Vector3(), up = cam.up.clone();
+      for (let it = 0; it < 4; it++) {
+        const m = box(), s = tw / (m[2] - m[0]);
+        cam.getWorldDirection(dir);
+        const tgt = cam.position.clone().addScaledVector(dir, 100);
+        // distance: about the model's own depth; the apparent width goes as 1 / distance
+        const D = cam.position.distanceTo(V.parts.find((p) => p.id === '1').obj.getWorldPosition(new T.Vector3()));
+        cam.position.addScaledVector(dir, D - D / s);
+        right.crossVectors(dir, up).normalize();
+        const m2 = box(), ppu = h / (2 * Math.tan((cam.fov * Math.PI) / 360) * (D / s));
+        cam.position.addScaledVector(right, ((m2[0] + m2[2]) / 2 - tcx) / ppu).addScaledVector(up, -((m2[1] + m2[3]) / 2 - tcy) / ppu);
+        void tgt;
+      }
+      const m = box();
+      return {w: (m[2] - m[0]) / tw, cx: ((m[0] + m[2]) / 2 - tcx) / tw, cy: ((m[1] + m[3]) / 2 - tcy) / (tb[3] - tb[1])};
+    }, {b: PBOX[k], f, h});
+    FRAMED.push(`A${['1', '3', '4', '6'].indexOf(k) + 1} mine_${k}: model box width ${(fr.w * 100).toFixed(1)}% of the photo's, centre off ${(fr.cx * 100).toFixed(1)}% across, ${(fr.cy * 100).toFixed(1)}% down`);
+  }
   await page.waitForTimeout(900);
   await page.screenshot({path: tmp('a' + k)});
   await page.close();
@@ -143,7 +186,7 @@ B.save('scratch/review_B_r${R}.png')
 `]);
 
 // --- metrics
-const M = [`round ${R} · ${new Date().toISOString().slice(0, 16)}`];
+const M = [`round ${R} · ${new Date().toISOString().slice(0, 16)}`, ...(FRAMED.length ? ['sheet A framing (target: width within 5%, centre within 3%):', ...FRAMED.map((l) => '  ' + l)] : ['sheet A framing: the run 11 landmark fit (no scratch/photobox27.json)'])];
 const run = (args, env = {}) => { try { return execFileSync('node', args, {env: {...process.env, ...env}, maxBuffer: 1 << 24}).toString(); } catch (e) { return String(e.stdout || e); } };
 // stripes
 const nm = run(['scripts/normals.mjs']).split('\n').filter((l) => /^\S+: smooth/.test(l)).map((l) => l.split(' || ')[0]);

@@ -48,7 +48,8 @@ const DEEP = [[-2.78, -2.7], [-1.09, -2.75], [0.43, -2.7], [0.78, -2.4, 0.35], [
 
 // run 27 (item 8): the chamber's one inner outline (the belly's, 3 mm in), the flat floor's top, and the accelerator jet's column (x, z, top y): up
 // the cable-side wall under the body's pump outlet stub (body.js, x 0.77 z -2.75), 77 seated in its top
-export const CH = inset(BELLY, 0.28);
+// (round 1: its engine end held at x -3.08, so the inner land round it keeps 1.6 mm or more: at 0.7 mm the land's hole triangulated solid)
+export const CH = inset(BELLY, 0.28).map(([x, z, r]) => [Math.max(x, -3.08), z, r]);
 export const FL = BY.shallow + 0.32;
 export const AJ = [0.77, -2.75, -3.2];
 /** Run 12 (item 8, cmp_2): the belly narrows toward the drain: its outline scales about the drain nipple, from 1 at the
@@ -104,8 +105,10 @@ export function buildBowl(index) {
     // run 27 (item 8): the belly's walls and floor straight (no taper: the chamber's walls leaned in with it); the floor has the centre hole
     // for plug 38 (main jet access) through it, the deep step and the plug boss under it
     tier(BELLY, BY.ear, BY.shallow, 0.12, CH), // the belly's walls
-    tier(BELLY, FL, BY.shallow, 0.25, null, 0.25, [[QX, QZ, 0.55]]), // the flat floor
-    taper(tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3, null, 0.25, [[QX, QZ, 0.55]])), // the deeper step under the jets (run 12's taper kept under the floor)
+    tier(BELLY, FL, BY.shallow, 0.04, null, 0.25, [[QX, QZ, 0.55]]), // the flat floor (round 1: bevel 0.04, its 1.4 mm bevel closed the hole)
+    // the deeper step under the jets; round 1: its air-box side 0.4 further out, so the hole has metal round it, and no taper (it moved the hole
+    // off the floor's)
+    tier(DEEP.map(([x, z, r]) => [x > 0.5 ? x + 0.42 : x, z, r]), BY.shallow + 0.1, BY.deep, 0.12, null, 0.25, [[QX, QZ, 0.55]]),
     tier(BOSS, BY.deep + 0.1, BY.boss, 0.2, null, 0.1, [[QX, QZ, 0.55]]), // the plug boss
     tier(PASS, BY.deep + 0.05, BY.deep - 0.38, 0.12, null, 0.1), // the curled passage
     tier(DSB, BY.shallow + 0.05, BY.shallow - 0.45, 0.12, null, 0.05), // the drain screw's boss
