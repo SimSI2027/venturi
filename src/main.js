@@ -286,6 +286,34 @@ async function main() {
   };
   // the selected part's card
   const detail = el('div', 'vt-detail', null, ui);
+  // run 27 (item 10): a scrolling card ends on a whole line: its height is cut back to the last text line that fits whole (at 800x500 half a
+  // line showed at the part card's foot); refitted when its text changes, the dock's height changes or the window resizes
+  function wholeLines(box) {
+    if (!box || !box.isConnected) return;
+    box.style.maxHeight = box.style.paddingBottom = '';
+    const lim = box.clientHeight;
+    if (!lim || box.scrollHeight <= lim + 1) return;
+    const cs = getComputedStyle(box), pt = parseFloat(cs.paddingTop) || 0, pb = parseFloat(cs.paddingBottom) || 0;
+    const top = box.getBoundingClientRect().top + box.clientTop - box.scrollTop, lines = [], rg = document.createRange();
+    const tw = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+    for (let n; (n = tw.nextNode()); ) {
+      if (!n.textContent.trim()) continue;
+      rg.selectNodeContents(n);
+      for (const q of rg.getClientRects()) if (q.height) lines.push([q.top - top, q.bottom - top]);
+    }
+    let cut = 0;
+    for (const [, b] of lines) if (b <= lim && b > cut && !lines.some(([t, bb]) => t < b - 0.5 && bb > b + 0.5)) cut = b;
+    // the scroll box shows its content through its bottom padding, so its visible edge (padding box) goes exactly on that line's foot
+    const bt = box.clientTop, bb = box.offsetHeight - box.clientHeight - bt; // max-height counts the borders too on a border-box card
+    if (cut > pt + pb) box.style.maxHeight = `${cs.boxSizing === 'border-box' ? Math.ceil(cut) + bt + bb : Math.ceil(cut - pt - pb)}px`;
+    // and scrolled to the end, its top edge on a line's top: the padding below the last line grows to the next line top past the end
+    const end = box.scrollHeight - box.clientHeight, tops = lines.map(([t]) => t).filter((t) => t >= end - 0.5 && !lines.some(([a, b]) => a < t - 0.5 && b > t + 0.5));
+    if (end > 0 && tops.length) box.style.paddingBottom = `${pb + Math.ceil(Math.min(...tops) - end)}px`;
+  }
+  let wlQ = false;
+  const refitLines = () => { if (wlQ) return; wlQ = true; requestAnimationFrame(() => { wlQ = false; wholeLines(detail); wholeLines(guide.card.querySelector('.vt-sb')); }); };
+  for (const b of [detail, guide.card]) new MutationObserver(refitLines).observe(b, {childList: true, subtree: true, characterData: true});
+  addEventListener('resize', refitLines);
   const docked = () => innerWidth >= 1000; // the panel sits beside the view; narrower, it opens over it
 
   // --- controls
@@ -1523,7 +1551,7 @@ async function main() {
     drawTrayUI();
     // run 25 (item 7): the part and circuit card keeps clear of the dock, however tall it is now (circuits row, the 2-row sliders at 390 px)
     const dockH = Math.round((detail.offsetParent || document.body).getBoundingClientRect().bottom - dock.getBoundingClientRect().top);
-    if (dockH !== lastDockH) ui.style.setProperty('--dock-h', `${(lastDockH = dockH)}px`);
+    if (dockH !== lastDockH) ui.style.setProperty('--dock-h', `${(lastDockH = dockH)}px`), refitLines();
 
     // shadows follow the parts, not the camera: re-rendered when the explode moves, and once when a solo move
     // settles (never every frame while a part flies or spins: that pass alone would pass the 350k triangle budget)
