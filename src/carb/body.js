@@ -292,7 +292,8 @@ export function buildBody(index) {
   // run 26 (item 13): the mating face is the flange's rim only (it was a solid 5.9 x 6.0 plate drawn over every boss and hole), in 2 machined
   // bands 0.6 mm proud with the groove gasket 25 (an O-ring loop, RIM to 0.3 in) lies in between them
   const band = (o, h) => { const s = rpolyA(o, 0.2); s.holes.push(rpolyA(h, 0.15, new THREE.Path())); return extrudeXY(s, 0.06, 0.012, 8, {free: true}).rotateX(Math.PI / 2).translate(0, BOT - 0.025, 0); };
-  const bowlFace = mk(merge([band(RIM, inset(RIM, 0.06)), band(inset(RIM, 0.3), inset(RIM, 0.42))]), machined);
+  // run 27 (item 4): 1 flat machined band, RIM to 0.42 in, with no groove: gasket 25 lies in the bowl's rim (bowl_4, bowl_6)
+  const bowlFace = mk(band(RIM, inset(RIM, 0.42)), machined);
   // run 26 (item 12): the machined face gasket 2 seals on, round the well, and the tops of the top cover's 2 tapped bolt bosses
   const gS = rpolyA([[TX0 + 0.1, -2.94], [TX1 - 0.1, -2.94], [TX1 - 0.1, 2.94], [TX0 + 0.1, 2.94]], 0.15);
   gS.holes.push(rpolyA([[SX0, -SZ], [SX1, -SZ], [SX1, SZ], [SX0, SZ]], FR, new THREE.Path()));

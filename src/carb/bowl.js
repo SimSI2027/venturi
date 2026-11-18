@@ -81,8 +81,10 @@ export function buildBowl(index) {
   const PBOSS = PUMP_EARS.map(([x, z]) => tappedY(0.45, mm(1.85), 0, 0.9, mm(8)).rotateX(Math.PI).translate(x, PYW + 0.7, z));
   const g = merge([
     // run 26 (round 1, D2 line 8): bevel 0.08 -> 0.03: on this 0.1 wide ring the 2 bevels crossed and it triangulated solid, closing the chamber
-    tier(RIM, BY.lip, BY.lip - 0.3, 0.03, BOX), // the top lip in the joint's outline, open
-    tier(BOX, BY.lip - 0.25, BY.band, 0.1, inset(BOX, 0.32)), // the upper box: straight walls
+    // run 27 (item 4, bowl_4 / bowl_6): the rim is 2 lands either side of the groove gasket 25 lies in (RIM 0.12 to 0.28 in, 1.3 mm deep)
+    tier(RIM, BY.lip, BY.lip - 0.3, 0.03, inset(RIM, 0.12)), // the outer land, in the joint's outline
+    tier(inset(RIM, 0.28), BY.lip, BY.lip - 0.14, 0.02, inset(RIM, 0.42)), // the inner land
+    tier(BOX, BY.lip - 0.12, BY.band, 0.04, inset(BOX, 0.32)), // the upper box: straight walls, its top the groove's floor
     // the flange band stepping out (run 15: no ears on it any more); run 26 (round 1): its outline is RIM scaled 3% (about 0.1 out), not
     // inset(RIM, -0.1), whose outward offset looped at RIM's concave points and closed the band over the chamber
     tier(RIM.map(([x, z, r]) => [x * 1.03, z * 1.03, r]), BY.band, BY.ear, 0.15, inset(BOX, 0.32)),
@@ -112,9 +114,9 @@ export function buildBowl(index) {
   // run 14 (item 4): the flat machined seat under each screw head: a washer face round each ear hole, 0.5 mm proud of the band's foot
   const seats = merge(EARS.map(([x, z]) => tubeY(mm(4.6), M4_HOLE, BY.earBot - 0.05, BY.earBot + 0.02, 0.015).translate(x, 0, z)));
   const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep - 0.2).translate(DX, 0, DZ);
-  const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.015, BOX);
-  // run 26 (item 14): the inner rim gasket 25 (RIM to 0.3 in) seals against, 0.4 mm proud just inside it
-  const rim = tier(inset(RIM, 0.3), BY.lip + 0.04, BY.lip, 0.01, inset(RIM, 0.4), 0.15);
+  // run 27 (item 4): both lands' tops machined flat, level, against the body's flat face
+  const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.015, inset(RIM, 0.12));
+  const rim = tier(inset(RIM, 0.28), BY.lip + 0.02, BY.lip - 0.03, 0.015, inset(RIM, 0.42), 0.15);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
   // run 10 (item 7): the Keihin diagram's thin pump rod (its 72), 2 mm, a ball end up in link lever 41's arm (linkage.js)
   // run 15 (item 7): the rod has a chamfered foot with thread rings, a retaining groove and a collar under the ball
@@ -133,7 +135,12 @@ export function buildBowl(index) {
   A.add(part([1.0, IY, z0], mk(merge([0.3, 0.45, 0.6].map((dz) => oring(0.38, 0.045).rotateX(Math.PI / 2).translate(0, 0, dz))), rubber)), 'K85', {ex: [0, 0, 2.6], order: 0.25, axis: [0, 0, 1]});
   A.add(part([0, 0, 0], mk(rod, steel)), 'K72', {ex: [0, 0.6, 0], order: 0.35, axis: [0, 1, 0]});
   A.add(part([1.57, BY.lip - 0.4, -4.09], mk(tubeY(0.17, mm(1.0), 0, 0.12, 0.02), rubber)), 'K52', {ex: [0, 1.4, 0], order: 0.4, axis: [0, 1, 0]});
-  A.add(part([0, HT.joint - 0.05, 0], mk(tier(RIM, 0.05, -0.05, 0.03, inset(RIM, 0.3)), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
+  // run 27 (item 4, bowl_4 / bowl_6): gasket 25 is a black rubber cord of round section (1.8 mm), its straight sides and corners on the bowl's
+  // outline 0.2 in (the groove's middle), lying in the groove with its top 0.5 mm proud of the lands
+  const cordPts = rpolyA(inset(RIM, 0.2), 0.15).getPoints(6).filter((p, i, a) => i === 0 || p.distanceTo(a[i - 1]) > 0.01);
+  if (cordPts.length > 2 && cordPts[0].distanceTo(cordPts[cordPts.length - 1]) < 0.01) cordPts.pop();
+  const cord = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPts.map((p) => new THREE.Vector3(p.x, 0, p.y)), true, 'centripetal'), 420, 0.085, 8, true);
+  A.add(part([0, HT.joint - 0.05, 0], mk(cord.translate(0, BY.lip - 0.035 - (HT.joint - 0.05), 0), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
   // 5 screws: 4 Phillips pan heads, M4 x 12, up through the corner ears of the flange band
   const sc = fastenerY(mm(12), mm(3.5), mm(2), mm(2.6), 'cross').rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)
   A.add(part([0, BY.earBot - 0.02, 0], ...EARS.map(([x, zz]) => mk(sc.clone(), zinc, x, 0, zz))), '5', {ex: [0, -6.0, 0], order: 0});
