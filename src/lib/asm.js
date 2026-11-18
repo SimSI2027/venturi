@@ -12,30 +12,77 @@ const TEX = ['map', 'bumpMap', 'normalMap', 'roughnessMap'];
 // so a flat face next to a gentle curve no longer shades in diagonal bands. Positions, indices and triangle count do not change.
 // run 23: the same rule for the other 3 castings: the float chamber, the top cover and cable cover 65 (the body is part 1)
 const FLAT_PARTS = new Set(['body:1', 'bowl:1-bowl', 'top:1-top', 'linkage:65']);
-const FLAT = Math.cos(THREE.MathUtils.degToRad(0.5));
-function flatten(g) {
-  const P = g.attributes.position, N = g.attributes.normal, nt = P.count / 3;
-  const key = (i) => `${P.getX(i).toFixed(4)},${P.getY(i).toFixed(4)},${P.getZ(i).toFixed(4)}`;
-  const fn = [], edges = new Map();
+const FLAT = Math.cos(THREE.MathUtils.degToRad(0.5)), SAME = Math.cos(THREE.MathUtils.degToRad(0.05));
+// run 26 (item 3): the 4 castings replace that rule with area-weighted normals. Faces whose normals are within 0.5 deg and share an
+// edge form a flat region. At each vertex a region takes its own normal (and so do the corners of faces within 35 deg of it) only when
+// its area is at least 4 times that of the other regions there within 35 deg; every other corner averages the face normals within
+// 35 deg of its own, each weighted by its area. A cylinder's strips (2 coplanar triangles each) come out smooth, a big flat face flat.
+const FLAT_DOM = 4;
+function areaNormals(g0) {
+  const g = g0.index ? g0.toNonIndexed() : g0.clone();
+  const P = g.attributes.position, nc = P.count, nt = nc / 3;
+  const ids = new Map(), vid = new Int32Array(nc);
+  for (let i = 0; i < nc; i++) {
+    const k = `${P.getX(i).toFixed(4)},${P.getY(i).toFixed(4)},${P.getZ(i).toFixed(4)}`;
+    let v = ids.get(k);
+    if (v === undefined) ids.set(k, (v = ids.size));
+    vid[i] = v;
+  }
+  const nv = ids.size, fn = new Float32Array(nt * 3), fa = new Float32Array(nt);
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
   for (let t = 0; t < nt; t++) {
-    a.fromBufferAttribute(P, t * 3); b.fromBufferAttribute(P, t * 3 + 1); c.fromBufferAttribute(P, t * 3 + 2);
-    fn.push(b.sub(a).cross(c.sub(a)).normalize().clone());
-    const k = [key(t * 3), key(t * 3 + 1), key(t * 3 + 2)];
-    for (let e = 0; e < 3; e++) {
-      const id = [k[e], k[(e + 1) % 3]].sort().join('|');
-      if (!edges.has(id)) edges.set(id, []);
-      edges.get(id).push(t);
+    a.fromBufferAttribute(P, t * 3); b.fromBufferAttribute(P, t * 3 + 1).sub(a); c.fromBufferAttribute(P, t * 3 + 2).sub(a);
+    b.cross(c);
+    const l = b.length();
+    fa[t] = l / 2;
+    if (l > 0) fn.set([b.x / l, b.y / l, b.z / l], t * 3);
+  }
+  const dot = (s, t) => fn[s * 3] * fn[t * 3] + fn[s * 3 + 1] * fn[t * 3 + 1] + fn[s * 3 + 2] * fn[t * 3 + 2];
+  // the faces round each vertex
+  const off = new Int32Array(nv + 1);
+  for (let i = 0; i < nc; i++) off[vid[i] + 1]++;
+  for (let v = 0; v < nv; v++) off[v + 1] += off[v];
+  const fill = off.slice(0, nv), at = new Int32Array(nc);
+  for (let i = 0; i < nc; i++) at[fill[vid[i]]++] = (i / 3) | 0;
+  // flat regions (union-find): coplanar faces sharing a vertex lie in 1 plane, so a face cut up by T-junctions stays 1 region
+  const up = Int32Array.from({length: nt}, (_, i) => i);
+  const find = (x) => { while (up[x] !== x) x = up[x] = up[up[x]]; return x; };
+  const grown = new Uint8Array(nt);
+  for (let v = 0; v < nv; v++) for (let i = off[v]; i < off[v + 1]; i++) {
+    const s = at[i];
+    // joined only when the 2 regions' own normals agree, so a gently curving strip never chains into 1 'flat' region
+    // (a face joins a region only while it is still alone, and only within 0.5 deg of the region's first face)
+    // (2 grown regions merge only when their first faces lie in 1 plane to 0.05 deg: the pieces of a face cut up by T-junctions)
+    if (fa[s] > 0) for (let j = off[v]; j < i; j++) {
+      const t = at[j], rs = find(s), rt = find(t);
+      if (fa[t] <= 0 || rs === rt) continue;
+      if (rs === s && !grown[s] ? dot(s, rt) > FLAT : dot(rs, rt) > SAME) (up[rs] = rt), (grown[rt] = 1);
     }
   }
-  const flat = new Uint8Array(nt);
-  for (const l of edges.values()) if (l.length === 2 && fn[l[0]].dot(fn[l[1]]) > FLAT) flat[l[0]] = flat[l[1]] = 1;
-  for (let t = 0; t < nt; t++) if (flat[t] && fn[t].lengthSq() > 0) for (let k = 0; k < 3; k++) N.setXYZ(t * 3 + k, fn[t].x, fn[t].y, fn[t].z);
+  const reg = new Int32Array(nt), ra = new Float64Array(nt);
+  for (let t = 0; t < nt; t++) (reg[t] = find(t)), (ra[reg[t]] += fa[t]);
+  const N = new Float32Array(nc * 3), cornerOf = (t, v) => t * 3 + (vid[t * 3] === v ? 0 : vid[t * 3 + 1] === v ? 1 : 2);
+  const C = Math.cos(CREASE);
+  for (let v = 0; v < nv; v++) {
+    const fs = at.subarray(off[v], off[v + 1]);
+    const rs = [...new Set(Array.from(fs, (t) => reg[t]))];
+    const dom = rs.filter((r) => ra[r] >= FLAT_DOM * rs.reduce((s, o) => s + (o !== r && dot(o, r) > C ? ra[o] : 0), 0));
+    for (const t of fs) {
+      let best = -1, bd = C;
+      for (const r of dom) { const d = dot(t, r); if (d > bd || reg[t] === r) (bd = reg[t] === r ? 2 : d), (best = r); }
+      let x = 0, y = 0, z = 0;
+      if (best >= 0) (x = fn[best * 3]), (y = fn[best * 3 + 1]), (z = fn[best * 3 + 2]);
+      else for (const f of fs) if (dot(f, t) > C) (x += fa[f] * fn[f * 3]), (y += fa[f] * fn[f * 3 + 1]), (z += fa[f] * fn[f * 3 + 2]);
+      const l = Math.hypot(x, y, z) || 1, i = cornerOf(t, v);
+      N[i * 3] = x / l; N[i * 3 + 1] = y / l; N[i * 3 + 2] = z / l;
+    }
+  }
+  g.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+  return g;
 }
 function crease(g, flatFaces = false) {
   if (!creased.has(g)) {
-    let c = toCreasedNormals(g, CREASE);
-    if (flatFaces) flatten(c);
+    let c = flatFaces ? areaNormals(g) : toCreasedNormals(g, CREASE);
     if (!c.groups.length) c = mergeVertices(c, 1e-5); // indexed again
     creased.set(g, c);
   }
