@@ -44,7 +44,8 @@ export function buildSlide(index) {
   fr.holes.push(rpoly([[-2.0, -1.35], [2.0, -1.35], [2.0, 1.35], [-2.0, 1.35]], 0.2, new THREE.Path()));
   A.add(part([NX - 0.56, 1.6, 0], mk(extrudeXY(fr, 0.17, 0.05, 8, {free: true}).rotateY(Math.PI / 2), rubber)), '12', {ex: [-3.6, 1.0, 0], order: 0.35});
   // 14 needle holder (screw), 15 spring, 16 collar
-  A.add(part([NX, 3.2, 0], mk(merge([headY(0.3, 0.28, 'slot'), threadTubeY(0.4, 0.2, 0.08)]), steel)), '14', {ex: [0, 3.0, 0], order: 0.5});
+  // run 27 (item 9, top_1_frank): a hex-socket head, its socket seen from above in the middle of the slide's top (was slotted)
+  A.add(part([NX, 3.2, 0], mk(merge([headY(0.3, 0.28, 'hex'), threadTubeY(0.4, 0.2, 0.08)]), steel)), '14', {ex: [0, 3.0, 0], order: 0.5});
   A.add(part([NX, 3.52, 0], mk(springY(0.7, 0.2, 0.04, 5), steel)), '15', {ex: [0, 4.3, 0], order: 0.45});
   A.add(part([NX, 2.6, 0], mk(tubeY(0.2, 0.08, 0, 0.28), brass)), '16', {ex: [2.6, 2.4, -1.4], order: 0.55});
   // 48 jet needle: a straight shank, then a visible taper down to a rounded tip hanging into the needle jet, and 7

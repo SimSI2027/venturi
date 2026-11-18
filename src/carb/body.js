@@ -307,11 +307,14 @@ export function buildBody(index) {
   // run 27 (item 4): 1 flat machined band, RIM to 0.42 in, with no groove: gasket 25 lies in the bowl's rim (bowl_4, bowl_6)
   const bowlFace = mk(band(RIM, inset(RIM, 0.42)), machined);
   // run 26 (item 12): the machined face gasket 2 seals on, round the well, and the tops of the top cover's 2 tapped bolt bosses
-  const gS = rpolyA([[TX0 + 0.1, -2.94], [TX1 - 0.1, -2.94], [TX1 - 0.1, 2.94], [TX0 + 0.1, 2.94]], 0.15);
-  gS.holes.push(rpolyA([[SX0, -SZ], [SX1, -SZ], [SX1, SZ], [SX0, SZ]], FR, new THREE.Path()));
+  // run 27 (item 9, top_1_frank): 1 flat machined rim round the well, out over the 2 bolt bosses in an ear at each end, with gasket 2's 2 tapped
+  // holes in it (it was a rectangle with the bosses' tops as 2 separate rings beside it)
+  const EX = (s) => CX + s * (BOLT_X + 0.5), ER = 0.5;
+  const gS = rpolyA([[TX0 + 0.1, -2.94, 0.15], [TX1 - 0.1, -2.94, 0.15], [TX1 - 0.1, -ER, 0.15], [EX(1), -ER, 0.45], [EX(1), ER, 0.45], [TX1 - 0.1, ER, 0.15], [TX1 - 0.1, 2.94, 0.15],
+    [TX0 + 0.1, 2.94, 0.15], [TX0 + 0.1, ER, 0.15], [EX(-1), ER, 0.45], [EX(-1), -ER, 0.45], [TX0 + 0.1, -ER, 0.15]], 0.15);
+  gS.holes.push(rpolyA([[SX0, -SZ], [SX1, -SZ], [SX1, SZ], [SX0, SZ]], FR, new THREE.Path()), ...[-1, 1].map((s) => circ(CX + s * BOLT_X, 0, mm(1.85) + 0.02)));
   // (run 26, item 16: 1.3 mm thick, sunk 0.9 into the casting, so its outer and well edges carry a 0.5 mm chamfer down to the cast)
-  const gasketFace = mk(merge([extrudeXY(gS, 0.12, 0.047, 8, {free: true}).rotateX(Math.PI / 2).translate(0, TT - 0.044, 0),
-    ...[-1, 1].map((sx) => tubeY(0.48, mm(1.85) + 0.02, TT - 0.004, TT + 0.016).translate(CX + sx * BOLT_X, 0, 0))]), machined);
+  const gasketFace = mk(extrudeXY(gS, 0.12, 0.047, 8, {free: true}).rotateX(Math.PI / 2).translate(0, TT - 0.044, 0), machined);
   // (run 11: the needle valve seat in it is Keihin 36, a piece of 23 in float.js)
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)
   // 48 across (Sudco table A), the air-box one (+X) 50 (photos carb_7 / carb_8), 90 spigot face to spigot face
@@ -409,7 +412,12 @@ export function buildBody(index) {
   // run 14 (item 6, Keihin 16): a flat lever with an eye round the shaft and a forked foot for the slide's lug, the stop screw's hole through it
   const yb = -(LL - 0.15), kS = rpoly([[-0.25, 0.15], [0.25, 0.15], [0.25, yb], [0.13, yb], [0.13, yb + 0.4], [-0.13, yb + 0.4], [-0.13, yb], [-0.25, yb]], 0.05);
   kS.holes.push(circ(0, yb + 0.6, 0.09));
-  const kArm = merge([extrudeXY(kS, 0.22, 0.04, 8, {free: true}).rotateY(Math.PI / 2).translate(0, 0, -0.9), orient(tubeY(0.42, 0.23, -0.25, 0.25, 0.03), [0, 0, 1], [0, 0, -0.9])]).rotateZ(LA);
+  // run 27 (item 9, top_1_frank): above the fork the lever widens into a plate across the well (z -1.4..1.4), seen from above beside the needle
+  // holder's head, the stop screw (K18) through it (shape x = -z - 0.9)
+  const wS = rpoly([[-2.3, yb + 0.42], [0.5, yb + 0.42], [0.5, yb + 1.1], [-2.3, yb + 1.1]], 0.12);
+  wS.holes.push(circ(0, yb + 0.6, 0.09));
+  const kArm = merge([extrudeXY(kS, 0.22, 0.04, 8, {free: true}).rotateY(Math.PI / 2).translate(0, 0, -0.9), extrudeXY(wS, 0.15, 0.04, 8, {free: true}).rotateY(Math.PI / 2).translate(0, 0, -0.9),
+    orient(tubeY(0.42, 0.23, -0.25, 0.25, 0.03), [0, 0, 1], [0, 0, -0.9])]).rotateZ(LA);
   A.add(part([SHX, SHY, 0], mk(kArm, steel)), 'K16', {axis: [0, 0, 1], legs: [[[0, 0, 1], 1.4], [[0, 1, 0], 0.6]]}); // item 5: -Z ran through the cable wheel, washer and spring; it slides off the shaft's +Z end (1.4 hovers, the end of the shaft plus its eye), then lifts away
   A.add(part([LGX + 0.12, LGY + 0.45, -0.9], mk(orient(fastenerY(0.45, 0.17, 0.08, 0.16, 'cross'), [1, 0, 0]), steel)), 'K18', {axis: [1, 0, 0]});
   A.add(part([0, 0, 0], mk(rsp, steel)), 'K14', {axis: [0, 0, -1]});
