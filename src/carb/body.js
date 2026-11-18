@@ -279,7 +279,12 @@ export function buildBody(index) {
   }
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
   // run 27 (item 5): a ring (RIM to 0.42 in, 5.3 mm deep) round the underside's pocket, and the pocket's ceiling
-  g.push(slabY(RIM, BOT + 0.25, 0.5, inset(RIM, 0.42)), slabY(inset(RIM, 0.3), BOT + 0.54, 0.12));
+  // run 28 (item 8): the ring's hole rounded at 0.3 (slabY's 0.5 is more than the ring is wide, 0.42): its cap triangulated a 61 mm triangle across
+  // the pocket's opening at the flange face (y BOT), the 'diagonal band' of sheet B2 (the same with the key's shadow, the recess shading or GTAO off)
+  const r15 = (o) => o.map(([x, z]) => [x, z, 0.15]);
+  const ringS = rpolyA(r15(RIM), 0.15);
+  ringS.holes.push(rpolyA(r15(inset(RIM, 0.42)), 0.15, new THREE.Path()));
+  g.push(extrudeXY(ringS, 0.5, 0.08, 16, {free: true}).rotateX(Math.PI / 2).translate(0, BOT + 0.25, 0), slabY(inset(RIM, 0.3), BOT + 0.54, 0.12));
   // the projection on the engine spigot (-X) that keys into the joint slot
   g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(-3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
