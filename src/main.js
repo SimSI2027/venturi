@@ -8,7 +8,7 @@ import fontSemi from '@fontsource/barlow-condensed/files/barlow-condensed-latin-
 import {createStage, FLOOR_Y, MM} from './stage.js';
 import {createPerf} from './perf.js';
 import {Asm, SEC, CLIP} from './lib/asm.js';
-import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, inManual, info, nameOf, specValue, groupIndex, needsLT, fitNew, checkLine, LT_TEXT} from './carb/data.js';
+import {PARTS, PIECES, KPIECES, GROUPS, STEPS_B, N_B, SPEC_LABELS, CONFLICT_20, KIT, KIT_TOTAL, inKit, inManual, info, nameOf, specValue, groupIndex, needsLT, fitNew, checkLine, LT_TEXT, CIRCUITS} from './carb/data.js';
 import {buildHoses} from './carb/hoses.js';
 import {buildSensor} from './carb/sensor.js';
 import {buildStarters} from './carb/starters.js';
@@ -172,6 +172,16 @@ async function main() {
   const secBtn = el('button', 'iw-btn iw-section', 'Section', ctl);
   secBtn.setAttribute('aria-pressed', 'false');
   secBtn.setAttribute('aria-label', 'Section: cut the body along the bore');
+  // run 25 (item 4): CIRCUITS, 5 buttons (EXPLORE only): each lights its parts (brass outline, +15%), dims the rest to 30% and lists them in the card
+  const circRow = el('div', 'vt-circ', '<label>Circuits</label>', dock);
+  const circBtns = CIRCUITS.map((c, i) => {
+    const b = el('button', 'iw-btn', c.label, circRow);
+    b.setAttribute('aria-pressed', 'false');
+    b.onclick = () => setCircuit(circ === i ? -1 : i);
+    return b;
+  });
+  const circSets = CIRCUITS.map((c) => new Set(c.parts));
+  let circ = -1;
   const pillWrap = el('div', 'iw-pw', null, dock); // run 23 (item 8): a strip too narrow for all 13 pills scrolls, with a fade and an arrow at each cut edge
   const pills = el('div', 'iw-pills', null, pillWrap);
   const pillBtns = asms.map((a, i) => {
@@ -685,6 +695,7 @@ async function main() {
       if (m && docked()) showTab('steps');
       if (m) range.value = st.target = 0; // the guided carburetor starts assembled
       if (m) setThrottle(0); // run 25 (item 3): the throttle shuts on leaving EXPLORE
+      if (m && circ >= 0) setCircuit(-1, true); // and the circuit goes out (item 4)
     }
     guideTargets(now, enter && !!m && mixT.v === 0, !enter);
     lastInput = now;
@@ -894,12 +905,32 @@ async function main() {
   function focusOn(i, dur = 1.2) {
     if (secOn) setSection(false, true);
     focus = i;
+    if (i >= 0 && circ >= 0) setCircuit(-1, true);
     pillBtns.forEach((b, k) => b.classList.toggle('on', k === i));
     if (i >= 0) pillBtns[i].scrollIntoView({block: 'nearest', inline: 'center'});
     if (solo.part) deselect();
     flyTo(dur);
   }
 
+  /** run 25 (item 4): light circuit i (-1: none); its card lists the parts, each row selects its part. quiet: no camera move. */
+  function setCircuit(i, quiet = false) {
+    if (i >= 0 && solo.part) deselect();
+    if (i >= 0 && focus >= 0) focusOn(-1, 0.8);
+    circ = i;
+    circBtns.forEach((b, k) => (b.classList.toggle('on', k === i), b.setAttribute('aria-pressed', String(k === i))));
+    if (i < 0) {
+      detail.classList.remove('show', 'vt-cc');
+    } else {
+      const c = CIRCUITS[i];
+      detail.innerHTML = `<div class="vt-dn"><span>${esc(c.label)} circuit</span></div><div class="vt-role">${esc(c.range)} <i class="vt-rt">(rule of thumb)</i></div>` +
+        `<table class="vt-cl">${c.parts.map((id) => `<tr data-id="${id}" tabindex="0"><th>${esc(nameOf(id))}</th></tr>`).join('')}</table>` +
+        '<div class="vt-hint">Visual only. Ranges are a rule of thumb, not from the manual.</div>';
+      detail.querySelectorAll('tr[data-id]').forEach((r) => (r.onclick = () => select(r.dataset.id)));
+      detail.classList.add('show', 'vt-cc');
+    }
+    lastInput = performance.now();
+    if (!quiet) flyTo(0.8);
+  }
   /** run 25 (item 3): the throttle to t (0-1); the footer says it is visual only while it is open (correction 52). */
   function setThrottle(t) {
     thRange.value = String(t);
@@ -941,6 +972,7 @@ async function main() {
     solo.pts = pts.map((v) => v.sub(solo.c));
     aim(solo.T, 1, performance.now());
     rows.forEach((r) => r.classList.toggle('on', r.dataset.id === (id.startsWith('1-') ? '1' : id))); // a K piece has its own row
+    if (circ >= 0) setCircuit(-1, true);
     showDetail(id);
     if (!docked()) setPanel(false);
     lastInput = performance.now();
@@ -977,6 +1009,7 @@ async function main() {
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && solo.part && solo.T.to > 0) return e.target.blur?.(), deselect(); // also from the search box
     if (e.key === 'Escape' && secOn) return setSection(false);
+    if (e.key === 'Escape' && circ >= 0 && !solo.part) return setCircuit(-1);
     if (e.target.closest?.('input, textarea')) return;
     if (e.key === '?') return setHelp(!helpCard.classList.contains('on'));
     if (e.key === 'Escape' && helpCard.classList.contains('on')) return setHelp(false);
@@ -1372,7 +1405,8 @@ async function main() {
     stepT(thT, now);
     thOut.value = `${Math.round(thT.v * 100)}%`;
     thRange.style.setProperty('--p', `${(thT.v * 100).toFixed(1)}%`);
-    foot.classList.toggle('vis', thT.v > 0);
+    const vis = thT.v > 0 && circ >= 0 ? 'Throttle and circuits: visual only · ' : thT.v > 0 ? 'Throttle: visual only · ' : circ >= 0 ? 'Circuits: visual only · ' : '';
+    if (foot.dataset.v !== vis) foot.dataset.v = vis;
     trT.forEach((T) => stepT(T, now)); // run 15 (item 9): the tray tweens were never stepped, so a part only reached the tray on entering a mode
     poseAll(st.explode);
     placeFloor();
@@ -1390,8 +1424,9 @@ async function main() {
     const selV = stepT(selT, now);
     const floor = 0.5 - 0.4 * selV; // the rest of the carburetor fades to 10% opacity
     parts.forEach((p, i) => {
-      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
-      aim(rimT[i], sel ? (p === sel ? SOLO_TRIM : 0) : guide.mode ? gRim[i] : focus >= 0 && p.asm === asms[focus] ? 1 : 0, now); // run 16 (item 4, correction 35): a clicked part gets no +15% lift but a trim: with no neighbours to shade it the casting read 56-59% against 40-43% in the assembly, now 47-51% on HIGH (blown 0%)
+      const lit = !sel && !guide.mode && circ >= 0 ? circSets[circ] : null; // run 25 (item 4)
+      aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : lit ? (lit.has(p.id) ? 0 : 1) : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
+      aim(rimT[i], sel ? (p === sel ? SOLO_TRIM : 0) : guide.mode ? gRim[i] : lit ? (lit.has(p.id) ? 1 : 0) : focus >= 0 && p.asm === asms[focus] ? 1 : 0, now); // run 16 (item 4, correction 35): a clicked part gets no +15% lift but a trim: with no neighbours to shade it the casting read 56-59% against 40-43% in the assembly, now 47-51% on HIGH (blown 0%)
       dim[i] = stepT(dimT[i], now);
       const r = stepT(rimT[i], now);
       let hd = stepT(hT[i], now);
@@ -1446,7 +1481,7 @@ async function main() {
     const ph = pointer ? (pickDirty ? (lastPick = pick()) : lastPick) : null;
     pickDirty = false; // the raycast reruns after the pointer moves or a frame is drawn
     // guided: the step's parts keep the brass outline and the first one carries the name card
-    const gOut = sel ? [] : guide.mode ? curParts().map((p) => p.obj).filter((o) => o.visible) : [];
+    const gOut = sel ? [] : guide.mode ? curParts().map((p) => p.obj).filter((o) => o.visible) : circ >= 0 ? CIRCUITS[circ].parts.map((id) => partOf[id].obj) : [];
     const gLab = gOut[0] || null;
     if (!ph && gLab && hovered !== gLab) anchor.copy(gLab.worldToLocal(new THREE.Box3().setFromObject(gLab).getCenter(new THREE.Vector3())));
     setHover(sel ? null : ph || (S.size.w < 480 ? null : gLab)); // run 15 (item 10): on a phone the step panel names the part (its first button), no 3D label over the carburetor

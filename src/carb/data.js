@@ -140,6 +140,16 @@ export const KPIECES = Object.keys(PIECES).filter((id) => PIECES[id].k);
 export const KEIHIN = {'2': [6], '3': [7], '4': [8], '5': [7], '6': [249], '9': [19], '10': [20], '11': [21], '12': [22], '13': [24], '14': [25], '15': [243], '16': [244], '17': [26], '18': [28], '19': [29], '20': [30], '21': [39], '22': [40], '23': [42], '24': [43], '25': [45], '26': [46], '27': [47], '28': [51], '30': [53], '31': [54], '32': [55], '36': [100], '37': [122], '38': [123], '39': [152], '40': [64], '41': [65], '43': [251], '44': [250], '45': [209], '46': [90], '47': [96], '48': [23], '49': [32], '50': [33], '51': [34], '52': [35], '53': [245], '57': [148], '58': [206], '62': [180], '65': [264], '68': [207], '70': [265], '75': [205], '78': [211], '79': [213]};
 export const QTY = {61: 1, 62: 1, 64: 1, 65: 1, 66: 1, 67: 1, 68: 1, 69: 1, 70: 2, 71: 1, 73: 1, 74: 1, 75: 1, 76: 1, 77: 1, 78: 1, 79: 1};
 
+// run 25 (item 4): the 5 fuel circuits as the owner listed them, for the CIRCUITS row. Visual only; each range line is a rule of thumb,
+// not from the manual (correction 52). FUEL IN was given no range: "every opening" is the page's own rule-of-thumb line.
+export const CIRCUITS = [
+  {key: 'pilot', label: 'Pilot', parts: ['18', '20', '49', '50', '51', '52', '78', '79', '1-pilot'], range: 'Pilot: shut to 1/4 throttle'},
+  {key: 'main', label: 'Main', parts: ['1-mainjet', '17', '1-spacer', '48', '13', 'K103', '9'], range: 'Needle: 1/4 to 3/4 throttle · main jet: 3/4 to full'},
+  {key: 'pump', label: 'Pump', parts: ['27', '28', '30', '31', '40', '41', '43', '44', '77', 'K72'], range: 'Pump: on a snap opening'},
+  {key: 'starter', label: 'Starter', parts: ['32', '33', '34', '19', '53', '54', '56', '64'], range: 'Starter: cold start'},
+  {key: 'fuel', label: 'Fuel in', parts: ['K83', 'K85', 'K44', 'K36', '23', '24', '21', '22'], range: 'Fuel in: keeps the float chamber full at every opening'},
+];
+
 // run 13 (item 13): the seals, O-rings, gaskets and diaphragms (by their fiche names, and the Keihin pieces that are rings), which are
 // usually replaced at a rebuild. qty: the fiche table's quantity where it gives one (refs 61-79) or what the diagram draws (K85: 3
 // rings); known: false = the sources give none and the line counts once (1 per carburetor, as the model has it).

@@ -221,7 +221,7 @@ html, body { background: var(--iw-bg); }
 .iw-dock { bottom: 30px; }
 .vt-foot { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-size: 13px; color: var(--iw-dim); letter-spacing: 0.08em;
   font-variant-caps: normal; pointer-events: none; }
-.vt-foot.vis::before { content: 'Throttle: visual only \00b7  '; color: var(--iw-brass); } /* run 25 (item 3, correction 52) */
+.vt-foot::before { content: attr(data-v); color: var(--iw-brass); } /* run 25 (items 3-4, correction 52) */
 .iw-ctl .vt-thl { margin-left: 6px; }
 .iw-ctl .vt-tho { width: 2.6em; }
 .vt-panel { position: absolute; right: 20px; top: 20px; bottom: 30px; width: 320px; display: flex; flex-direction: column; background: rgba(16, 17, 20, 0.86);
@@ -309,7 +309,15 @@ html, body { background: var(--iw-bg); }
 .vt-modes .iw-btn.on { background: #c9a24b; }
 .vt-modes .iw-btn.on i { color: rgba(17, 17, 17, 0.62); }
 .vt-modes .s { display: none; }
-.iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pw { display: none; }
+.iw-dock.guided .iw-ctl, .iw-dock.guided .iw-pw, .iw-dock.guided .vt-circ { display: none; }
+/* run 25 (item 4): the CIRCUITS row */
+.vt-circ { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.vt-circ label { font-size: 15px; color: var(--iw-brass); letter-spacing: 0.2em; margin-right: 6px; }
+.vt-circ .iw-btn { font-size: 15px; padding: 4px 12px; letter-spacing: 0.1em; }
+.vt-cl tr[data-id] { cursor: pointer; }
+.vt-cl tr[data-id] th { color: var(--iw-fg); font-weight: 400; }
+.vt-cl tr[data-id]:hover th, .vt-cl tr[data-id]:focus-visible th { color: var(--iw-brass); }
+.vt-rt { color: var(--iw-brass); font-style: normal; font-size: 14px; letter-spacing: 0.06em; }
 .vt-step { position: absolute; left: 28px; top: 104px; width: 300px; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-left: 2px solid #c9a24b; background: rgba(14, 15, 18, 0.9);
   font-variant-caps: normal; letter-spacing: 0.03em; opacity: 0; pointer-events: none; transform: translateY(-4px); z-index: 4;
   transition: opacity .25s cubic-bezier(.65, 0, .35, 1), transform .25s cubic-bezier(.65, 0, .35, 1);
