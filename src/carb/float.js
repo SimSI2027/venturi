@@ -6,16 +6,18 @@ import {THREE, merge, rbox, cylY, tubeY, latheY, screwY, fastenerY, orient, orin
 export function buildFloat(index) {
   const A = new Asm('float', 'Float', {offset: [0, -7.0, 0], index});
   const {plastic, steel, rubber, brass} = A.M;
-  // two pontoons either side of the jet tower, the arm and hinge to the pin at +X
-  const pont = (zz) => rbox(3.0, 2.2, 1.35, 0.4).translate(-0.8, -6.4, zz);
-  // run 14 (item 6): 2 lobes on a hinge arm: the cross bar joins the lobes' ends, 2 posts rise from it to 2 hinge lugs, each lug with its pin hole
-  const arm = merge([rbox(1.6, 0.35, 3.6, 0.12).translate(0.9, -5.4, 0), rbox(0.5, 1.1, 0.35, 0.1).translate(0.4, -5.9, 1.55), rbox(0.5, 1.1, 0.35, 0.1).translate(0.4, -5.9, -1.55),
-    rbox(0.5, 1.05, 0.35, 0.08).translate(1.7, -5.05, 0.9), rbox(0.5, 1.05, 0.35, 0.08).translate(1.7, -5.05, -0.9)]);
+  // run 27 (item 7, under_3 and correction 60): black, 2 lobes either side of the jet boss (z +/-1.3..2.45, x -2.45..0.35, 21 mm tall, their
+  // tops 3.5 mm under the underside pocket's ceiling), joined by a hinge arm: a side bar from each lobe's air-box end, a cross bar carrying the
+  // tang under needle valve 23, 2 short bars to the hinge lugs on pin 22 inside the 2 posts (pre-lift heights: the group is lifted by UY)
+  const LY = -4.65, AY = -5.035;
+  const pont = (zz) => rbox(2.8, 2.0, 1.15, 0.3).translate(-1.05, LY, zz);
+  const arm = merge([...[-1, 1].flatMap((s) => [rbox(1.2, 0.17, 0.2, 0.05).translate(0.85, AY, s * 1.45), rbox(0.42, 0.17, 0.35, 0.05).translate(1.62, AY, s * 0.8), rbox(0.2, 0.5, 0.35, 0.05).translate(1.8, AY + 0.17, s * 0.8)]),
+    rbox(0.22, 0.17, 3.1, 0.05).translate(1.4, AY, 0)]);
   const lugS = new THREE.Shape();
   lugS.absarc(0, 0, 0.34, 0, Math.PI * 2, false);
   lugS.holes.push(circ(0, 0, 0.11));
   const hinge = merge([-0.8, 0.8].map((zz) => extrudeXY(lugS, 0.35, 0.04, 20, {free: true}).translate(1.8, -4.75, zz))); // run 27: inside the posts (z +/-1.2)
-  const tang = rbox(0.5, 0.12, 0.6, 0.04).translate(SEAT[0], -5.05, 0); // the tang that sets the float height
+  const tang = rbox(0.42, 0.06, 0.5, 0.02).translate(SEAT[0], -4.98, 0); // the tang that sets the float height: its top on needle valve 23's foot (-4.95)
   A.add(part([0, 0, 0], mk(merge([pont(1.55), pont(-1.55), arm, hinge]), plastic), mk(tang, brass)), '21', {ex: [0, -0.8, 0], order: 0.3});
   // run 14: the pin has a head at one end and a clip groove at the other
   A.add(part([1.8, -4.75, 0], mk(orient(latheY([[-1.5, 0], [-1.5, 0.16], [-1.42, 0.16], [-1.42, 0.1], [1.2, 0.1], [1.2, 0.065], [1.28, 0.065], [1.28, 0.1], [1.5, 0.1], [1.5, 0]]), [0, 0, 1]), steel)), '22', {ex: [0, 0, 4.0], order: 0, axis: [0, 0, 1]});
