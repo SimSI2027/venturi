@@ -349,6 +349,7 @@ export function buildBody(index) {
   // run 14 (item 8): the air-box half of the bore is dark inside (owner's mine_1: black); the engine half stays bright machined steel
   const boreDark = A.M.bore.clone();
   boreDark.color.set(0x0b0c0e);
+  boreDark.userData.finish = 'dark';
   boreDark.metalness = 0.1;
   boreDark.roughness = 0.9;
   const boreD = mk(merge([ring(-SP + LIP, SX0), ring(SX1, ADAPT - LIP)]), boreDark);
