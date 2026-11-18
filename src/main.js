@@ -21,7 +21,7 @@ import {buildBowl} from './carb/bowl.js';
 import {buildFloat} from './carb/float.js';
 import {buildJets} from './carb/jets.js';
 import {buildMixture} from './carb/mixture.js';
-import {buildBody} from './carb/body.js';
+import {buildBody, BORE_R, SHAFT, SLIDE_LUG} from './carb/body.js';
 import {toMM} from './carb/kit.js';
 import {createGuide, MODES, REMOVED_AT, FITTED_AT} from './guide.js';
 
@@ -111,7 +111,7 @@ async function main() {
   const hint =el('div', 'iw-hint', null, ui);
   const dropped = [];
   const setHint = () => (hint.textContent = `13 groups · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.map((k) => ' · ' + k).join('')}`);
-  el('div', 'vt-foot', NOTICE, ui);
+  const foot = el('div', 'vt-foot', NOTICE, ui);
 
   const TIERS = ['high', 'med', 'low'];
   const forced = TIERS.includes(q.get('q')) ? q.get('q') : null;
@@ -161,6 +161,13 @@ async function main() {
   Object.assign(range, {type: 'range', min: 0, max: 1, step: 0.001, value: 0});
   range.setAttribute('aria-label', 'Explode');
   const out = el('output', null, '0.00', ctl);
+  // run 25 (item 3): THROTTLE 0-100% beside EXPLODE, in EXPLORE only; visual only (correction 52), which the footer says while it is open
+  el('label', 'vt-thl', 'Throttle', ctl);
+  const thRange = el('input', 'iw-range vt-th', null, ctl);
+  Object.assign(thRange, {type: 'range', min: 0, max: 1, step: 0.01, value: 0});
+  thRange.setAttribute('aria-label', 'Throttle, visual only');
+  thRange.title = 'Visual only: the slide, needle and pump move to show how, not by the manual';
+  const thOut = el('output', 'vt-tho', '0%', ctl);
   let secOn = false; // run 13 (item 11): SECTION on
   const secBtn = el('button', 'iw-btn iw-section', 'Section', ctl);
   secBtn.setAttribute('aria-pressed', 'false');
@@ -283,6 +290,7 @@ async function main() {
   const hold = (T, v) => Object.assign(T, {v, from: v, to: v});
   const exT = tween(st.explode, 0.6);
   let exDrag = false;
+  const thT = tween(0, 0.25); // run 25 (item 3): the throttle, 0 shut, 1 wide open
   const dimT = parts.map(() => tween(0, QUICK));
   const rimT = parts.map(() => tween(0, QUICK));
   const dim = parts.map(() => 0);
@@ -539,6 +547,45 @@ async function main() {
       if (e.dataset.t !== t) (e.dataset.t = t), (e.firstChild.textContent = t);
     }
   }
+  // run 25 (item 3): the throttle's moving parts. The shaft (K12 with its wheel, the link arm K16, its stop screw K18 and the lever's screw
+  // 42) turns about the shaft's axis so the arm's foot rises with the slide's lug; the slide (9) with everything that rides in it (rollers
+  // 10, jet needle 48 and its clip 13, plate 11, seal 12, needle holder 14, spring 15, collar 16) lifts a full bore (2 x 19.5 mm) at 100%;
+  // the pump levers 40 (with screw 44 and spring 43 on its tab) and 41 turn 14 deg on their pin over the first 60%, and 41's arm presses
+  // rod K72 down. Each part turns about the pivot moved by its own explode offset, so 0% is exactly home. Visual only (correction 52).
+  const TH = {
+    shaft: ['K12', 'K16', 'K18', '42'].map((id) => partOf[id]),
+    slide: asms.find((a) => a.key === 'slide').parts,
+    p40: ['40', '43', '44'].map((id) => partOf[id]),
+    p41: partOf['41'],
+    rod: partOf['K72'],
+    lift: 2 * BORE_R * MM + 0.2,
+    pa: THREE.MathUtils.degToRad(14),
+    a41: [0.82 * MM, 0.35 * MM], // lever 41's arm to the rod's ball end (linkage.js A41)
+  };
+  TH.L = Math.hypot((SLIDE_LUG[0] - SHAFT[0]) * MM, (SLIDE_LUG[1] - SHAFT[1]) * MM);
+  TH.a0 = Math.atan2(SLIDE_LUG[1] - SHAFT[1], SLIDE_LUG[0] - SHAFT[0]);
+  const thQ = new THREE.Quaternion(), thZ = new THREE.Vector3(0, 0, 1), thV = new THREE.Vector3();
+  /** Turn parts by ang about +Z through pivot (a rest position), each about the pivot shifted by its own offset from rest. */
+  function turnAbout(ps, pivot, ang) {
+    thQ.setFromAxisAngle(thZ, ang);
+    for (const p of ps) {
+      thV.copy(p.rest).sub(pivot);
+      p.obj.position.sub(thV).add(thV.applyQuaternion(thQ));
+      p.obj.quaternion.premultiply(thQ);
+    }
+  }
+  function poseThrottle(t) {
+    if (!(t > 0)) return;
+    const lift = t * TH.lift;
+    // the arm's foot (angle a0 from the shaft, length L) up by lift: the shaft turns th (toward -Z) with sin(a0 - th) = sin(a0) + lift / L
+    const k = Math.min(1, Math.sin(TH.a0) + lift / TH.L);
+    turnAbout(TH.shaft, TH.shaft[0].rest, -(TH.a0 + Math.PI + Math.asin(k)));
+    for (const p of TH.slide) p.obj.position.y += lift;
+    const a = TH.pa * ease(clamp01(t / 0.6));
+    turnAbout(TH.p40, TH.p40[0].rest, -a);
+    turnAbout([TH.p41], TH.p41.rest, -a);
+    TH.rod.obj.position.y += -TH.a41[0] * Math.sin(a) + TH.a41[1] * Math.cos(a) - TH.a41[1];
+  }
   const hOff = new THREE.Vector3();
   function poseAll(e, useTo = false) {
     const m = useTo ? mixT.to : mixT.v;
@@ -547,6 +594,7 @@ async function main() {
       a.poseEach((p) => [g, Asm.partAmt(p, e) * (1 - m)]);
       for (const p of a.parts) p.obj.position.add(hoverAt(p, (useTo ? wT[p.k].to : wT[p.k].v) * m, hOff)), p.obj.scale.setScalar(1);
     }
+    poseThrottle(useTo ? thT.to : thT.v);
     if (guide.mode) layTray(useTo); // run 25 (item 2): laid from the poses above, so it clears the hovering parts too
     for (const p of parts) {
       const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
@@ -636,6 +684,7 @@ async function main() {
       aim(mixT, m ? 1 : 0, now);
       if (m && docked()) showTab('steps');
       if (m) range.value = st.target = 0; // the guided carburetor starts assembled
+      if (m) setThrottle(0); // run 25 (item 3): the throttle shuts on leaving EXPLORE
     }
     guideTargets(now, enter && !!m && mixT.v === 0, !enter);
     lastInput = now;
@@ -851,6 +900,13 @@ async function main() {
     flyTo(dur);
   }
 
+  /** run 25 (item 3): the throttle to t (0-1); the footer says it is visual only while it is open (correction 52). */
+  function setThrottle(t) {
+    thRange.value = String(t);
+    aim(thT, t, performance.now(), 0.15 + 0.35 * Math.abs(t - thT.v));
+    lastInput = performance.now();
+  }
+  thRange.addEventListener('input', () => setThrottle(Number(thRange.value)));
   range.addEventListener('pointerdown', () => (exDrag = true));
   addEventListener('pointerup', () => (exDrag = false));
   range.addEventListener('change', () => (exDrag = false));
@@ -1191,7 +1247,7 @@ async function main() {
   let carbFloor = FLOOR_Y;
   let poseKey = NaN; // changes only when a carburetor part moves (the shadow pass follows it)
   function placeFloor() {
-    poseKey = st.explode + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + hT.reduce((s, T) => s + T.v, 0) * 23;
+    poseKey = st.explode + thT.v * 31 + mixT.v * 7 + wT.reduce((s, T) => s + T.v, 0) * 13 + hT.reduce((s, T) => s + T.v, 0) * 23;
     if (floorKey === poseKey) return;
     floorKey = poseKey;
     let lo = Infinity;
@@ -1296,8 +1352,8 @@ async function main() {
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
-  const settled = () => !view.follow && [mixT, ...wT, ...trT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
+  const settled = () => !view.follow && [thT, mixT, ...wT, ...trT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
+  const sigOf = () => [st.explode, thT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -1313,6 +1369,10 @@ async function main() {
     range.style.setProperty('--p', `${(st.explode * 100).toFixed(1)}%`);
     stepT(mixT, now);
     wT.forEach((T) => stepT(T, now));
+    stepT(thT, now);
+    thOut.value = `${Math.round(thT.v * 100)}%`;
+    thRange.style.setProperty('--p', `${(thT.v * 100).toFixed(1)}%`);
+    foot.classList.toggle('vis', thT.v > 0);
     trT.forEach((T) => stepT(T, now)); // run 15 (item 9): the tray tweens were never stepped, so a part only reached the tray on entering a mode
     poseAll(st.explode);
     placeFloor();

@@ -221,6 +221,9 @@ html, body { background: var(--iw-bg); }
 .iw-dock { bottom: 30px; }
 .vt-foot { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-size: 13px; color: var(--iw-dim); letter-spacing: 0.08em;
   font-variant-caps: normal; pointer-events: none; }
+.vt-foot.vis::before { content: 'Throttle: visual only \00b7  '; color: var(--iw-brass); } /* run 25 (item 3, correction 52) */
+.iw-ctl .vt-thl { margin-left: 6px; }
+.iw-ctl .vt-tho { width: 2.6em; }
 .vt-panel { position: absolute; right: 20px; top: 20px; bottom: 30px; width: 320px; display: flex; flex-direction: column; background: rgba(16, 17, 20, 0.86);
   border: 1px solid var(--iw-line); border-radius: 14px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow: hidden; z-index: 5; }
 .vt-tabs { display: flex; gap: 4px; padding: 10px 10px 0; border-bottom: 1px solid var(--iw-line); }
