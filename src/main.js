@@ -952,9 +952,13 @@ async function main() {
   const legged = () => (guide.step()?.moves || []).map((id) => partOf[id]).filter((p) => p && p.legV);
   // ...from the end of the step's first part's fitting axis, so its seat shows: from below for the jets, float and
   // bowl, from above for the top and slide, square to the face for the side covers
+  // run 28 (item 6): a step's own view, where the rule below hides what the step is about. The float pin (TEAR DOWN 20, REBUILD 10): from
+  // below, the air-box end and the side it slides out to, so both its posts, the float's hinge between them and the pin sliding out show
+  const STEP_DIR = {'22': new THREE.Vector3(0.8, -1.1, 0.35)};
   const guideDir = () => {
     const p = curParts()[0];
     if (!p) return HERO_DIR;
+    if (STEP_DIR[p.id]) return STEP_DIR[p.id];
     const a = p.ax;
     if (Math.abs(a.y) > 0.7) return new THREE.Vector3(-0.42, 1.25 * Math.sign(a.y), 0.62);
     if (Math.abs(a.z) > 0.7) return new THREE.Vector3(-0.4, 0.42, Math.sign(a.z));
@@ -1687,7 +1691,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, trayLay, trayGroups, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, trayLay, trayGroups, STEP_DIR, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
