@@ -29,10 +29,11 @@ export function buildFloat(index) {
   A.add(part([SEAT[0], -4.32, 0], mk(latheY([[-0.17, 0.08], [-0.17, 0.22], [0.05, 0.22], [0.05, 0.2], [0.15, 0.2], [0.15, 0.22], [0.17, 0.21], [0.17, 0.14], [0.04, 0.08], [-0.17, 0.08]], 40), brass)), 'K36', {ex: [2.6, 1.0, 0], order: 0.7});
   A.add(part([SEAT[0], -4.22, 0], mk(oring(0.235, 0.035), rubber)), 'K37', {ex: [2.6, 1.7, 0], order: 0.75});
   // run 15 (item 6): the fuel screen is a mesh thimble: a collar, 3 hoops and 10 wires up the wall, and a flat mesh top (2 hoops, 10 spokes)
-  const W = 0.014, RS = 0.16, mesh = [tubeY(RS + 0.012, RS - 0.02, 0, 0.07, 0.006), ...[0.11, 0.17, 0.23].map((y) => new THREE.TorusGeometry(RS, W, 5, 24).rotateX(Math.PI / 2).translate(0, y, 0)),
-    ...[0.09, 0.16].map((r) => new THREE.TorusGeometry(r, W, 5, 24).rotateX(Math.PI / 2).translate(0, 0.28, 0)), tubeY(RS + 0.012, RS - 0.012, 0.27, 0.3, 0.004).translate(0, 0, 0)];
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2;
+  // run 27 (item 12): 3.7 mm across and inside the seat boss: hoops 5 x 24 -> 4 x 16 sides, 10 -> 8 wires (4240 -> about 2000 triangles)
+  const W = 0.014, RS = 0.16, mesh = [tubeY(RS + 0.012, RS - 0.02, 0, 0.07, 0.006), ...[0.11, 0.17, 0.23].map((y) => new THREE.TorusGeometry(RS, W, 4, 16).rotateX(Math.PI / 2).translate(0, y, 0)),
+    ...[0.09, 0.16].map((r) => new THREE.TorusGeometry(r, W, 4, 16).rotateX(Math.PI / 2).translate(0, 0.28, 0)), tubeY(RS + 0.012, RS - 0.012, 0.27, 0.3, 0.004).translate(0, 0, 0)];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
     mesh.push(cylY(W, 0.06, 0.28, 0.003).translate(Math.cos(a) * RS, 0, Math.sin(a) * RS), orient(cylY(W, 0, RS, 0.003), [Math.cos(a), 0, Math.sin(a)], [0, 0.28, 0]));
   }
   A.add(part([SEAT[0], -4.15, 0], mk(merge(mesh), steel)), 'K44', {ex: [2.6, 2.4, 0], order: 0.8});

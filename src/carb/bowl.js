@@ -157,7 +157,7 @@ export function buildBowl(index) {
   // outline 0.2 in (the groove's middle), lying in the groove with its top 0.5 mm proud of the lands
   const cordPts = rpolyA(inset(RIM, 0.2), 0.15).getPoints(6).filter((p, i, a) => i === 0 || p.distanceTo(a[i - 1]) > 0.01);
   if (cordPts.length > 2 && cordPts[0].distanceTo(cordPts[cordPts.length - 1]) < 0.01) cordPts.pop();
-  const cord = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPts.map((p) => new THREE.Vector3(p.x, 0, p.y)), true, 'centripetal'), 420, 0.085, 8, true);
+  const cord = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cordPts.map((p) => new THREE.Vector3(p.x, 0, p.y)), true, 'centripetal'), 300, 0.085, 6, true); // (item 12: 420 x 8 -> 300 x 6 sides, 6720 -> 3600 triangles; half of it sits in the groove)
   A.add(part([0, HT.joint - 0.05, 0], mk(cord.translate(0, BY.lip - 0.035 - (HT.joint - 0.05), 0), rubber)), '25', {ex: [0, 1.2, 0], order: 0.5});
   // 5 screws: 4 Phillips pan heads, M4 x 12, up through the corner ears of the flange band
   const sc = fastenerY(mm(12), mm(3.5), mm(2), mm(2.6), 'cross').rotateX(Math.PI); // M4 x 12 (fiche 98502-04012)
