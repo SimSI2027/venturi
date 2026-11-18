@@ -349,8 +349,10 @@ export function makeMaterials() {
   return {
     // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the cast faces show no blue or lavender tint at the default view
     cast,
-    machined: tag(std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}), 'machined'),
-    bore: tag(std({color: 0xb6b5b1, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.5}), 'machined'), // run 13 (item 9): brighter machined bore; run 26 (item 16): 0.26 -> 0.3
+    // run 27 (item 3): less metal, so a machined face is about as lit as the cast beside it from any side (metal 0.8 mirrored the studio's
+    // top light: +73% over the cast round it in the top view, -10% in the default view, where it now reads +8%), smoother (0.26 to the cast's 0.55)
+    machined: tag(std({color: 0xbcbcba, metalness: 0.35, roughness: 0.26, envMapIntensity: 0.3}), 'machined'),
+    bore: tag(std({color: 0xb8b8b6, metalness: 0.35, roughness: 0.26, envMapIntensity: 0.3}), 'machined'), // run 13 (item 9): brighter machined bore; run 26 (item 16): 0.26 -> 0.3
     brass: brassVar(std({color: 0xc9a24b, metalness: 1, roughness: 0.3})),
     steel: std({color: 0xa7adb5, metalness: 1, roughness: 0.32}),
     steelDark: std({color: 0x5c626b, metalness: 1, roughness: 0.38}),
