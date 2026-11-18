@@ -46,6 +46,11 @@ const BELLY = [[-2.73, -2.95], [-1.68, -2.98], [-0.51, -3.0], [0.31, -2.98], [1.
 const DEEP = [[-2.78, -2.7], [-1.09, -2.75], [0.43, -2.7], [0.78, -2.4, 0.35], [0.83, -1.0], [0.87, 0, 0.3], [0.83, 1.0], [0.78, 2.2, 0.35], [0.43, 2.45], [-1.09, 2.5],
   [-2.78, 2.45], [-3.02, 2.2, 0.35], [-3.08, 1.0], [-3.13, 0.3, 0.35], [-3.08, -1.0], [-3.02, -2.4, 0.35]].map(PLAN);
 
+// run 27 (item 8): the chamber's one inner outline (the belly's, 3 mm in), the flat floor's top, and the accelerator jet's column (x, z, top y): up
+// the cable-side wall under the body's pump outlet stub (body.js, x 0.77 z -2.75), 77 seated in its top
+export const CH = inset(BELLY, 0.28);
+export const FL = BY.shallow + 0.32;
+export const AJ = [0.77, -2.75, -3.2];
 /** Run 12 (item 8, cmp_2): the belly narrows toward the drain: its outline scales about the drain nipple, from 1 at the
  * flange band's foot (BY.ear) to 0.9 at the shallow floor and 0.8 at the deep one. The side walls are single quads from
  * ring to ring, so moving the ring vertices tapers them in a straight line; the flange band and its screws stay put. */
@@ -83,30 +88,38 @@ export function buildBowl(index) {
     // run 26 (round 1, D2 line 8): bevel 0.08 -> 0.03: on this 0.1 wide ring the 2 bevels crossed and it triangulated solid, closing the chamber
     // run 27 (item 4, bowl_4 / bowl_6): the rim is 2 lands either side of the groove gasket 25 lies in (RIM 0.12 to 0.28 in, 1.3 mm deep)
     tier(RIM, BY.lip, BY.lip - 0.3, 0.03, inset(RIM, 0.12)), // the outer land, in the joint's outline
-    tier(inset(RIM, 0.28), BY.lip, BY.lip - 0.14, 0.02, inset(RIM, 0.42)), // the inner land
-    tier(BOX, BY.lip - 0.12, BY.band, 0.04, inset(BOX, 0.32)), // the upper box: straight walls, its top the groove's floor
+    // run 27 (item 8, bowl_1 / bowl_4 / bowl_6): the chamber is 1 straight-walled pocket, CH (the belly's outline 3 mm in), from the rim to the
+    // flat floor: the box and band are hollowed to CH too, so the walls meet the floor with no ledge (they stepped in at the band's foot)
+    tier(inset(RIM, 0.28), BY.lip, BY.lip - 0.14, 0.02, CH), // the inner land
+    tier(BOX, BY.lip - 0.12, BY.band, 0.04, CH), // the upper box: straight walls, its top the groove's floor
     // the flange band stepping out (run 15: no ears on it any more); run 26 (round 1): its outline is RIM scaled 3% (about 0.1 out), not
     // inset(RIM, -0.1), whose outward offset looped at RIM's concave points and closed the band over the chamber
-    tier(RIM.map(([x, z, r]) => [x * 1.03, z * 1.03, r]), BY.band, BY.ear, 0.15, inset(BOX, 0.32)),
+    tier(RIM.map(([x, z, r]) => [x * 1.03, z * 1.03, r]), BY.band, BY.ear, 0.15, CH),
     ...EARS.map(([x, z]) => { // run 15 (item 2): the 4 ears, 4 mm thick at the joint, each with its 4.5 mm through-hole
       const sx = x > -0.5 ? 1 : -1, sz = z > 0 ? 1 : -1, x0 = x - sx * 0.35, x1 = x + sx * 0.38, z0 = z - sz * 0.35, z1 = z + sz * 0.38; // run 26 (round 1, D1 lines 3 and 8): 0.6 -> 0.38 out, corner lobes, not arms
       const q = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
       if (sx * sz < 0) q.reverse();
       return tier(q, BY.lip, BY.earBot, 0.06, null, 0.3, [[x, z, M4_HOLE]]);
     }),
-    taper(tier(BELLY, BY.ear, BY.shallow, 0.12, inset(BELLY, 0.3))), // the belly's walls (run 12: tapering toward the drain)
-    taper(tier(BELLY, BY.shallow + 0.32, BY.shallow, 0.25)), // its floor at the shallow end
-    taper(tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3)), // the deeper step under the jets
-    tier(BOSS, BY.deep + 0.1, BY.boss, 0.2, null, 0.1), // the plug boss
+    // run 27 (item 8): the belly's walls and floor straight (no taper: the chamber's walls leaned in with it); the floor has the centre hole
+    // for plug 38 (main jet access) through it, the deep step and the plug boss under it
+    tier(BELLY, BY.ear, BY.shallow, 0.12, CH), // the belly's walls
+    tier(BELLY, FL, BY.shallow, 0.25, null, 0.25, [[QX, QZ, 0.55]]), // the flat floor
+    taper(tier(DEEP, BY.shallow + 0.1, BY.deep, 0.3, null, 0.25, [[QX, QZ, 0.55]])), // the deeper step under the jets (run 12's taper kept under the floor)
+    tier(BOSS, BY.deep + 0.1, BY.boss, 0.2, null, 0.1, [[QX, QZ, 0.55]]), // the plug boss
     tier(PASS, BY.deep + 0.05, BY.deep - 0.38, 0.12, null, 0.1), // the curled passage
     tier(DSB, BY.shallow + 0.05, BY.shallow - 0.45, 0.12, null, 0.05), // the drain screw's boss
     // run 26 (item 14): the pump housing lobe, its lower 6.4 mm hollow: the pump chamber's well, open under cover 27 (pump.js)
     tier(LOBE, BY.ear - 0.25, PYW + 0.6, 0.2, null, 0.1),
     tier(LOBE, PYW + 0.6, PYW, 0.1, null, 0.1, [[PX, PZ, 1.25]]),
-    // inside, on the flat floor (top at BY.shallow + 0.32, walls 3.2-3.4 mm): the boss round plug 38's thread at the centre, and the
-    // drain passage's port toward drain screw 26
-    tubeY(0.95, 0.55, BY.shallow + 0.3, BY.shallow + 0.62).translate(QX, 0, QZ),
-    tubeY(0.32, 0.15, BY.shallow + 0.3, BY.shallow + 0.45).translate(SX, 0, SZ),
+    // inside, on the flat floor (top at FL, walls 3 mm): a low collar round the centre hole and the curved wall standing round its air-box and
+    // cable sides (bowl_4, bowl_6), the 4 small pads near the floor's corners, the drain passage's port toward drain screw 26, and the
+    // accelerator jet's column up the cable-side wall to under the body's pump outlet, its seat at the top (77, jets.js)
+    tubeY(0.8, 0.55, FL - 0.02, FL + 0.15).translate(QX, 0, QZ),
+    tier([...arc(QX, QZ, 1.2, -2.8, 0.35, 14, 0.05), ...arc(QX, QZ, 0.95, 0.35, -2.8, 14, 0.05)], FL + 0.62, FL - 0.02, 0.04, null, 0.05),
+    ...[[-2.75, -2.35], [1.2, -2.35], [1.2, 1.95], [-2.75, 1.95]].map(([x, z]) => rbox(0.28, 0.16, 0.28, 0.04).translate(x, FL + 0.06, z)),
+    tubeY(0.32, 0.15, FL - 0.02, FL + 0.13).translate(SX, 0, SZ),
+    tubeY(0.3, 0.12, FL - 0.02, AJ[2]).translate(AJ[0], 0, AJ[1]),
     tier(NIPB, BY.deep + 0.1, BY.deep - 0.3, 0.1, null, 0.05), // the drain nipple's boss
     tier(RG, BY.lip - 0.4, BY.ear - 0.3, 0.06, null, 0.1), // the pump rod's guide
   ]);
@@ -116,7 +129,7 @@ export function buildBowl(index) {
   const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep - 0.2).translate(DX, 0, DZ);
   // run 27 (item 4): both lands' tops machined flat, level, against the body's flat face
   const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.015, inset(RIM, 0.12));
-  const rim = tier(inset(RIM, 0.28), BY.lip + 0.02, BY.lip - 0.03, 0.015, inset(RIM, 0.42), 0.15);
+  const rim = tier(inset(RIM, 0.28), BY.lip + 0.02, BY.lip - 0.03, 0.015, CH, 0.15);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)
   // run 10 (item 7): the Keihin diagram's thin pump rod (its 72), 2 mm, a ball end up in link lever 41's arm (linkage.js)
   // run 15 (item 7): the rod has a chamfered foot with thread rings, a retaining groove and a collar under the ball
@@ -128,7 +141,9 @@ export function buildBowl(index) {
   const inlet = merge([hose([[1.0, IY, z0 - 0.3], [1.0, IY, IZ - 0.5], [1.0, IY + 0.3, IZ - 0.05], [1.0, IY + 0.85, IZ], [1.0, IT, IZ]], 0.36, 0.2), orient(hexY(0.5, 0, 0.3), [0, 0, 1], [1.0, IY, z0 - 0.1]), tubeY(0.42, 0.2, IT - 0.45, IT - 0.3).translate(1.0, 0, IZ)]); // overlay round 1 (carb_8): 8 across
   // overlay round 2 (carb_7, carb_8): the cast boss the inlet comes out of, on the upper box's sensor side
   const iboss = rbox(1.4, 1.1, 1.0, 0.3).translate(1.0, IY, z0 + 0.35);
-  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), machined)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  // run 27 (item 8, bowl_1 / bowl_4 / bowl_6): the brass tube pressed into the floor beside the centre hole, standing up 14 mm, leaning a little
+  const btube = orient(merge([tubeY(0.11, 0.06, 0, 1.3, 0.01), tubeY(0.16, 0.06, 0, 0.1, 0.02)]), [0.12, 1, 0.2], [QX + 0.25, FL - 0.02, QZ + 1.0]);
+  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), machined), mk(btube, brass)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   // run 11 (item 3): Keihin pieces of reference 1 with their own meshes: the fuel joint (83) with its 3 O-rings (85)
   // in the boss, the pump rod (72) with its U-ring (52) on the guide's top
   A.add(part([0, 0, 0], mk(inlet, brass)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});

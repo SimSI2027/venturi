@@ -3,6 +3,7 @@
 // the pilot air jet, in the bell mouth.
 import {Asm} from '../lib/asm.js';
 import {UY, ADAPT, JF, JETS} from './body.js';
+import {AJ} from './bowl.js';
 import {merge, cylY, tubeY, hexY, latheY, screwY, jetY, hexRingY, threadTubeY, orient, lift, mk, part, mm, rpolyA, circ, extrudeXY} from './kit.js';
 
 export function buildJets(index) {
@@ -40,6 +41,7 @@ export function buildJets(index) {
   // run 27 (item 5, under_1): both up into the 1 jet boss, their heads at its face JF (pre-lift y: JF - UY); the pilot jet 12 mm, so it stays under the bore
   A.add(part([JETS.pilot[0], JF - UY, JETS.pilot[1]], mk(jetY(mm(12), mm(1.5), mm(2.75), mm(2), {slot: true, slotW: mm(1), slotD: mm(1.2), holes: 4, holeW: mm(1.2), holeY: [mm(4), mm(5.6)]}).rotateX(Math.PI), brass)), '18', {ex: [-1.6, -1.2, 0], order: 0.5});
   A.add(part([JETS.starter[0], JF - UY, JETS.starter[1]], mk(jetY(0.75, 0.17).rotateX(Math.PI), brass)), '19', {ex: [1.2, -1.2, -0.6], order: 0.6});
-  A.add(part([-2.7, -4.55, 2.4], mk(jetY(0.5, 0.14), brass)), '77', {ex: [-2.2, -0.6, 0.6], order: 0, axis: [0, 1, 0]});
+  // run 27 (item 8, bowl_4 / bowl_6): seated in the top of its column up the bowl's cable-side wall (bowl.js AJ), hex up, under the body's pump outlet
+  A.add(part([AJ[0], AJ[2] - UY, AJ[1]], mk(jetY(0.5, 0.14), brass)), '77', {ex: [0.6, -0.6, -1.6], order: 0, axis: [0, 1, 0]});
   return lift(A, UY, ['17', '20', 'K103']);
 }
