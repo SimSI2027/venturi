@@ -34,7 +34,7 @@ export function buildPump(index) {
   // 31 O-ring: run 9, seated on the bowl lobe's face beside the diaphragm, round the pump's outlet passage
   A.add(part([PX + 1.3, PYW - 0.06, PZ + 0.6], mk(oring(0.22, 0.06), rubber)), '31', {ex: [0.8, -0.3, 0.8], order: 0.5});
   // 45 PLATE (run 11, item 8): the owner's underside (mine_6) has 0 large guard plates, so the plate is a small
-  // stamped strap (Keihin 209, buffer plate), 9 wide and 14 long: under the cover's cable-side ear (its screw through
+  // stamped strap, 9 wide and 14 long (run 27, correction 60: Keihin 209 is not this but the main jet's collar, jets.js): under the cover's cable-side ear (its screw through
   // it) out to the adjusting screw (8). Run 10's shield-shaped guard plate came from a listing photo, another carburetor.
   const EAR = [PX + Math.cos(EA[2]) * ER, PZ + Math.sin(EA[2]) * ER], SR = mm(4.5);
   const dv = [ADJ[0] - EAR[0], ADJ[1] - EAR[1]], dl = Math.hypot(...dv), d = [dv[0] / dl, dv[1] / dl], nrm = [-d[1], d[0]];

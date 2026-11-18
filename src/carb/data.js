@@ -129,6 +129,9 @@ export const PIECES = {
   // run 13 (item 4): the throttle sensor's hardware, Keihin 241 (Torx screw), 199 (washer) and 109 (collar) on its ear; K140, a body screw
   K109: {k: 109, of: '47', piece: 'collar', role: 'throttle sensor collar, between its ear and the cover plate', group: 'sensor', fits: '47', step: 4},
   K199: {k: 199, of: '47', piece: 'washer', role: 'throttle sensor screw washer', group: 'sensor', fits: '47', step: 4},
+  // run 27 (item 6, correction 60): Keihin 209 is the white plastic collar round the main jet (it was matched to 45 PLATE, which stays the strap
+  // under pump cover 27); it comes off with the main jet, before it
+  K209: {k: 209, of: '1', piece: 'buffer plate', role: 'white plastic collar round the main jet at the jet boss; it also covers the pilot jet beside it', group: 'jets', fits: '1', step: 23},
   K241: {k: 241, of: '47', piece: 'Torx screw', role: 'throttle sensor Torx screw through its ear', group: 'sensor', fits: '47', step: 4},
   K140: {k: 140, of: '1', piece: 'screw', role: 'small body screw above the carburetor switch stop screw', group: 'sensor', fits: '1', step: 6},
 };
@@ -137,7 +140,7 @@ export const KPIECES = Object.keys(PIECES).filter((id) => PIECES[id].k);
 
 // run 13 (item 3, scratch/parts_map.txt): the Keihin FCR-MX diagram numbers that sit on each fiche reference, and the
 // quantities the fiche table gives (refs 61-79; the table's refs 1-60 and its qty are in no source this page may read)
-export const KEIHIN = {'2': [6], '3': [7], '4': [8], '5': [7], '6': [249], '9': [19], '10': [20], '11': [21], '12': [22], '13': [24], '14': [25], '15': [243], '16': [244], '17': [26], '18': [28], '19': [29], '20': [30], '21': [39], '22': [40], '23': [42], '24': [43], '25': [45], '26': [46], '27': [47], '28': [51], '30': [53], '31': [54], '32': [55], '36': [100], '37': [122], '38': [123], '39': [152], '40': [64], '41': [65], '43': [251], '44': [250], '45': [209], '46': [90], '47': [96], '48': [23], '49': [32], '50': [33], '51': [34], '52': [35], '53': [245], '57': [148], '58': [206], '62': [180], '65': [264], '68': [207], '70': [265], '75': [205], '78': [211], '79': [213]};
+export const KEIHIN = {'2': [6], '3': [7], '4': [8], '5': [7], '6': [249], '9': [19], '10': [20], '11': [21], '12': [22], '13': [24], '14': [25], '15': [243], '16': [244], '17': [26], '18': [28], '19': [29], '20': [30], '21': [39], '22': [40], '23': [42], '24': [43], '25': [45], '26': [46], '27': [47], '28': [51], '30': [53], '31': [54], '32': [55], '36': [100], '37': [122], '38': [123], '39': [152], '40': [64], '41': [65], '43': [251], '44': [250], '46': [90], '47': [96], '48': [23], '49': [32], '50': [33], '51': [34], '52': [35], '53': [245], '57': [148], '58': [206], '62': [180], '65': [264], '68': [207], '70': [265], '75': [205], '78': [211], '79': [213]};
 export const QTY = {61: 1, 62: 1, 64: 1, 65: 1, 66: 1, 67: 1, 68: 1, 69: 1, 70: 2, 71: 1, 73: 1, 74: 1, 75: 1, 76: 1, 77: 1, 78: 1, 79: 1};
 
 // run 25 (item 4): the 5 fuel circuits as the owner listed them, for the CIRCUITS row. Visual only; each range line is a rule of thumb,

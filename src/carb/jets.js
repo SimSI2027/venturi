@@ -3,7 +3,7 @@
 // the pilot air jet, in the bell mouth.
 import {Asm} from '../lib/asm.js';
 import {UY, ADAPT, JF, JETS} from './body.js';
-import {merge, cylY, tubeY, hexY, latheY, screwY, jetY, hexRingY, threadTubeY, orient, lift, mk, part, mm} from './kit.js';
+import {merge, cylY, tubeY, hexY, latheY, screwY, jetY, hexRingY, threadTubeY, orient, lift, mk, part, mm, rpolyA, circ, extrudeXY} from './kit.js';
 
 export function buildJets(index) {
   const A = new Asm('jets', 'Jets', {offset: [8.0, -4.0, 0], index});
@@ -17,6 +17,17 @@ export function buildJets(index) {
   A.add(part([NX, -4.65, 0], mk(merge([hexRingY(0.45, 0.3, -0.25, 0), tubeY(0.4, 0.3, -0.6, -0.25), tubeY(0.44, 0.3, -0.4, -0.3)]), machined)), '1-spacer', {ex: [0, -1.4, 0], order: 0.4});
   // main jet #158 (piece of reference 1: no reference of its own on this fiche): threads into the needle jet's foot
   A.add(part([NX, -5.1, 0], mk(jetY(mm(6.5), mm(2.0), mm(3.0), mm(2.5)).rotateX(Math.PI), brass)), '1-mainjet', {ex: [0, -2.4, 0], order: 0.2});
+  // run 27 (item 6, under_3 and correction 60): Keihin 209, the buffer plate: a white plastic collar 5.2 mm deep under the jet boss's face, round
+  // the spacer and main jet (a 10 mm hole) and over the pilot jet's head beside it, so it covers 2 jets; off first in the main jet's step
+  const [MX, MZ] = JETS.main, [PX, PZ] = JETS.pilot;
+  const cS = rpolyA([[PX - MX - 0.42, PZ - MZ - 0.5], [0.55, -0.55], [0.55, 0.55], [PX - MX - 0.42, PZ - MZ + 0.5]], 0.45);
+  cS.holes.push(circ(0, 0, 0.47));
+  const collar = extrudeXY(cS, 0.49, 0.05, 16, {free: true}).rotateX(Math.PI / 2);
+  collar.computeBoundingBox();
+  const white = A.M.plastic.clone();
+  white.color.set(0xe4e1d8);
+  white.roughness = 0.5;
+  A.add(part([MX, JF - UY, MZ], mk(collar.translate(0, -collar.boundingBox.max.y - 0.005, 0), white)), 'K209', {ex: [0, -1.8, 0], order: 0.1});
   // 20 the #100 jet = pilot air jet: in the air-box spigot's floor (run 8: the air box is +X), screwed in along the
   // bore from the air-box end; it comes off toward +X
   // run 10 landmarks (carb_8): seated in the air-box spigot's floor (inner radius 1.88), 0.8 in from the face, 0.4 toward the sensor side
