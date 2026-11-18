@@ -224,9 +224,11 @@ export function createStage(canvas) {
   // SSAO (GTAO) on the gun only: the floors are hidden from its normal/depth pass, which also
   // keeps the Reflector from re-rendering the scene a second time inside it
   const ao = new GTAOPass(scene, camera, 4, 4);
-  ao.updateGtaoMaterial({radius: 0.6 * MM, distanceExponent: 1.4, thickness: 0.7 * MM, scale: 1.0, samples: 16});
+  // run 26 (item 18): stronger, on top of the baked recess shading (which stays on every tier): at its run 3 settings it darkened the default
+  // view's carburetor by 3% at p90 and 0.2% of its pixels by 25-40%; now 13% at p90 (radius 16 mm, scale 2.5, falloff 1, blend 1)
+  ao.updateGtaoMaterial({radius: 1.5 * MM, distanceExponent: 1, distanceFallOff: 1, thickness: 1.5 * MM, scale: 2.5, samples: 16});
   ao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16});
-  ao.blendIntensity = 0.8;
+  ao.blendIntensity = 1;
   // half resolution: the largest GPU pass; AO is soft, the blend samples it bilinearly
   const aoSize = ao.setSize.bind(ao);
   ao.setSize = (w, h) => aoSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
