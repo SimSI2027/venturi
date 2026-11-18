@@ -320,7 +320,7 @@ function brassVar(m) {
 }
 
 export function makeMaterials() {
-  const grain = castNormal();
+  const grain = castNormal(256, 0.6); // run 26 (round 1, D3 line 3): slope 1.6 -> 0.6: at 0.25 mm a texel (item 4) 1.6 read as hammered paint
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
   const cast = std({color: 0x7a7d83, metalness: 0.3, roughness: 0.55, envMapIntensity: 0.3, // run 26 (item 16): 0.52 -> 0.55 as-cast, against 0.3 machined // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
     normalMap: grain, normalScale: new THREE.Vector2(1, 1)});

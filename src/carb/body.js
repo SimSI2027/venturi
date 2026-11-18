@@ -261,10 +261,10 @@ export function buildBody(index) {
   // run 26 (item 15, mine_1 / mine_3 / mine_6): flush ears, not round posts: each a rounded-square lobe of the flange on the bowl ear's own
   // footprint (bowl.js), flush with the mating face and 7.5 mm thick, the M4 tapped through it (7 mm of the screw's 12)
   for (const [ex, ez] of EARS) {
-    const sx = ex > -0.5 ? 1 : -1, sz = ez > 0 ? 1 : -1, x0 = ex - sx * 0.35, x1 = ex + sx * 0.6, z0 = ez - sz * 0.35, z1 = ez + sz * 0.6;
+    const sx = ex > -0.5 ? 1 : -1, sz = ez > 0 ? 1 : -1, x0 = ex - sx * 0.35, x1 = ex + sx * 0.38, z0 = ez - sz * 0.35, z1 = ez + sz * 0.38; // (round 1: 0.6 -> 0.38, as the bowl's)
     const q = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
     if (sx * sz < 0) q.reverse();
-    const s = rpolyA(q, 0.4);
+    const s = rpolyA(q, 0.3);
     s.holes.push(circ(ex, ez, 0.3));
     g.push(extrudeXY(s, 0.7, 0.06, 12, {free: true}).rotateX(Math.PI / 2).translate(0, BOT + 0.35, 0), tappedY(0.3, mm(1.85), 0, 0.7, 0.66).rotateX(Math.PI).translate(ex, BOT + 0.7, ez));
   }
@@ -286,7 +286,7 @@ export function buildBody(index) {
   // the 2 float pin posts, each with the pin's cross hole (22 runs along Z at y -3.23, 0.1 across)
   for (const z of [-1.35, 1.35]) g.push(slabZ([[1.55, -3.6], [2.05, -3.6], [2.05, -2.43], [1.55, -2.43]], z, 0.36, [[1.8, -3.23, 0.115]], 0.1));
   // the accelerator pump outlet: a bored stub on the cable side of the joint, over the pump housing (bowl.js PUMP), where its passage goes up
-  g.push(tubeY(0.24, 0.1, BOT - 0.25, BOT + 0.05).translate(0.77, 0, -2.75));
+  g.push(tubeY(0.34, 0.14, BOT - 0.45, BOT + 0.05).translate(0.77, 0, -2.75)); // (round 1, D2 line 7: 5.1 -> 7.2 mm across, 2.7 -> 4.8 mm long, so it reads)
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
   // run 26 (item 13): the mating face is the flange's rim only (it was a solid 5.9 x 6.0 plate drawn over every boss and hole), in 2 machined

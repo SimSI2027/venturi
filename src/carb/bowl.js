@@ -80,14 +80,17 @@ export function buildBowl(index) {
   // across, 8 mm deep, open at the bottom)
   const PBOSS = PUMP_EARS.map(([x, z]) => tappedY(0.45, mm(1.85), 0, 0.9, mm(8)).rotateX(Math.PI).translate(x, PYW + 0.7, z));
   const g = merge([
-    tier(RIM, BY.lip, BY.lip - 0.3, 0.08, BOX), // the top lip in the joint's outline, open
+    // run 26 (round 1, D2 line 8): bevel 0.08 -> 0.03: on this 0.1 wide ring the 2 bevels crossed and it triangulated solid, closing the chamber
+    tier(RIM, BY.lip, BY.lip - 0.3, 0.03, BOX), // the top lip in the joint's outline, open
     tier(BOX, BY.lip - 0.25, BY.band, 0.1, inset(BOX, 0.32)), // the upper box: straight walls
-    tier(inset(RIM, -0.1), BY.band, BY.ear, 0.15, inset(BOX, 0.32)), // the flange band stepping out (run 15: no ears on it any more)
+    // the flange band stepping out (run 15: no ears on it any more); run 26 (round 1): its outline is RIM scaled 3% (about 0.1 out), not
+    // inset(RIM, -0.1), whose outward offset looped at RIM's concave points and closed the band over the chamber
+    tier(RIM.map(([x, z, r]) => [x * 1.03, z * 1.03, r]), BY.band, BY.ear, 0.15, inset(BOX, 0.32)),
     ...EARS.map(([x, z]) => { // run 15 (item 2): the 4 ears, 4 mm thick at the joint, each with its 4.5 mm through-hole
-      const sx = x > -0.5 ? 1 : -1, sz = z > 0 ? 1 : -1, x0 = x - sx * 0.35, x1 = x + sx * 0.6, z0 = z - sz * 0.35, z1 = z + sz * 0.6;
+      const sx = x > -0.5 ? 1 : -1, sz = z > 0 ? 1 : -1, x0 = x - sx * 0.35, x1 = x + sx * 0.38, z0 = z - sz * 0.35, z1 = z + sz * 0.38; // run 26 (round 1, D1 lines 3 and 8): 0.6 -> 0.38 out, corner lobes, not arms
       const q = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
       if (sx * sz < 0) q.reverse();
-      return tier(q, BY.lip, BY.earBot, 0.06, null, 0.4, [[x, z, M4_HOLE]]);
+      return tier(q, BY.lip, BY.earBot, 0.06, null, 0.3, [[x, z, M4_HOLE]]);
     }),
     taper(tier(BELLY, BY.ear, BY.shallow, 0.12, inset(BELLY, 0.3))), // the belly's walls (run 12: tapering toward the drain)
     taper(tier(BELLY, BY.shallow + 0.32, BY.shallow, 0.25)), // its floor at the shallow end
@@ -109,7 +112,7 @@ export function buildBowl(index) {
   // run 14 (item 4): the flat machined seat under each screw head: a washer face round each ear hole, 0.5 mm proud of the band's foot
   const seats = merge(EARS.map(([x, z]) => tubeY(mm(4.6), M4_HOLE, BY.earBot - 0.05, BY.earBot + 0.02, 0.015).translate(x, 0, z)));
   const nipple = tubeY(0.21, 0.1, BY.deep - 0.5, BY.deep - 0.2).translate(DX, 0, DZ);
-  const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.04, BOX);
+  const face = tier(RIM, BY.lip + 0.02, BY.lip - 0.03, 0.015, BOX);
   // run 26 (item 14): the inner rim gasket 25 (RIM to 0.3 in) seals against, 0.4 mm proud just inside it
   const rim = tier(inset(RIM, 0.3), BY.lip + 0.04, BY.lip, 0.01, inset(RIM, 0.4), 0.15);
   // the pump rod: from the housing lobe up the cable side, through its guide, to the lever under the cable cover (body.js)

@@ -193,6 +193,25 @@ M.push(`bore shows through from the air-box end with the slide out: ${bore ? `${
     out.push(`${n} ${(t / 1000).toFixed(0)}k`);
   }
   M.push(`triangles drawn (one scene pass, visible meshes): max ${(max / 1000).toFixed(0)}k · ${out.join(' · ')}`);
+  // step numbers under their own group (TEAR DOWN 20, settled): the number's top 0-16 px under its group's lowest projected point, its centre
+  // inside the group's x range
+  await page.evaluate(() => { window.VENTURI.setMode('teardown', 20); });
+  await page.waitForTimeout(4000);
+  const nums = await page.evaluate(() => {
+    const V = window.VENTURI, T = V.THREE, v = new T.Vector3(), b = new T.Box3(), els = [...document.querySelectorAll('.vt-tg')];
+    let n = 0, ok = 0;
+    V.trayGroups.forEach((g, i) => {
+      const e = els[i];
+      if (!e || !e.classList.contains('show')) return;
+      let x0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const p of g.ps) { b.setFromObject(p.obj); for (let k = 0; k < 8; k++) { v.set(k & 1 ? b.max.x : b.min.x, k & 2 ? b.max.y : b.min.y, k & 4 ? b.max.z : b.min.z).project(V.camera); const x = (v.x * 0.5 + 0.5) * innerWidth, y = (-v.y * 0.5 + 0.5) * innerHeight; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } }
+      const r = e.querySelector('b').getBoundingClientRect(), cx = (r.left + r.right) / 2;
+      n++;
+      if (r.top - y1 >= -3 && r.top - y1 <= 16 && cx >= x0 - 2 && cx <= x1 + 2) ok++;
+    });
+    return {n, ok};
+  });
+  M.push(`tray step numbers under their own group (TEAR DOWN 20, 1418x930): ${nums.ok} of ${nums.n}`);
   const fl = await page.evaluate(() => ({hint: document.querySelector('.iw-hint').textContent, cut: Object.keys(window.VENTURI.S.cut).join('+') || 'none', tier: window.VENTURI.S.tier, first: window.__STATS.firstMs}));
   M.push(`quality flags after the states above (default tier ${fl.tier}): cuts ${fl.cut} · line "${fl.hint}"`);
   await page.close();
@@ -206,6 +225,9 @@ const tr = run(['scripts/tray.mjs'], {SIZES: '1418x930,1366x768'}).split('\n').f
 M.push('tray (settled worst = px to the mode buttons; outline frames with parts not landed):', ...tr);
 const ft = run(['scripts/foot.mjs']).trim().split('\n');
 M.push('footer:', ...ft.map((l) => '  ' + l));
+// the nozzle shows with SECTION on; the nipples are under hoses 57 and 58 until TEAR DOWN step 2 takes them off
+const hv = [...run(['scratch/_hov4.mjs'], {NOTES: 'Accelerator pump nozzle'}).split('\n'), ...run(['scratch/_hov4.mjs'], {NOTES: 'Air vent nipples (hoses 57, 58)', HQ: '&mode=teardown&step=3'}).split('\n')].filter((l) => l.includes('->'));
+M.push('hover names of the pressed-in brass (mouse swept over each):', ...hv.map((l) => '  ' + l));
 M.push(`console errors while rendering: ${errs.length ? errs.slice(0, 5).join(' | ') : 0}`);
 fs.writeFileSync('scratch/metrics.txt', M.join('\n') + '\n');
 console.log(M.join('\n'));
