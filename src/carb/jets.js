@@ -2,7 +2,7 @@
 // starter jet #90 (19), accelerator jet (77) inside the float chamber, coming off downward; and the #100 jet (20),
 // the pilot air jet, in the bell mouth.
 import {Asm} from '../lib/asm.js';
-import {UY, ADAPT} from './body.js';
+import {UY, ADAPT, JF, JETS} from './body.js';
 import {merge, cylY, tubeY, hexY, latheY, screwY, jetY, hexRingY, threadTubeY, orient, lift, mk, part, mm} from './kit.js';
 
 export function buildJets(index) {
@@ -13,7 +13,8 @@ export function buildJets(index) {
   // (run 8: the underside 0.62 higher, so the needle jet is shorter: its foot still 0.27 into the spacer)
   A.add(part([NX, -1.95, 0], mk(merge([tubeY(0.28, mm(0.6), -0.85, 0), hexRingY(0.42, mm(0.6), -1.1, -0.85), threadTubeY(0.35, 0.3, mm(0.6)).translate(0, -1.1, 0)]), brass)), '17', {ex: [0, 0, 0], order: 0.3});
   // spacer under it (piece of reference 1)
-  A.add(part([NX, -4.65, 0], mk(merge([hexRingY(0.9, 0.5, -0.25, 0), tubeY(0.7, 0.32, -0.6, -0.25), tubeY(0.74, 0.5, -0.4, -0.3)]), machined)), '1-spacer', {ex: [0, -1.4, 0], order: 0.4});
+  // run 27 (item 5): hex 0.9 -> 0.45 (19 -> 9.6 mm across), so the pilot jet sits beside it in the same boss face (under_1)
+  A.add(part([NX, -4.65, 0], mk(merge([hexRingY(0.45, 0.3, -0.25, 0), tubeY(0.4, 0.3, -0.6, -0.25), tubeY(0.44, 0.3, -0.4, -0.3)]), machined)), '1-spacer', {ex: [0, -1.4, 0], order: 0.4});
   // main jet #158 (piece of reference 1: no reference of its own on this fiche): threads into the needle jet's foot
   A.add(part([NX, -5.1, 0], mk(jetY(mm(6.5), mm(2.0), mm(3.0), mm(2.5)).rotateX(Math.PI), brass)), '1-mainjet', {ex: [0, -2.4, 0], order: 0.2});
   // 20 the #100 jet = pilot air jet: in the air-box spigot's floor (run 8: the air box is +X), screwed in along the
@@ -25,8 +26,9 @@ export function buildJets(index) {
   A.add(part([ADAPT - 0.8, -1.97, -0.4], mk(orient(jetY(0.55, 0.13, 0.2, 0.2), [1, 0, 0]), brass)), 'K103', {ex: [-2.0, 3.0, -1.0], order: 0.75, axis: [1, 0, 0]});
   // 18 pilot jet #42 (long and slim) and 19 starter jet #90: screwed up into their bosses under the body, hex at
   // the boss foot (body.js); 77 accelerator jet: hex up, in its boss in the bowl's corner (bowl.js)
-  A.add(part([0.7, -5.0, 1.1], mk(jetY(mm(16), mm(1.5), mm(2.75), mm(2), {slot: true, slotW: mm(1), slotD: mm(1.2), holes: 4, holeW: mm(1.2), holeY: [mm(4), mm(5.6)]}).rotateX(Math.PI), brass)), '18', {ex: [1.8, 0, 0], order: 0.5});
-  A.add(part([-1.7, -4.75, -0.8], mk(jetY(0.75, 0.17).rotateX(Math.PI), brass)), '19', {ex: [-1.4, 0, 0], order: 0.6});
+  // run 27 (item 5, under_1): both up into the 1 jet boss, their heads at its face JF (pre-lift y: JF - UY); the pilot jet 12 mm, so it stays under the bore
+  A.add(part([JETS.pilot[0], JF - UY, JETS.pilot[1]], mk(jetY(mm(12), mm(1.5), mm(2.75), mm(2), {slot: true, slotW: mm(1), slotD: mm(1.2), holes: 4, holeW: mm(1.2), holeY: [mm(4), mm(5.6)]}).rotateX(Math.PI), brass)), '18', {ex: [-1.6, -1.2, 0], order: 0.5});
+  A.add(part([JETS.starter[0], JF - UY, JETS.starter[1]], mk(jetY(0.75, 0.17).rotateX(Math.PI), brass)), '19', {ex: [1.2, -1.2, -0.6], order: 0.6});
   A.add(part([-2.7, -4.55, 2.4], mk(jetY(0.5, 0.14), brass)), '77', {ex: [-2.2, -0.6, 0.6], order: 0, axis: [0, 1, 0]});
   return lift(A, UY, ['17', '20', 'K103']);
 }

@@ -18,6 +18,12 @@ export const TOWER = {x0: -2.2, x1: 1.8, z: 3.3, top: 7.3}; // the slide tower; 
 export const BOLT_X = 2.35; // run 14: the top cover's 2 bolts sit this far either side of the tower's middle, in 2 threaded bosses
 export const BOT = HT.joint; // the body's underside: the float chamber gasket face
 export const UY = 1.52; // the underside's bosses and every part under them, built for BOT -4.0, lifted with it
+// run 27 (item 5, under_1 / under_3): the jet boss's face (carb y), the jets in it (x, z: the main jet under the needle, the pilot jet beside it
+// toward the engine, the starter jet toward the air box and the cable side), the needle valve seat at the air-box end, the pilot screw's axis height
+export const JF = -3.13;
+export const JETS = {main: [-0.2, 0], pilot: [-0.98, 0.05], starter: [0.6, -0.77]};
+export const SEAT = [1.45, 0];
+export const PSY = BOT + 0.28;
 // throttle shaft (x, y), across the tower along Z; run 11 (item 7, round 1): 1.1 toward the air box (was -0.2), where
 // the owner's cable side (mine_4: the wheel) and sensor side (mine_2: the TPS hub) both put it, 12-17 mm off
 export const SHAFT = [0.9, 5.6];
@@ -60,7 +66,9 @@ export const PLATE59 = [[-1.8, 6.9], [3.6, 6.9], [3.6, -0.2], [1.8, -0.2], [1.8,
 // the body seen along the bore (traced from carb_7: z, y, corner r), right half from the joint up to the top: the
 // lower block round the bore, a ledge at the shoulder, the tower with a rib band and a step in under the top cover;
 // the casting is symmetric about the bore's vertical plane, so the left half is its mirror (28 points in all)
-const HALF = [[2.7, BOT, 0.5], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.2], [3.6, 2.45, 0.12], [3.6, 2.95, 0.12], [3.3, 3.2, 0.15],
+// run 27 (item 5, under_1 / under_3): the blocks stop 5.3 mm above the joint (BOT + 0.5): the underside is a pocket inside the flange, its
+// ceiling a plate 1.6 mm under the bore, the jet boss, seat boss and float pin posts hanging from it
+const HALF = [[2.96, BOT + 0.5, 0.1], [3.15, -1.6, 0.4], [3.2, 0.6, 0.3], [3.3, 2.2, 0.2], [3.6, 2.45, 0.12], [3.6, 2.95, 0.12], [3.3, 3.2, 0.15],
   [3.3, 4.5, 0.08], [3.45, 4.6, 0.06], [3.45, 5.0, 0.06], [3.3, 5.1, 0.08], [3.3, 6.2, 0.25], [3.0, 6.55, 0.2], [3.0, 7.3, 0.08]]; // run 26 (item 12): top corner 0.3 -> 0.08, so the 2.7 mm wall keeps a flat gasket face
 // the float chamber joint seen from below (traced from carb_12 / carb_bottom: x, z, corner r): a rounded rectangle
 // with a screw ear at each corner, a boss bulge at each end; the body's flange and the bowl's lip share it (32 points)
@@ -254,8 +262,9 @@ export function buildBody(index) {
   // shows under it
   // run 26 (item 11): its top stops at the engine spigot's outside (y -RE): from y -0.68 it stood 12 mm up into the bore, where 42 of 315 rays
   // along the bore stopped
-  g.push(rbox(0.95, 0.85, 1.4, 0.3).translate(-3.95, -3.05 + 0.85 / 2, 0));
-  g.push(tubeY(0.45, 0.17, -4.6 + UY, -3.9 + UY).translate(-3.95, 0, 0));
+  // run 27 (item 5, under_1): the pilot screw lies along the bore axis at the underside, entering at the engine end through a bored boss in the
+  // flange's end wall, its tip in the pocket toward the pilot jet
+  g.push(orient(tubeY(0.3, 0.16, 0, 0.55), [1, 0, 0], [-3.75, PSY, 0])); // x -3.75..-3.2: the head stays behind the engine spigot's face (-4.0)
   // run 15 (item 2): the 4 bowl screws thread up into 4 tapped holes in the flange (M4: thread 7.4 mm across, 8 mm deep, open at
   // the bottom), each in a round boss at the flange's corner: no posts
   // run 26 (item 15, mine_1 / mine_3 / mine_6): flush ears, not round posts: each a rounded-square lobe of the flange on the bowl ear's own
@@ -269,7 +278,8 @@ export function buildBody(index) {
     g.push(extrudeXY(s, 0.7, 0.06, 12, {free: true}).rotateX(Math.PI / 2).translate(0, BOT + 0.35, 0), tappedY(0.3, mm(1.85), 0, 0.7, 0.66).rotateX(Math.PI).translate(ex, BOT + 0.7, ez));
   }
   // float chamber mating flange: its face at y BOT sits on the bowl gasket (25)
-  g.push(slabY(RIM, BOT + 0.2, 0.4));
+  // run 27 (item 5): a ring (RIM to 0.42 in, 5.3 mm deep) round the underside's pocket, and the pocket's ceiling
+  g.push(slabY(RIM, BOT + 0.25, 0.5, inset(RIM, 0.42)), slabY(inset(RIM, 0.3), BOT + 0.54, 0.12));
   // the projection on the engine spigot (-X) that keys into the joint slot
   g.push(rbox(0.5, 0.4, 0.6, 0.12).translate(-3.3, 2.5, 0));
   // vent nipples (57, 58) on the tower's engine face, near the top
@@ -279,14 +289,16 @@ export function buildBody(index) {
   // pin posts either side of the float's hinge
   // run 26 (item 13, manual 6-2 and carb_main): the main jet tower closes at the joint round the needle jet's bore (17 passes through it,
   // 0.28 across its tube), the hex of 17 and the spacer below inside the tower
-  g.push(tubeY(0.98, 0.8, -5.2 + UY, BOT + 0.05).translate(-0.2, 0, 0), tubeY(0.8, 0.31, BOT - 0.2, BOT + 0.05).translate(-0.2, 0, 0));
-  // the pilot jet (18) and starter jet (19) each in its own threaded boss, tapped 8 mm up from the boss's foot (were solid cylinders)
-  for (const [x, z, y0, r, hr] of [[0.7, 1.1, -5.0 + UY, 0.42, mm(2.6)], [-1.7, -0.8, -4.75 + UY, 0.36, mm(1.9)]]) { const h = BOT + 0.05 - y0; g.push(tappedY(r, hr, 0, h, Math.min(mm(8), h - 0.1)).rotateX(Math.PI).translate(x, BOT + 0.05, z)); }
-  g.push(tubeY(0.4, 0.2, -4.45 + UY, BOT + 0.05).translate(1.2, 0, 0)); // the needle valve seat boss, bored through
-  // the 2 float pin posts, each with the pin's cross hole (22 runs along Z at y -3.23, 0.1 across)
-  for (const z of [-1.35, 1.35]) g.push(slabZ([[1.55, -3.6], [2.05, -3.6], [2.05, -2.43], [1.55, -2.43]], z, 0.36, [[1.8, -3.23, 0.115]], 0.1));
+  // run 27 (item 5, under_1 labelled, engine side left): 1 raised jet boss from the pocket's ceiling down to JF (12 mm), round the main jet stack
+  // (the needle jet 17 inside it, the spacer and main jet below its face), with the pilot jet 18 beside it on the engine side and the starter jet
+  // 19 in a lobe toward the air box and the cable side
+  const JB = [[-1.42, -0.42, 0.4], [-0.5, -0.66, 0.4], [0.2, -1.2, 0.35], [0.98, -1.2, 0.35], [1.02, -0.4, 0.35], [0.45, 0.64, 0.55], [-1.42, 0.45, 0.4]];
+  g.push(slabY(JB, (BOT + 0.52 + JF) / 2, BOT + 0.52 - JF, null, 0.35));
+  // the needle valve seat boss (bored through) and the 2 float pin posts at the air-box end (under_1), each post with the pin's cross hole
+  g.push(tubeY(0.4, 0.2, -4.45 + UY, BOT + 0.52).translate(SEAT[0], 0, SEAT[1]));
+  for (const z of [-1.2, 1.2]) g.push(slabZ([[1.55, -3.6], [2.05, -3.6], [2.05, BOT + 0.52], [1.55, BOT + 0.52]], z, 0.36, [[1.8, -3.23, 0.115]], 0.1));
   // the accelerator pump outlet: a bored stub on the cable side of the joint, over the pump housing (bowl.js PUMP), where its passage goes up
-  g.push(tubeY(0.34, 0.14, BOT - 0.45, BOT + 0.05).translate(0.77, 0, -2.75)); // (round 1, D2 line 7: 5.1 -> 7.2 mm across, 2.7 -> 4.8 mm long, so it reads)
+  g.push(tubeY(0.34, 0.14, BOT - 0.45, BOT + 0.52).translate(0.77, 0, -2.75)); // (round 1, D2 line 7: 5.1 -> 7.2 mm across, 2.7 -> 4.8 mm long, so it reads)
   const casting = mk(merge(g), cast);
   // the machined face the bowl gasket seals on, and the brass needle valve seat in its boss
   // run 26 (item 13): the mating face is the flange's rim only (it was a solid 5.9 x 6.0 plate drawn over every boss and hole), in 2 machined
