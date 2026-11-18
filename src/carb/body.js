@@ -290,7 +290,8 @@ export function buildBody(index) {
   // run 26 (item 12): the machined face gasket 2 seals on, round the well, and the tops of the top cover's 2 tapped bolt bosses
   const gS = rpolyA([[TX0 + 0.1, -2.94], [TX1 - 0.1, -2.94], [TX1 - 0.1, 2.94], [TX0 + 0.1, 2.94]], 0.15);
   gS.holes.push(rpolyA([[SX0, -SZ], [SX1, -SZ], [SX1, SZ], [SX0, SZ]], FR, new THREE.Path()));
-  const gasketFace = mk(merge([extrudeXY(gS, 0.02, 0.005, 8, {free: true}).rotateX(Math.PI / 2).translate(0, TT + 0.006, 0),
+  // (run 26, item 16: 1.3 mm thick, sunk 0.9 into the casting, so its outer and well edges carry a 0.5 mm chamfer down to the cast)
+  const gasketFace = mk(merge([extrudeXY(gS, 0.12, 0.047, 8, {free: true}).rotateX(Math.PI / 2).translate(0, TT - 0.044, 0),
     ...[-1, 1].map((sx) => tubeY(0.48, mm(1.85) + 0.02, TT - 0.004, TT + 0.016).translate(CX + sx * BOLT_X, 0, 0))]), machined);
   // (run 11: the needle valve seat in it is Keihin 36, a piece of 23 in float.js)
   // 2 short plain round spigots, a thin bead near each lip, machined end faces; run 9 real sizes: the engine one (-X)

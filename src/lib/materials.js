@@ -322,7 +322,7 @@ function brassVar(m) {
 export function makeMaterials() {
   const grain = castNormal();
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
-  const cast = std({color: 0x7a7d83, metalness: 0.3, roughness: 0.52, envMapIntensity: 0.3, // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
+  const cast = std({color: 0x7a7d83, metalness: 0.3, roughness: 0.55, envMapIntensity: 0.3, // run 26 (item 16): 0.52 -> 0.55 as-cast, against 0.3 machined // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
     normalMap: grain, normalScale: new THREE.Vector2(1, 1)});
   // run 26 (item 4): the grain is triplanar in the mesh's own (part) space, 256 texels to 64 mm (0.25 mm a texel), at strength 1 on every
   // as-cast face: no uv, so a round cap or boss shows the same grain as a flat face (its radial uv gave radial speckle). Whiteout blend
@@ -348,7 +348,7 @@ export function makeMaterials() {
     // run 8: neutral silver (#b9b9b5, roughness 0.5); less metal and less of the cool studio reflection, so the cast faces show no blue or lavender tint at the default view
     cast,
     machined: std({color: 0xc4c3bf, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.45}),
-    bore: std({color: 0xb6b5b1, metalness: 0.8, roughness: 0.26, envMapIntensity: 0.5}), // run 13 (item 9): brighter machined bore
+    bore: std({color: 0xb6b5b1, metalness: 0.8, roughness: 0.3, envMapIntensity: 0.5}), // run 13 (item 9): brighter machined bore; run 26 (item 16): 0.26 -> 0.3
     brass: brassVar(std({color: 0xc9a24b, metalness: 1, roughness: 0.3})),
     steel: std({color: 0xa7adb5, metalness: 1, roughness: 0.32}),
     steelDark: std({color: 0x5c626b, metalness: 1, roughness: 0.38}),
