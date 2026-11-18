@@ -399,7 +399,7 @@ async function main() {
     return p.hp;
   }
   /** The groups' layout at part scale factor f, in mm on the tray's plane (x along the camera's right, y down from the tray's top). sz: p -> [width, height] of its projection. */
-  function trayFit(f, seq, sz) {
+  function trayFit(f, seq, sz, R = TRAY_ROWS) {
     const gs = seq.map((g) => {
       const items = g.ps.map((p) => {
         const [er, eu] = sz.get(p);
@@ -410,7 +410,7 @@ async function main() {
     });
     const tot = gs.reduce((a, g) => a + g.w + TRAY_GG, -TRAY_GG), widest = Math.max(...gs.map((g) => g.w));
     let rows;
-    for (let lim = Math.max((tot / TRAY_ROWS) * 1.03, widest), k = 0; k < 30; k++, lim *= 1.03) {
+    for (let lim = Math.max((tot / R) * 1.03, widest), k = 0; k < 30; k++, lim *= 1.03) {
       rows = [[]];
       let x = 0;
       for (const g of gs) {
@@ -418,11 +418,13 @@ async function main() {
         rows[rows.length - 1].push(g);
         x += g.w + TRAY_GG;
       }
-      if (rows.length <= TRAY_ROWS) break;
+      if (rows.length <= R) break;
     }
     const rh = rows.map((r) => Math.max(...r.map((g) => g.h)));
-    return {gs, rows, rh, H: rh.reduce((a, h) => a + h + TRAY_LB + 2 * TRAY_PAD, 0) + (rows.length - 1) * TRAY_RG};
+    const W = Math.max(...rows.map((r) => r.reduce((a, g) => a + g.w + TRAY_GG, -TRAY_GG)));
+    return {gs, rows, rh, W, H: rh.reduce((a, h) => a + h + TRAY_LB + 2 * TRAY_PAD, 0) + (rows.length - 1) * TRAY_RG};
   }
+  const tC = new THREE.Vector3(), tF = new THREE.Vector3(), tQ = new THREE.Vector3();
   /** The tray's slots for the camera's right and up (the target camera's when useTo): the rows hang under the carburetor's lowest point along up. */
   function layTray(useTo) {
     if (!trayBox) return;
@@ -436,11 +438,35 @@ async function main() {
       tu.setFromMatrixColumn(camera.matrixWorld, 1);
     }
     trayBox.getCenter(tc);
-    // the lowest point of the body and the bowl (their hulls at rest) along the camera's up; once the bowl is in the tray the grid rises to the body's foot
-    let lowB = 0, low = 0;
-    for (const q of hullLocal(partOf['1'])) lowB = Math.min(lowB, tp.copy(q).add(partOf['1'].rest).sub(tc).dot(tu));
-    for (const q of hullLocal(partOf['1-bowl'])) low = Math.min(low, tp.copy(q).add(partOf['1-bowl'].rest).sub(tc).dot(tu));
-    low = Math.min(lowB, low) + (lowB - Math.min(lowB, low)) * (useTo ? trT[partOf['1-bowl'].k].to : trT[partOf['1-bowl'].k].v);
+    // run 25 (item 2): the lowest (and highest) point of every part not in the tray, at its pose now (hovering parts included), as the camera
+    // sees it: each hull point is carried along its sight line onto the tray's plane (through tc, facing the camera). A part on its way to
+    // the tray counts less as it goes (tw), so the tray moves smoothly.
+    tF.crossVectors(tu, tr);
+    if (useTo) tC.copy(tc).addScaledVector(tF, -camera.position.distanceTo(tc));
+    else tC.copy(camera.position);
+    const d0 = tp.copy(tc).sub(tC).dot(tF);
+    const ext = (p) => {
+      let lo = Infinity, hi = -Infinity;
+      for (const q of hullLocal(p)) {
+        tQ.copy(q).add(p.obj.position).applyMatrix4(p.obj.parent.matrixWorld).sub(tC);
+        const u = tQ.multiplyScalar(d0 / Math.max(1e-6, tQ.dot(tF))).add(tC).sub(tc).dot(tu);
+        lo = Math.min(lo, u), (hi = Math.max(hi, u));
+      }
+      return [lo, hi];
+    };
+    const [bl, bh] = ext(partOf['1']);
+    let low = bl, high = bh;
+    for (const p of parts) {
+      if (p === partOf['1'] || !p.obj.visible) continue;
+      const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
+      if (tw >= 1) continue;
+      const [l, h] = ext(p);
+      low = Math.min(low, bl + Math.min(0, l - bl) * (1 - tw));
+      high = Math.max(high, bh + Math.max(0, h - bh) * (1 - tw));
+    }
+    // 16 px clear of it (12 asked) plus 2 mm, at the tray plane's scale
+    const mmPx = (2 * d0 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)) / Math.max(1, S.size.h);
+    const gapMM = 16 * mmPx + 2;
     // each part's size as the camera sees it
     const sz = new Map();
     for (const g of trayGroups) for (const p of g.ps) {
@@ -450,12 +476,26 @@ async function main() {
       sz.set(p, [r1 - r0, u1 - u0]);
     }
     const seq = guide.mode === 'rebuild' ? trayGroups.slice().reverse() : trayGroups;
-    // the largest f (at most 1: never bigger than in the carburetor) whose rows fit TRAY_H mm
-    let lo = 0.01, hi = 1;
-    if (trayFit(hi, seq, sz).H <= TRAY_H) lo = hi;
-    else for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (trayFit(m, seq, sz).H <= TRAY_H) lo = m; else hi = m; }
-    const L = trayFit(lo, seq, sz);
-    const top = low - 14, boxes = [];
+    // run 25 (item 2): wide before tall. For 1 to TRAY_ROWS rows, the largest f (at most 1: never bigger than in the carburetor) whose rows
+    // fit TRAY_H mm and no wider than the usable area allows at the height they make with the carburetor; the fewest rows whose f is at
+    // least 0.6 of the best f win (cells shrink before a row is added). Too wide even at the smallest cells: the old rule (TRAY_ROWS rows).
+    const U = usable(), asp = (U.r - U.l) / Math.max(1, U.b - U.t);
+    const okAt = (f, R) => { const L = trayFit(f, seq, sz, R); return L.rows.length <= R && L.H <= TRAY_H && L.W <= asp * (high - low + gapMM + L.H) * 0.98; };
+    const bestF = (R, ok) => {
+      if (ok(1, R)) return 1;
+      if (!ok(0.01, R)) return 0;
+      let lo = 0.01, hi = 1;
+      for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (ok(m, R)) lo = m; else hi = m; }
+      return lo;
+    };
+    const fs = [];
+    for (let R = 1; R <= TRAY_ROWS; R++) fs.push(bestF(R, okAt));
+    const fMax = Math.max(...fs);
+    let R = TRAY_ROWS, lo = fMax;
+    if (fMax > 0) (R = fs.findIndex((f) => f >= 0.6 * fMax) + 1), (lo = fs[R - 1]);
+    else lo = bestF(TRAY_ROWS, (f) => trayFit(f, seq, sz).H <= TRAY_H) || 0.01;
+    const L = trayFit(lo, seq, sz, R);
+    const top = low - gapMM, boxes = [];
     let y = 0;
     L.rows.forEach((row, ri) => {
       const rw = row.reduce((a, g) => a + g.w + TRAY_GG, -TRAY_GG), rhh = L.rh[ri];
@@ -475,7 +515,7 @@ async function main() {
       }
       y += rhh + TRAY_LB + 2 * TRAY_PAD + TRAY_RG;
     });
-    trayLay[useTo ? 'to' : 'v'] = {f: lo, H: L.H, boxes};
+    trayLay[useTo ? 'to' : 'v'] = {f: lo, H: L.H, W: L.W, rows: L.rows.length, boxes};
   }
   /** The tray's step numbers and the brass outline of the current step's group, placed from the layout the parts were laid by (run 16, item 5). */
   function drawTrayUI() {
@@ -501,19 +541,19 @@ async function main() {
   }
   const hOff = new THREE.Vector3();
   function poseAll(e, useTo = false) {
-    if (guide.mode) layTray(useTo);
     const m = useTo ? mixT.to : mixT.v;
     for (const a of asms) {
       const g = a.groupAmt(e) * (1 - m);
       a.poseEach((p) => [g, Asm.partAmt(p, e) * (1 - m)]);
-      for (const p of a.parts) {
-        p.obj.position.add(hoverAt(p, (useTo ? wT[p.k].to : wT[p.k].v) * m, hOff));
-        const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
-        if (tw > 0) p.obj.position.lerp(p.tray, tw);
-        p.obj.scale.setScalar(1 + (tw > 0 ? (p.trayS - 1) * tw : 0));
-      }
+      for (const p of a.parts) p.obj.position.add(hoverAt(p, (useTo ? wT[p.k].to : wT[p.k].v) * m, hOff)), p.obj.scale.setScalar(1);
+    }
+    if (guide.mode) layTray(useTo); // run 25 (item 2): laid from the poses above, so it clears the hovering parts too
+    for (const p of parts) {
+      const tw = p.tray ? (useTo ? trT[p.k].to : trT[p.k].v) : 0;
+      if (tw > 0) p.obj.position.lerp(p.tray, tw), p.obj.scale.setScalar(1 + (p.trayS - 1) * tw);
     }
   }
+  S.reflectSkip = () => (guide.mode ? parts.filter((p) => p.tray && trT[p.k].v > 0.3).map((p) => p.obj) : []); // run 25 (item 2): the tray casts 0 floor reflection
   /**
    * Each part's target for the current step. TEAR DOWN: steps before n hidden, step n's parts 0.3 body-lengths
    * out on their fitting axis, later parts in place. REBUILD: steps before n in place, step n's parts hovering off their seat (home in
@@ -1424,7 +1464,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, trayLay, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, trayLay, trayT: (p) => trT[p.k].v, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {

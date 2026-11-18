@@ -198,10 +198,11 @@ export function createStage(canvas) {
   const noReflect = [];
   floorR.onBeforeRender = function (...a) {
     if (S.cut.reflection) return;
-    const vis = noReflect.map((o) => o.visible);
-    noReflect.forEach((o) => (o.visible = false));
+    const skip = S.reflectSkip ? [...noReflect, ...S.reflectSkip()] : noReflect; // main.js: the bench tray's parts (run 25)
+    const vis = skip.map((o) => o.visible);
+    skip.forEach((o) => (o.visible = false));
     reflect.apply(this, a);
-    noReflect.forEach((o, i) => (o.visible = vis[i]));
+    skip.forEach((o, i) => (o.visible = vis[i]));
   };
   floorR.renderOrder = -2;
   floorR.rotation.x = -Math.PI / 2;
