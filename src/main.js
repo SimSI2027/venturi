@@ -345,8 +345,8 @@ async function main() {
   const exT = tween(st.explode, 0.6);
   let exDrag = false;
   const thT = tween(0, 0.25); // run 25 (item 3): the throttle, 0 shut, 1 wide open
-  // run 29 (item 4): the tray fades to 0% in 0.06 s while the guided camera flies (between steps, or into a mode) and back to 100% in 0.3 s
-  // once it has landed, so it never sweeps across the mode buttons or the footer on the way
+  // run 29 (item 4): the tray fades to 0% in 0.06 s while the guided camera flies (between steps, or into a mode) and back to 100% in 0.1 s
+  // from 85% of the flight's time (1.4% of its eased travel left), so it never sweeps across the mode buttons or the footer on the way
   const tfT = tween(0, 0.06);
   const aoT = tween(0, 0.25); // run 29 (item 5): 1 while the camera moves (GTAO blend 0.3), 0 still (blend 1)
   const hdNow = parts.map(() => 0); // each part's hide as last drawn (the tray check reads it)
@@ -1562,8 +1562,8 @@ async function main() {
     aim(selT, sel ? 1 : 0, now);
     const selV = stepT(selT, now);
     const floor = 0.5 - 0.4 * selV; // the rest of the carburetor fades to 10% opacity
-    const fly = !!(guide.mode && view.follow);
-    aim(tfT, fly ? 1 : 0, now, fly ? 0.06 : 0.3);
+    const fly = !!(guide.mode && view.follow && now - view.follow.t0 < 0.85 * view.follow.dur);
+    aim(tfT, fly ? 1 : 0, now, fly ? 0.06 : 0.1);
     const tfV = stepT(tfT, now);
     parts.forEach((p, i) => {
       const lit = !sel && !guide.mode && circ >= 0 ? circSets[circ] : null; // run 25 (item 4)
@@ -1654,8 +1654,10 @@ async function main() {
     const cm = camOf();
     const camMoved = !same(lastCam, cm, 1e-5);
     // run 29 (item 5): GTAO's noise slides under a moving camera and flickers along the edges (about 15 of the 37 edge flickers a frame in
-    // idle sway), so its blend eases to 0.3 in 0.25 s while the camera moves and back to 1 in 0.6 s once it stops; baked shading unchanged
-    aim(aoT, camMoved ? 1 : 0, now, camMoved ? 0.25 : 0.6);
+    // idle sway), so its blend eases to 0.3 in 0.25 s while the camera moves on its own (idle sway, a drag; not a 0.45 s flight to a step,
+    // which would then wait on it, nor the sway dying away after one) and back to 1 in 0.5 s once it stops; baked shading unchanged
+    const aoDim = camMoved && !view.follow && (view.user || view.env.to === 1);
+    aim(aoT, aoDim ? 1 : 0, now, aoDim ? 0.25 : 0.5);
     S.aoBlend(1 - 0.7 * stepT(aoT, now));
     const sg = sigOf();
     const moved = !same(lastSig, sg, 1e-6);
