@@ -123,7 +123,7 @@ async function main() {
   el('div', 'iw-rule', null, ui);
   const hint =el('div', 'iw-hint', null, ui);
   const dropped = [];
-  const STEP = {ssao: 'no SSAO', reflection: 'no reflection', shadowmap: 'shadow map 1024', dpr: 'DPR 1', shadows: 'no shadows'};
+  const STEP = {reflection: 'no reflection', shadowmap: 'shadow map 1024', dpr: 'DPR 1', shadows: 'no shadows'};
   // run 26 (item 2): the line lists only the cuts still in force (HIGH on a discrete GPU takes back all but the pixel ratio)
   const setHint = () => (hint.textContent = `13 groups · ${meshes.length} meshes · ${{high: 'HIGH', med: 'MEDIUM', low: 'LOW'}[S.tier]}${dropped.filter((k) => S.cut[k]).map((k) => ' · ' + STEP[k]).join('')}`);
   const foot = el('div', 'vt-foot', NOTICE, ui);
@@ -357,7 +357,6 @@ async function main() {
   // run 29 (item 4): the tray fades to 0% in 0.06 s while the guided camera flies (between steps, or into a mode) and back to 100% in 0.1 s
   // from 85% of the flight's time (1.4% of its eased travel left), so it never sweeps across the mode buttons or the footer on the way
   const tfT = tween(0, 0.06);
-  const aoT = tween(0, 0.25); // run 29 (item 5): 1 while the camera moves (GTAO blend 0.3), 0 still (blend 1)
   const hdNow = parts.map(() => 0); // each part's hide as last drawn (the tray check reads it)
   const dimT = parts.map(() => tween(0, QUICK));
   const rimT = parts.map(() => tween(0, QUICK));
@@ -1532,8 +1531,8 @@ async function main() {
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
-  const settled = () => !view.follow && tfT.v < 1e-6 && [thT, tfT, aoT, mixT, ...wT, ...trT, ...bT, ...rideT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, thT.v, tfT.v, aoT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...bT.map((t) => t.v), ...rideT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
+  const settled = () => !view.follow && tfT.v < 1e-6 && [thT, tfT, mixT, ...wT, ...trT, ...bT, ...rideT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
+  const sigOf = () => [st.explode, thT.v, tfT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...bT.map((t) => t.v), ...rideT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -1662,12 +1661,6 @@ async function main() {
     }
     const cm = camOf();
     const camMoved = !same(lastCam, cm, 1e-5);
-    // run 29 (item 5): GTAO's noise slides under a moving camera and flickers along the edges (about 15 of the 37 edge flickers a frame in
-    // idle sway), so its blend eases to 0.3 in 0.25 s while the camera moves on its own (idle sway, a drag; not a 0.45 s flight to a step,
-    // which would then wait on it, nor the sway dying away after one) and back to 1 in 0.5 s once it stops; baked shading unchanged
-    const aoDim = camMoved && !view.follow && (view.user || view.env.to === 1);
-    aim(aoT, aoDim ? 1 : 0, now, aoDim ? 0.25 : 0.5);
-    S.aoBlend(1 - 0.7 * stepT(aoT, now));
     const sg = sigOf();
     const moved = !same(lastSig, sg, 1e-6);
     const draw = moved || camMoved || still;

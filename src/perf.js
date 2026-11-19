@@ -38,7 +38,7 @@ export function createPerf(S, {gpu, marks, floor, parts, onGpu}) {
   const sm = renderer.shadowMap;
   wrap(sm, 'render', 'shadows', function () { return this.enabled && (this.autoUpdate || this.needsUpdate); });
   wrap(floor, 'onBeforeRender', 'reflection');
-  const names = ['main', 'ssao', 'bloom', 'outline', 'post', 'post'];
+  const names = ['main', 'bloom', 'outline', 'post', 'post'];
   composer.passes.forEach((p, i) => i > 0 && wrap(p, 'render', names[i] || 'post'));
   wrap(S, 'render', 'main');
   // x-ray: the transparent queue of the gun's parts, inside the main pass
@@ -103,7 +103,7 @@ export function createPerf(S, {gpu, marks, floor, parts, onGpu}) {
       box.textContent =
         `VENTURI perf · ${S.tier} · ${P.size}\n` +
         [['script parsed', marks.parsed], ['textures built', marks.textures], ['shaders compiled', marks.shaders], ['first frame', marks.first]].map(([k, v]) => k.padEnd(17) + ms(v)).join('\n') + '\n\n' +
-        (ext ? ['shadows', 'main', 'reflection', 'ssao', 'bloom', 'x-ray', 'outline', 'post'].map((k) => `${k.padEnd(11)}${(P.pass[k] || 0).toFixed(2).padStart(6)} ms`).join('\n') + `\n${'GPU total'.padEnd(11)}${P.gpuMs.toFixed(2).padStart(6)} ms` : 'no GPU timer query') +
+        (ext ? ['shadows', 'main', 'reflection', 'bloom', 'x-ray', 'outline', 'post'].map((k) => `${k.padEnd(11)}${(P.pass[k] || 0).toFixed(2).padStart(6)} ms`).join('\n') + `\n${'GPU total'.padEnd(11)}${P.gpuMs.toFixed(2).padStart(6)} ms` : 'no GPU timer query') +
         `\nframe      ${P.frameMs.toFixed(1).padStart(6)} ms (max ${P.frameMax}) · ${P.drawnPerS} drawn/s\nprograms ${P.programs}\n\ndraws ${P.calls} · tris ${P.tris}\n${gpu}`;
     },
   };

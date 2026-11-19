@@ -10,7 +10,6 @@ import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {SMAAPass} from 'three/addons/postprocessing/SMAAPass.js';
 import {FullScreenQuad} from 'three/addons/postprocessing/Pass.js';
 import {CopyShader} from 'three/addons/shaders/CopyShader.js';
-import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {Reflector} from 'three/addons/objects/Reflector.js';
 import {setEnvironment, grainAniso} from './lib/materials.js';
@@ -221,30 +220,7 @@ export function createStage(canvas) {
   const composer = new EffectComposer(renderer, target);
   const scenePass = new MSRenderPass(scene, camera);
   composer.addPass(scenePass);
-  // SSAO (GTAO) on the gun only: the floors are hidden from its normal/depth pass, which also
-  // keeps the Reflector from re-rendering the scene a second time inside it
-  const ao = new GTAOPass(scene, camera, 4, 4);
-  // run 26 (item 18): stronger, on top of the baked recess shading (which stays on every tier): at its run 3 settings it darkened the default
-  // view's carburetor by 3% at p90 and 0.2% of its pixels by 25-40%; now 13% at p90 (radius 16 mm, scale 2.5, falloff 1, blend 1)
-  ao.updateGtaoMaterial({radius: 1.5 * MM, distanceExponent: 1, distanceFallOff: 1, thickness: 1.5 * MM, scale: 2.5, samples: 16});
-  ao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16});
-  ao.blendIntensity = 1;
-  // half resolution: the largest GPU pass; AO is soft, the blend samples it bilinearly (run 28: full resolution measured no better under the sway)
-  const aoSize = ao.setSize.bind(ao);
-  ao.setSize = (w, h) => aoSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
-  const aoRender = ao.render.bind(ao);
-  // the fire effects (additive sprites, smoke) are hidden from it too: drawn with its normal/depth override
-  // they wrote garbage and the AO blend blacked out each sprite's whole quad
-  const noAO = [];
-  ao.render = (...args) => {
-    floorR.visible = catcher.visible = false;
-    const vis = noAO.map((o) => o.visible);
-    noAO.forEach((o) => (o.visible = false));
-    aoRender(...args);
-    noAO.forEach((o, i) => (o.visible = vis[i]));
-    showFloors();
-  };
-  composer.addPass(ao);
+  // run 31 (correction 71): GTAO removed on every tier; the baked recess shading (src/lib/ao.js) is the only ambient occlusion
   const bloom = new UnrealBloomPass(new THREE.Vector2(4, 4), 0.25, 0.45, 0.9);
   bloom.highPassUniforms.smoothWidth.value = 0.5;
   bloom.materialHighPassFilter.fragmentShader = BRASS_HIGHPASS;
@@ -337,7 +313,7 @@ export function createStage(canvas) {
     floorR.visible = !(S.tier === 'low' && innerWidth < 700);
     catcher.visible = true;
   }
-  /** high: 4096 shadow, GTAO, bloom, outline, 8x MSAA, reflection 1024, DPR <= 2. med: 1024 shadow, no GTAO, 4x MSAA, reflection 512, DPR <= 1.5. low: 1024 shadow, SMAA only, DPR 1. SMAA last on all three. */
+  /** high: 4096 shadow, bloom, outline, 8x MSAA, reflection 1024, DPR <= 2. med: 1024 shadow, 4x MSAA, reflection 512, DPR <= 1.5. low: 1024 shadow, SMAA only, DPR 1. SMAA last on all three. */
   const disposeShadow = () => {
     key.shadow.map?.dispose();
     key.shadow.mapPass?.dispose();
@@ -351,7 +327,7 @@ export function createStage(canvas) {
     // run 26 (item 2, correction 56): HIGH on a named discrete GPU takes back every cut but the pixel ratio, so a
     // reflection or shadow cut taken on MEDIUM no longer stays in force after a click on HIGH
     if (hi && S.discrete) {
-      for (const k of ['ssao', 'reflection', 'shadowmap', 'shadows']) delete S.cut[k];
+      for (const k of ['reflection', 'shadowmap', 'shadows']) delete S.cut[k];
       floorR.material.uniforms.uStrength.value = REFLECT;
       if (!renderer.shadowMap.enabled) (renderer.shadowMap.enabled = true), scene.traverse((o) => o.material && [o.material].flat().forEach((m) => (m.needsUpdate = true)));
     }
@@ -362,7 +338,6 @@ export function createStage(canvas) {
     disposeShadow();
     showFloors();
     floorR.getRenderTarget().setSize(hi ? 1024 : 512, hi ? 1024 : 512);
-    ao.enabled = hi && !S.cut.ssao;
     scenePass.setSamples(Math.min(maxSamples, {high: 8, med: 4, low: 0}[t]));
     bloom.enabled = outline.enabled = t !== 'low';
     resize();
@@ -390,7 +365,6 @@ export function createStage(canvas) {
   const degrade = () => {
     const hiLock = S.tier === 'high' && S.discrete; // correction 56: there only the pixel ratio may drop
     const steps = [
-      ['ssao', () => ao.enabled, () => (ao.enabled = false)],
       ['reflection', () => floorR.visible && floorR.material.uniforms.uStrength.value > 0, () => (floorR.material.uniforms.uStrength.value = 0)],
       ['shadowmap', () => key.shadow.mapSize.x > 1024, () => ((key.shadow.mapSize.x = key.shadow.mapSize.y = 1024), disposeShadow())],
       ['dpr', () => renderer.getPixelRatio() > 1, () => 0],
@@ -407,8 +381,7 @@ export function createStage(canvas) {
     }
     return null;
   };
-  const S = {THREE, renderer, scene, camera, composer, outline, noOutline, size, resize, project, select, setTier, degrade, crossfade, key, rim, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
+  const S = {THREE, renderer, scene, camera, composer, outline, noOutline, size, resize, project, select, setTier, degrade, crossfade, key, rim, cool, fill, under, noReflect, floor: floorR, cut: {}, tier: 'high'};
   S.render = () => composer.render();
-  S.aoBlend = (v) => (v === undefined ? ao.blendIntensity : (ao.blendIntensity = v)); // run 29 (item 5): main.js lowers it while the camera moves
   return S;
 }
