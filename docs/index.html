@@ -431,6 +431,7 @@ html, body { background: var(--iw-bg); }
 .vt-dn span { font-size: 20px; font-weight: 600; letter-spacing: 0.08em; line-height: 1.15; }
 .vt-pc { margin-top: 4px; font-size: 14px; color: var(--iw-brass); letter-spacing: 0.1em; font-variant-caps: all-small-caps; }
 .vt-role { margin: 8px 0 10px; font-size: 16px; line-height: 1.3; color: var(--iw-fg); }
+.vt-role + .vt-pc { margin: -4px 0 10px; }
 .vt-check { margin: 0 0 10px; font-size: 14px; line-height: 1.3; color: var(--iw-dim); }
 .vt-kh th, .vt-kh td { font-size: 12px; color: var(--iw-dim); letter-spacing: 0.06em; font-variant-caps: all-small-caps; }
 .vt-fn { width: 4.5em; font-size: 13px; color: var(--iw-brass); text-align: right; }
@@ -587,6 +588,7 @@ html, body { background: var(--iw-bg); }
 /* run 16 (item 5): the bench tray's step numbers and the current step's brass outline */
 .vt-tray { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s; overflow: hidden; }
 .vt-tray.on { opacity: 1; }
+.vt-tray.fly { transition: none; } /* run 29 (item 4): the flight fade is set frame by frame */
 .vt-tg { position: absolute; left: 0; top: 0; display: none; box-sizing: border-box; border: 1px solid transparent; border-radius: 3px; }
 .vt-tg.show { display: block; }
 .vt-tg.on { border-color: #c9a24b; }
@@ -597,6 +599,6 @@ html, body { background: var(--iw-bg); }
 </head>
 <body>
 <div id="app"></div>
-<script defer src="venturi.js?v=22b41630"></script>
+<script defer src="venturi.js?v=96be03f1"></script>
 </body>
 </html>
