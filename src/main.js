@@ -1105,12 +1105,13 @@ async function main() {
     const step = sB ? `Tear down ${i.step} of ${N_B} · rebuild ${N_B + 1 - i.step}${sB.added ? ' (added step, not in the manual’s list' + (inManual(id) ? '' : '; this part is not named in the manual’s list') + ')' : inManual(id) ? '' : ' (not named in the manual’s list)'}` : id === '1' ? 'Stays: everything else comes off it' : 'Stays in the body: not in the manual’s removal list';
     const fits = i.fits ? label(i.fits) : 'the carburetor joint (engine) and the air intake duct';
     const sp = i.specs.map((k) => `<tr><th>${esc(SPEC_LABELS[k])}</th><td>${esc(specValue(k))}</td></tr>`).join('');
+    // a piece names itself first, then the fiche number and name it belongs to; a piece of 1 (correction 66) puts its own role line
+    // before that line, which says reference 1 is not sold separately
+    const pc = i.piece ? `<div class="vt-pc">${i.k ? `Keihin ${i.k} · ` : ''}part of <b>${i.ref}</b> · ${esc(i.name)}${i.ref === 1 ? ' (not sold separately)' : ''}</div>` : '';
+    const one = i.piece && i.ref === 1;
     detail.innerHTML =
-      // a piece of reference 1 names itself first, then the fiche number and name it belongs to
-      (i.piece
-        ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div><div class="vt-pc">${i.k ? `Keihin ${i.k} · ` : ''}part of <b>${i.ref}</b> · ${esc(i.name)}</div>`
-        : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
-      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` + (inKit(id) ? '<div class="vt-kitnote">Usually replaced at rebuild</div>' : '') + (fitNew(id) ? '<div class="vt-kitnote">manual: fit new</div>' : '') +
+      (i.piece ? `<div class="vt-dn"><span>${esc(nameOf(id).split(' · ')[0])}</span></div>${one ? '' : pc}` : `<div class="vt-dn"><b>${i.ref}</b><span>${esc(i.name)}</span></div>`) +
+      `<div class="vt-role${i.ref === 20 || i.id === '1-mainjet' ? ' warn' : ''}">${esc(role)}</div>` + (one ? pc : '') + (inKit(id) ? '<div class="vt-kitnote">Usually replaced at rebuild</div>' : '') + (fitNew(id) ? '<div class="vt-kitnote">manual: fit new</div>' : '') +
       (checkLine(id) ? `<div class="vt-check">${esc(checkLine(id))}</div>` : '') + (needsLT(id) ? `<div class="vt-check">${esc(LT_TEXT)}</div>` : '') +
       `<dl><dt>Group</dt><dd>${nn(gi)} · ${esc(GROUPS[gi].label)}</dd><dt>Fits into</dt><dd>${esc(fits)}</dd><dt>Step</dt><dd>${esc(step)}</dd>${!i.piece && i.kk.length ? `<dt>Keihin</dt><dd>${esc(i.kk.map((k) => `K${k}`).join(', '))}</dd>` : ''}${i.qty ? `<dt>Qty</dt><dd>${i.qty}</dd>` : ''}</dl>` +
       (sp ? `<table>${sp}</table>` : '') +

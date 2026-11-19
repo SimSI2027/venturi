@@ -92,48 +92,48 @@ export const PARTS = [
 // Reference 1 is the whole assembly; the drawings show these pieces of it, which the fiche does not list on
 // their own. Each is clickable as reference 1 with the piece named.
 export const PIECES = {
-  '1': {piece: 'body (main casting)', group: 'body', fits: null, step: null},
-  '1-top': {piece: 'top cover', group: 'top', fits: '1', step: 7},
-  '1-pilot': {piece: 'pilot air diaphragm cover', group: 'pilot-air', fits: '1', step: 13},
-  '1-bowl': {piece: 'float chamber', group: 'bowl', fits: '1', step: 17, specs: ['float_height']},
-  '1-spacer': {piece: 'spacer (under the needle jet)', group: 'jets', fits: '17', step: 24},
+  '1': {piece: 'body (main casting)', role: 'Body: the main casting the air flows through to the engine; the slide, the jets and every cover fit on it', group: 'body', fits: null, step: null},
+  '1-top': {piece: 'top cover', role: 'Top cover: closes the top of the slide well over the throttle valve', group: 'top', fits: '1', step: 7},
+  '1-pilot': {piece: 'pilot air diaphragm cover', role: 'Pilot air diaphragm cover: holds the pilot air diaphragm and its spring against the body', group: 'pilot-air', fits: '1', step: 13},
+  '1-bowl': {piece: 'float chamber', role: 'Float chamber: holds the fuel, the float and the accelerator pump', group: 'bowl', fits: '1', step: 17, specs: ['float_height']},
+  '1-spacer': {piece: 'spacer (under the needle jet)', role: 'Spacer: sits under the needle jet in the jet boss', group: 'jets', fits: '17', step: 24},
   // the manual's main jet #158 has no reference of its own on this fiche (reference 20 is the #100 pilot air jet)
-  '1-mainjet': {piece: 'main jet', role: 'main jet (the manual lists #158; this fiche has no reference of its own for it, its #100 jet is reference 20). Check the number stamped on your jet.', group: 'jets', fits: '17', step: 22, specs: ['main_jet']},
+  '1-mainjet': {piece: 'main jet', role: 'Main jet: meters the fuel for the main circuit, under the needle jet. This fiche has no reference of its own for it; check the number stamped on your jet.', group: 'jets', fits: '17', step: 22, specs: ['main_jet']},
   // run 11 (item 3): the Keihin FCR-MX diagram's parts that had no mesh of their own (scratch/parts_map.txt), each a
   // clickable piece of the fiche reference it belongs to (of), named "<name> · part of <of>". k: the Keihin number.
   // step: the tear-down step it comes off with (that of the part it rides on), null: it stays on the body. Run 16 (correction 34): the 5
   // throttle shaft parts (K12, K14, K15, K16, K18; run 17: K16 rides in step 9) are named by no step of the manual's list, so they stay in the body like reference 1.
   K10: {k: 10, of: '65', piece: 'bracket', role: 'cable bracket: holds the throttle cable adjuster', group: 'linkage', fits: '65', step: 1},
   K11: {k: 11, of: '65', piece: 'screw, M5 x 8', role: 'cable bracket screw', group: 'linkage', fits: 'K10', step: 1},
-  K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'throttle shaft with the cable wheel on its cable-side end', group: 'body', fits: '1', step: null},
-  K14: {k: 14, of: '1', piece: 'coil spring', role: 'throttle return spring, behind the cable wheel', group: 'body', fits: 'K12', step: null},
-  K15: {k: 15, of: '1', piece: 'washer', role: 'throttle shaft washer', group: 'body', fits: 'K12', step: null},
-  K16: {k: 16, of: '1', piece: 'link arm', role: 'lift lever on the throttle shaft: lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: 9}, // run 17 (item 5): page 6-2 draws the forked lever under screw 8 coming off with it
-  K18: {k: 18, of: '1', piece: 'stop screw', role: 'stop screw in the link arm', group: 'body', fits: 'K16', step: null},
+  K12: {k: 12, of: '1', piece: 'throttle shaft', role: 'Throttle shaft: turns with the throttle cable, which pulls the cable wheel on its cable-side end', group: 'body', fits: '1', step: null},
+  K14: {k: 14, of: '1', piece: 'coil spring', role: 'Coil spring: the throttle return spring behind the cable wheel; it closes the throttle', group: 'body', fits: 'K12', step: null},
+  K15: {k: 15, of: '1', piece: 'washer', role: 'Washer: sits on the throttle shaft', group: 'body', fits: 'K12', step: null},
+  K16: {k: 16, of: '1', piece: 'link arm', role: 'Link arm: the lift lever on the throttle shaft; it lifts the throttle valve by its rollers', group: 'body', fits: 'K12', step: 9}, // run 17 (item 5): page 6-2 draws the forked lever under screw 8 coming off with it
+  K18: {k: 18, of: '1', piece: 'stop screw', role: 'Stop screw: sits in the link arm as its stop', group: 'body', fits: 'K16', step: null},
   K36: {k: 36, of: '23', piece: 'valve seat', role: 'float needle valve seat', group: 'float', fits: '1', step: 22, specs: ['valve_seat']},
   K37: {k: 37, of: '23', piece: 'O-ring', role: 'valve seat O-ring', group: 'float', fits: 'K36', step: 22},
   K38: {k: 38, of: '23', piece: 'screw', role: 'valve seat retaining screw', group: 'float', fits: '1', step: 22},
   K44: {k: 44, of: '23', piece: 'fuel screen', role: 'fuel screen on the valve seat', group: 'float', fits: 'K36', step: 22},
-  K52: {k: 52, of: '1', piece: 'U-ring', role: 'pump rod seal in the float chamber', group: 'bowl', fits: '1-bowl', step: 18},
-  K66: {k: 66, of: '1', piece: 'coil spring 1', role: 'torsion spring on the pump link pin, behind link lever 40', group: 'linkage', fits: '40', step: 9},
-  K67: {k: 67, of: '1', piece: 'coil spring 2', role: 'torsion spring on the pump link pin, behind link lever 41', group: 'linkage', fits: '41', step: 9},
-  K69: {k: 69, of: '1', piece: 'washer', role: 'pump link pin washer', group: 'linkage', fits: '1', step: 9},
-  K70: {k: 70, of: '1', piece: 'E-clip', role: 'pump link pin E-clip', group: 'linkage', fits: '1', step: 9},
-  K72: {k: 72, of: '1', piece: 'rod', role: 'accelerator pump rod: link lever 41 pushes the pump diaphragm through it', group: 'bowl', fits: '41', step: 18},
-  K83: {k: 83, of: '1', piece: 'fuel joint', role: 'fuel inlet joint: the fuel hose goes on it', group: 'bowl', fits: '1-bowl', step: 18},
-  K85: {k: 85, of: '1', piece: 'O-rings (3)', role: 'fuel joint O-rings', group: 'bowl', fits: 'K83', step: 18},
+  K52: {k: 52, of: '1', piece: 'U-ring', role: 'U-ring: seals the pump rod in the float chamber', group: 'bowl', fits: '1-bowl', step: 18},
+  K66: {k: 66, of: '1', piece: 'coil spring 1', role: 'Coil spring 1: the torsion spring on the pump link pin behind link lever 40; it returns the lever', group: 'linkage', fits: '40', step: 9},
+  K67: {k: 67, of: '1', piece: 'coil spring 2', role: 'Coil spring 2: the torsion spring on the pump link pin behind link lever 41; it returns the lever', group: 'linkage', fits: '41', step: 9},
+  K69: {k: 69, of: '1', piece: 'washer', role: 'Washer: sits on the pump link pin under its E-clip', group: 'linkage', fits: '1', step: 9},
+  K70: {k: 70, of: '1', piece: 'E-clip', role: 'E-clip: holds the pump link pin in place', group: 'linkage', fits: '1', step: 9},
+  K72: {k: 72, of: '1', piece: 'rod', role: 'Rod: the accelerator pump rod; link lever 41 pushes the pump diaphragm through it', group: 'bowl', fits: '41', step: 18},
+  K83: {k: 83, of: '1', piece: 'fuel joint', role: 'Fuel joint: lets the fuel into the float chamber; the fuel hose goes on it', group: 'bowl', fits: '1-bowl', step: 18},
+  K85: {k: 85, of: '1', piece: 'O-rings (3)', role: 'O-rings (3): seal the fuel joint in the float chamber', group: 'bowl', fits: 'K83', step: 18},
   K91: {k: 91, of: '46', piece: 'washer', role: 'idle speed screw washer', group: 'sensor', fits: '46', step: 6},
   K92: {k: 92, of: '46', piece: 'coil spring', role: 'idle speed screw spring', group: 'sensor', fits: '46', step: 6},
-  K103: {k: 103, of: '1', piece: 'main air jet', role: 'main air jet, in the air-box spigot beside the pilot air jet', group: 'jets', fits: '1', step: 28, specs: ['main_air_jet']},
+  K103: {k: 103, of: '1', piece: 'main air jet', role: 'Main air jet: meters the air for the main circuit, in the air-box spigot beside the pilot air jet', group: 'jets', fits: '1', step: 28, specs: ['main_air_jet']},
   K177: {k: 177, of: '46', piece: 'stop screw', role: 'carburetor switch screw', group: 'sensor', fits: '63', step: 6},
   // run 13 (item 4): the throttle sensor's hardware, Keihin 241 (Torx screw), 199 (washer) and 109 (collar) on its ear; K140, a body screw
   K109: {k: 109, of: '47', piece: 'collar', role: 'throttle sensor collar, between its ear and the cover plate', group: 'sensor', fits: '47', step: 4},
   K199: {k: 199, of: '47', piece: 'washer', role: 'throttle sensor screw washer', group: 'sensor', fits: '47', step: 4},
   // run 27 (item 6, correction 60): Keihin 209 is the white plastic collar round the main jet (it was matched to 45 PLATE, which stays the strap
   // under pump cover 27); it comes off with the main jet, before it
-  K209: {k: 209, of: '1', piece: 'buffer plate', role: 'white plastic collar round the main jet at the jet boss; it also covers the pilot jet beside it', group: 'jets', fits: '1', step: 23},
+  K209: {k: 209, of: '1', piece: 'buffer plate', role: 'Buffer plate: the white plastic collar round the main jet at the jet boss; it also covers the pilot jet beside it', group: 'jets', fits: '1', step: 23},
   K241: {k: 241, of: '47', piece: 'Torx screw', role: 'throttle sensor Torx screw through its ear', group: 'sensor', fits: '47', step: 4},
-  K140: {k: 140, of: '1', piece: 'screw', role: 'small body screw above the carburetor switch stop screw', group: 'sensor', fits: '1', step: 6},
+  K140: {k: 140, of: '1', piece: 'screw', role: 'Screw: a small body screw above the carburetor switch stop screw', group: 'sensor', fits: '1', step: 6},
 };
 /** The Keihin pieces, in Keihin order. */
 export const KPIECES = Object.keys(PIECES).filter((id) => PIECES[id].k);
