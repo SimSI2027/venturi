@@ -105,7 +105,7 @@ export function createStage(canvas) {
   // top-left key reads as a highlight on steel and walnut
   const room = new RoomEnvironment();
   room.traverse((o) => o.isMesh && o.material.emissiveIntensity > 0 && o.position.y < 19 && (o.material.emissiveIntensity *= 0.6));
-  // run 31 (correction 73): ?light=studio swaps in run 30's item 15 studio of soft boxes (scratch/item15_studio.patch, C15b): a charcoal
+  // run 32 (correction 74): the default; ?light=classic keeps the RoomEnvironment above. Run 30's item 15 studio of soft boxes (scratch/item15_studio.patch, C15b): a charcoal
   // room, a large overhead box, the key's box upper left in front, a tall strip at the right, a rim box behind and a floor bounce; HDR
   const studio = () => {
     const s = new THREE.Scene();
