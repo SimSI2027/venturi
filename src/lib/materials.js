@@ -370,8 +370,10 @@ export function makeMaterials() {
     cast,
     // run 27 (item 3): less metal, so a machined face is about as lit as the cast beside it from any side (metal 0.8 mirrored the studio's
     // top light: +73% over the cast round it in the top view, -10% in the default view, where it now reads +8%), smoother (0.26 to the cast's 0.55)
-    machined: tag(std({color: 0xbcbcba, metalness: 0.35, roughness: 0.26, envMapIntensity: 0.3}), 'machined'),
-    bore: tag(std({color: 0xb8b8b6, metalness: 0.35, roughness: 0.26, envMapIntensity: 0.3}), 'machined'), // run 13 (item 9): brighter machined bore; run 26 (item 16): 0.26 -> 0.3
+    // run 32 (item 3): in the studio default the machined faces are darker (0xbcbcba / env 0.3 -> 0xa4a4a2 / 0.2, roughness 0.38, metal 0.3), so they
+    // read 5-10% over the cast beside them, not 20-45% (scripts/bright.mjs); ?light=classic keeps v3.5.1's
+    machined: tag(std(LOOK.studio ? {color: 0xa4a4a2, metalness: 0.3, roughness: 0.38, envMapIntensity: 0.2} : {color: 0xbcbcba, metalness: 0.35, roughness: 0.26, envMapIntensity: 0.3}), 'machined'),
+    bore: tag(std(LOOK.studio ? {color: 0xa0a09e, metalness: 0.3, roughness: 0.38, envMapIntensity: 0.2} : {color: 0xb8b8b6, metalness: 0.35, roughness: 0.26, envMapIntensity: 0.3}), 'machined'), // run 13 (item 9): brighter machined bore; run 26 (item 16): 0.26 -> 0.3
     brass: brassVar(std({color: 0xc9a24b, metalness: 1, roughness: 0.3})),
     steel: std({color: 0xa7adb5, metalness: 1, roughness: 0.32}),
     steelDark: std({color: 0x5c626b, metalness: 1, roughness: 0.38}),

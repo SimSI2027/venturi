@@ -7,6 +7,7 @@
 // shallow flat-bottomed belly (-54..-73) stepped twice (a shallow end toward the air box, a deeper floor under the
 // jets), the round hex-plug boss with its curled passage (-73..-80), the drain nipple at the engine end, the pump
 // housing lobe on the cable side under the round 3-screw pump cover (pump.js). Built in carb space (sketch units).
+import {LOOK} from '../lib/materials.js';
 import {Asm} from '../lib/asm.js';
 import {THREE, merge, tubeY, latheY, ringsUp, hexY, orient, oring, screwY, fastenerY, tappedY, extrudeXY, rpolyA, circ, hose, rbox, mk, part, mm, M4_HOLE} from './kit.js';
 import {HT, RIM, EARS, PLAN, inset} from './body.js';
@@ -148,12 +149,22 @@ export function buildBowl(index) {
   const btube = orient(merge([tubeY(0.11, 0.06, 0, 1.3, 0.01), tubeY(0.16, 0.06, 0, 0.1, 0.02)]), [0.12, 1, 0.2], [QX + 0.25, FL - 0.02, QZ + 1.0]);
   // run 30 (item 14, rep_1 / bowl_4): a 0.3 mm bright worn edge round the bowl's top rim (its lip's outer edge under the gasket), on its own
   // mesh last in the part
+  // run 32 (item 3): the bowl's machined faces are the flat rim, seats and lands, seen at a low angle, where the shared machined finish
+  // (metal 0.3, roughness 0.38) mirrors the key and the overhead box at the grazing Fresnel edge and reads 35% over the cast beside it;
+  // this clone is dielectric, rougher and darker, with almost no specular, to hold it within 15% (scripts/bright.mjs)
+  const flat = machined.clone();
+  if (LOOK.studio) {
+    flat.color.set(0x7c7c7a);
+    flat.metalness = 0;
+    flat.roughness = 0.5;
+    flat.specularIntensity = 0.05;
+  }
   const worn = machined.clone();
   worn.color.set(0xe2e2de);
   worn.roughness = 0.18;
   const rimCurve = new THREE.CatmullRomCurve3(RIM.map(([x, z]) => new THREE.Vector3(x, BY.lip - 0.03, z)), true, 'centripetal');
   const wornRim = new THREE.TubeGeometry(rimCurve, 160, mm(0.3), 6, true);
-  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), machined), mk(btube, brass), mk(wornRim, worn)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), flat), mk(btube, brass), mk(wornRim, worn)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   // run 11 (item 3): Keihin pieces of reference 1 with their own meshes: the fuel joint (83) with its 3 O-rings (85)
   // in the boss, the pump rod (72) with its U-ring (52) on the guide's top
   A.add(part([0, 0, 0], mk(inlet, brass)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});
