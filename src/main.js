@@ -345,6 +345,10 @@ async function main() {
   const exT = tween(st.explode, 0.6);
   let exDrag = false;
   const thT = tween(0, 0.25); // run 25 (item 3): the throttle, 0 shut, 1 wide open
+  // run 29 (item 4): the tray fades to 0% in 0.06 s while the guided camera flies (between steps, or into a mode) and back to 100% in 0.3 s
+  // once it has landed, so it never sweeps across the mode buttons or the footer on the way
+  const tfT = tween(0, 0.06);
+  const hdNow = parts.map(() => 0); // each part's hide as last drawn (the tray check reads it)
   const dimT = parts.map(() => tween(0, QUICK));
   const rimT = parts.map(() => tween(0, QUICK));
   const dim = parts.map(() => 0);
@@ -634,6 +638,9 @@ async function main() {
   function drawTrayUI() {
     const L = guide.mode ? trayLay.v : null;
     trayUI.classList.toggle('on', !!L && !(solo.part && solo.T.to > 0) && !benchNow() && performance.now() > trayBack); // run 23 (item 6): 0% while a part is clicked alone (run 28: and at a bench step)
+    // run 29 (item 4): the numbers follow the tray's flight fade frame by frame (no CSS transition while it runs)
+    trayUI.classList.toggle('fly', tfT.v > 0);
+    trayUI.style.opacity = tfT.v > 0 && trayUI.classList.contains('on') ? (1 - tfT.v).toFixed(3) : '';
     if (!L) return;
     camera.updateMatrixWorld();
     // run 26 (item 5): a group's box and number show only once all its parts have landed (the current step's parts are never in the tray:
@@ -1515,8 +1522,8 @@ async function main() {
   let tag = 0;
   // the change check: anything that animates is in here, or it freezes
   // every tween at its target and the camera arrived (the scripted check of the guided modes reads this)
-  const settled = () => !view.follow && [thT, mixT, ...wT, ...trT, ...bT, ...rideT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
-  const sigOf = () => [st.explode, thT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...bT.map((t) => t.v), ...rideT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
+  const settled = () => !view.follow && tfT.v < 1e-6 && [thT, tfT, mixT, ...wT, ...trT, ...bT, ...rideT, ...hT, ...dimT, ...rimT, selT].every((T) => Math.abs(T.v - T.to) < 1e-6);
+  const sigOf = () => [st.explode, thT.v, tfT.v, secOn ? 1 : 0, S.size.w, S.size.h, TIERS.indexOf(S.tier), Object.keys(S.cut).length, hovered ? hovered.id : -1, hvT.v, solo.T.v, solo.zoomV, selT.v, ...solo.spin.toArray(), solo.part ? solo.part.obj.id : -1, S.floor.position.y, ...dim, ...rimT.map((t) => t.v), mixT.v, ...wT.map((t) => t.v), ...trT.map((t) => t.v), ...bT.map((t) => t.v), ...rideT.map((t) => t.v), ...hT.map((t) => t.v), olVer];
   const camOf = () => [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.aspect];
   const same = (a, b, eps) => !!a && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < eps);
 
@@ -1554,6 +1561,9 @@ async function main() {
     aim(selT, sel ? 1 : 0, now);
     const selV = stepT(selT, now);
     const floor = 0.5 - 0.4 * selV; // the rest of the carburetor fades to 10% opacity
+    const fly = !!(guide.mode && view.follow);
+    aim(tfT, fly ? 1 : 0, now, fly ? 0.06 : 0.3);
+    const tfV = stepT(tfT, now);
     parts.forEach((p, i) => {
       const lit = !sel && !guide.mode && circ >= 0 ? circSets[circ] : null; // run 25 (item 4)
       aim(dimT[i], sel ? (p === sel ? 0 : 1) : guide.mode ? 0 : lit ? (lit.has(p.id) ? 0 : 1) : focus >= 0 && p.asm !== asms[focus] ? 1 : 0, now);
@@ -1563,6 +1573,8 @@ async function main() {
       let hd = stepT(hT[i], now);
       // run 23 (item 6): a part in the bench tray fades to 0% while another part is clicked alone (the other parts stay at 10%)
       if (sel && p !== sel && p.tray) hd = 1 - (1 - hd) * (1 - selV * trT[p.k].v);
+      if (tfV > 0 && p.tray && (trT[i].v > 0 || trT[i].to > 0)) hd = 1 - (1 - hd) * (1 - tfV); // run 29 (item 4): and while the camera flies
+      hdNow[i] = hd;
       Asm.setLook(p, dim[i] < 0.004 ? 0 : dim[i], Math.abs(r) < 0.004 ? 0 : r, hd < 0.004 ? 0 : hd, floor);
     });
     const fl = 1 + 0.3 * THREE.MathUtils.smoothstep(st.explode, 0.5, 0.8);
@@ -1693,7 +1705,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, trayLay, trayGroups, STEP_DIR, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, trayLay, trayGroups, STEP_DIR, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), hide: (p) => hdNow[p.k], trayFade: () => tfT.v, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
