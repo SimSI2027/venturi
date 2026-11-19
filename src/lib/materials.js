@@ -339,11 +339,13 @@ export function makeMaterials() {
         vec3 on = normalize(vTriN) * faceDirection, bw = pow(abs(on), vec3(4.0));
         bw /= bw.x + bw.y + bw.z;
         vec3 tx = texture2D(normalMap, vTriP.zy).xyz * 2.0 - 1.0, ty = texture2D(normalMap, vTriP.xz).xyz * 2.0 - 1.0, tz = texture2D(normalMap, vTriP.xy).xyz * 2.0 - 1.0;
-        // run 28 (item 3): the grain fades out where 1 texel covers under 1 pixel (texels a pixel 0.5 -> 1: grain 1 -> 0), each projection's
-        // footprint from its own 2 axes' screen derivatives; below 1 texel a pixel the mip chain and the 8x / 4x anisotropy filter it
+        // run 28 (item 3): the grain fades out as 1 texel covers fewer pixels, each projection's footprint from its own 2 axes' screen
+        // derivatives; the mip chain and the 8x / 4x anisotropy filter it. Run 29 (item 3): the fade starts at 0.5 pixels a texel (it started
+        // at 2) and ends at 0.125 (texels a pixel 2 -> 8: grain 1 -> 0; it was 0.5 -> 1), so a casting clicked alone at 800x500 keeps its grain
+        // (scratch/grain29.mjs; shimmer the same, scratch/shimmer28.mjs)
         vec3 gdx = dFdx(vTriP) * 256.0, gdy = dFdy(vTriP) * 256.0;
         float tpp = dot(bw, vec3(max(length(gdx.zy), length(gdy.zy)), max(length(gdx.xz), length(gdy.xz)), max(length(gdx.xy), length(gdy.xy))));
-        vec2 gs = normalScale * (1.0 - smoothstep(0.5, 1.0, tpp));
+        vec2 gs = normalScale * (1.0 - smoothstep(2.0, 8.0, tpp));
         tx.xy *= gs; ty.xy *= gs; tz.xy *= gs;
         tx = vec3(tx.xy + on.zy, abs(tx.z) * on.x);
         ty = vec3(ty.xy + on.xz, abs(ty.z) * on.y);
