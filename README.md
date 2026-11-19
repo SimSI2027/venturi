@@ -4,6 +4,8 @@
 
 [![VENTURI 39: the assembled carburetor with the parts panel](docs/hero.png)](https://simsi2027.github.io/venturi/)
 
+Look: studio lighting by default; add ?light=classic to compare.
+
 An interactive three.js guide to a Keihin flat-slide carburetor with accelerator pump (the one on a 2004
 YFZ450, I.D. mark 5TG1 00), built entirely in code. Every one of the 79 parts-diagram references is a clickable part:
 find it, see where it sits, and follow the order it comes off and goes back.
