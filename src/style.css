@@ -406,7 +406,10 @@ html, body { background: var(--iw-bg); }
   .vt-note, .vt-call { font-size: 14px; }
   .vt-pg { padding: 3px 12px 4px; }
   .vt-prog { margin-top: 4px; }
-  .vt-nav { padding: 6px 12px 10px; }
+  /* run 33 (item 4): Back, Done and Next are 3 equal touch targets, 56 px tall, 30% of the card each, 12 px apart */
+  .vt-nav { padding: 6px 4px 10px; gap: 12px; }
+  .vt-nav .iw-btn, .vt-nav label { flex: 1 1 0; min-width: 0; min-height: 56px; box-sizing: border-box; justify-content: center; padding: 0 4px; }
+  .vt-nav label { border: 1px solid var(--iw-line); border-radius: 8px; background: rgba(255, 255, 255, 0.04); }
 }
 /* run 3: one easing for every UI transition; the "?" controls card */
 .iw, .iw * { transition-timing-function: cubic-bezier(.65, 0, .35, 1); }
