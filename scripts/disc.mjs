@@ -1,4 +1,11 @@
-// node scripts/disc.mjs <round> [--fit-pose]  (run 30, item 7): the discriminators D1-D3 against the 6 hand-traced outlines in
+// node scripts/disc.mjs <round> [--fit-pose] [--look=<query>]
+// Run 31 (item 4, correction 72): D1 is measured on the 4 owner outlines only (mine_1, mine_3, mine_4, mine_6); D2 and D3 on the 8 clean
+// references only (rep_1 to rep_5, under_3_frank, top_1_frank, bowl_4), with each view's excl polygons (hoses, wires, boots, brass
+// fittings, lettering, dirt) left out. s1 = mean D1 over the owner views, s2 and s3 = mean scores over the clean views, total = their mean.
+// A view may draw only some parts (only), be cut by the photo's edge (crop: framing uses the uncut sides) and, with --fit-pose, a view
+// with no saved pose (wide) is fitted within 40 deg (roll4: from 4 quarter turns); saved poses are kept. --look=light=studio&grain=0.7
+// loads the page with those look flags (correction 73).
+// Run 30 (item 7): the discriminators D1-D3 against the 6 hand-traced outlines in
 // scratch/masks.json (mine_1, mine_3, mine_4, mine_6, rep_1, rep_3). Per view the model is drawn on HIGH from the photo's side (R, U and
 // the pose offset rot in masks.json), hoses, wires and the parts absent from that photo hidden, and framed so its silhouette's box
 // matches the traced outline's box (scale from the box area, centre on the centre). Writes scratch/disc.txt (appends the round) and
@@ -20,9 +27,11 @@ const skill = path.join(os.homedir(), '.claude/skills/cutaway');
 const {chromium} = createRequire(path.join(skill, 'x.js'))('playwright');
 const {CHROMIUM_ARGS} = await import(pathToFileURL(path.join(skill, 'paths.mjs')).href);
 const R = process.argv[2] ?? '0', FIT = process.argv.includes('--fit-pose');
+const LOOK = (process.argv.find((a) => a.startsWith('--look=')) || '--look=').slice(7);
 const URL = pathToFileURL(path.resolve('docs/index.html')).href;
 const MASKS = JSON.parse(fs.readFileSync('scratch/masks.json', 'utf8'));
-const VIEWS = ['mine_1', 'mine_3', 'mine_4', 'mine_6', 'rep_1', 'rep_3'];
+const OWN = ['mine_1', 'mine_3', 'mine_4', 'mine_6'], CLEAN = ['rep_1', 'rep_2', 'rep_3', 'rep_4', 'rep_5', 'under_3_frank', 'top_1_frank', 'bowl_4'];
+const VIEWS = [...OWN, ...CLEAN];
 fs.mkdirSync('scratch/disc', {recursive: true});
 const browser = await chromium.launch({args: CHROMIUM_ARGS});
 const errs = [];
@@ -36,13 +45,13 @@ const pageCode = () => {
   V.controls.dispatchEvent({type: 'start'});
   V.controls.update = () => false;
   const D = (window.__disc = {});
-  D.setup = (hide) => {
+  D.setup = (hide, only) => {
     const hoses = new Set(V.asms.find((a) => a.key === 'hoses').parts.map((p) => p.id));
     D.meshes = [];
     V.parts.forEach((p) => p.obj.traverse((m) => {
       if (!m.isMesh) return;
       const wire = m.material && m.material.color && m.material.color.getHex() === 0x1a1b1d && m.material.roughness === 0.5;
-      m.visible = !hoses.has(p.id) && !hide.includes(p.id) && p.id !== 'K83' && !wire; // K83 the brass inlet elbow: the traces leave loose brass pipes out
+      m.visible = !hoses.has(p.id) && !hide.includes(p.id) && p.id !== 'K83' && !wire && (!only || only.includes(p.id)); // K83 the brass inlet elbow: the traces leave loose brass pipes out
       if (m.visible) D.meshes.push(m);
     }));
     S.scene.traverse((o) => (o.isMesh || o.isLine || o.isPoints) && !o.userData.partRoot && (o.visible = false));
@@ -69,7 +78,12 @@ const pageCode = () => {
     return [x0, y0, x1, y1];
   };
   // R, U in the carburetor's frame; rot = [yaw about U, pitch about R, roll about the view axis] in degrees
-  D.pose = (Rv, Uv, rot, tb, w, h) => {
+  D.pose = (Rv, Uv, rot, tb, w, h, crop = []) => {
+    // run 31: a side the photo cuts gives no extent; the scale comes from the uncut axis (both if both are whole) and each axis is
+    // aligned on its centre, or on its uncut side
+    const cut = (s) => crop.includes(s), okW = !cut('l') && !cut('r'), okH = !cut('t') && !cut('b');
+    const scaleOf = (m) => (okW && okH ? Math.sqrt(((tb[2] - tb[0]) * (tb[3] - tb[1])) / ((m[2] - m[0]) * (m[3] - m[1]))) : okW ? (tb[2] - tb[0]) / (m[2] - m[0]) : okH ? (tb[3] - tb[1]) / (m[3] - m[1]) : 1);
+    const offOf = (m, a) => (!cut(a ? 't' : 'l') && !cut(a ? 'b' : 'r') ? (m[a] + m[a + 2] - tb[a] - tb[a + 2]) / 2 : !cut(a ? 't' : 'l') ? m[a] - tb[a] : !cut(a ? 'b' : 'r') ? m[a + 2] - tb[a + 2] : 0);
     const Rw = new T.Vector3(...Rv).transformDirection(carb.matrixWorld), Uw = new T.Vector3(...Uv).transformDirection(carb.matrixWorld);
     const q = new T.Quaternion().setFromAxisAngle(Uw, (rot[0] * Math.PI) / 180)
       .multiply(new T.Quaternion().setFromAxisAngle(Rw, (rot[1] * Math.PI) / 180));
@@ -84,14 +98,14 @@ const pageCode = () => {
     for (let it = 0; it < 5; it++) {
       cam.position.copy(t).addScaledVector(back, dist);
       cam.lookAt(t);
-      const m = D.bbox(w, h), s = Math.sqrt((tw * th) / ((m[2] - m[0]) * (m[3] - m[1])));
+      const m = D.bbox(w, h), s = scaleOf(m);
       dist /= s;
       cam.position.copy(t).addScaledVector(back, dist);
       cam.lookAt(t);
       const m2 = D.bbox(w, h), ppu = h / (2 * Math.tan((cam.fov * Math.PI) / 360) * dist);
       right.crossVectors(cam.getWorldDirection(new T.Vector3()), cam.up).normalize();
       const up = new T.Vector3().crossVectors(right, cam.getWorldDirection(new T.Vector3())).normalize();
-      t.addScaledVector(right, ((m2[0] + m2[2]) / 2 - tcx) / ppu).addScaledVector(up, -((m2[1] + m2[3]) / 2 - tcy) / ppu);
+      t.addScaledVector(right, offOf(m2, 0) / ppu).addScaledVector(up, -offOf(m2, 1) / ppu);
     }
     cam.position.copy(t).addScaledVector(back, dist);
     cam.lookAt(t);
@@ -156,7 +170,7 @@ for (const k of VIEWS) {
   const page = await browser.newPage({viewport: {width: w, height: h}, deviceScaleFactor: 1});
   page.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
   page.on('pageerror', (e) => errs.push(e.message));
-  await page.goto(`${URL}?q=high`);
+  await page.goto(`${URL}?q=high${LOOK ? '&' + LOOK : ''}`);
   await page.waitForFunction(() => window.__READY, null, {timeout: 90000});
   await page.waitForTimeout(1500);
   await page.evaluate(pageCode);
@@ -164,12 +178,30 @@ for (const k of VIEWS) {
   const tb = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
   const res = await page.evaluate(({v, f, w, h, tb, FIT}) => {
     const D = window.__disc;
-    D.setup(v.hide);
+    D.setup(v.hide, v.only);
     const pm = D.poly(v.poly, f, w, h);
-    const score = (rot) => (D.pose(v.R, v.U, rot, tb, w, h), D.iou(D.mask(w, h, 'sil'), pm));
+    const score = (rot) => (D.pose(v.R, v.U, rot, tb, w, h, v.crop), D.iou(D.mask(w, h, 'sil'), pm));
     let rot = v.rot || [0, 0, 0];
-    if (FIT) {
-      let best = [score([0, 0, 0]), [0, 0, 0]];
+    if (FIT && v.wide && !v.rot) {
+      // run 31: a new view, fitted within 40 deg (roll4: the best of 4 quarter turns first)
+      let best = [-1, [0, 0, 0]];
+      for (const r0 of v.roll4 ? [0, 90, 180, 270] : [0]) for (const a of [-2, -1, 0, 1, 2]) for (const b of [-2, -1, 0, 1, 2]) {
+        const cand = [a * 16, b * 16, r0], s = score(cand);
+        if (s > best[0]) best = [s, cand];
+      }
+      for (const st of [8, 4, 2, 1]) {
+        const c = best[1];
+        for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) for (const r of [-1, 0, 1]) {
+          const cand = [c[0] + a * st, c[1] + b * st, c[2] + r * st];
+          if (Math.abs(cand[0]) > 40 || Math.abs(cand[1]) > 40) continue;
+          const s = score(cand);
+          if (s > best[0]) best = [s, cand];
+        }
+      }
+      rot = best[1];
+    } else if (FIT && !v.rot) {
+      let best = [-1, [0, 0, 0]];
+      for (const r0 of v.roll4 ? [0, 90, 180, 270] : [0]) { const s = score([0, 0, r0]); if (s > best[0]) best = [s, [0, 0, r0]]; }
       for (const st of [6, 3, 1.5]) {
         const c = best[1];
         for (const a of [-2, -1, 0, 1, 2]) for (const b of [-2, -1, 0, 1, 2]) for (const r of st === 6 ? [-1, 0, 1] : [0]) {
@@ -181,7 +213,7 @@ for (const k of VIEWS) {
       }
       rot = best[1];
     }
-    D.pose(v.R, v.U, rot, tb, w, h);
+    D.pose(v.R, v.U, rot, tb, w, h, v.crop);
     const sil = D.mask(w, h, 'sil'), cast = D.mask(w, h, 'cast');
     return {rot, iou: D.iou(sil, pm), sil: D.b64(sil), cast: D.b64(cast)};
   }, {v, f, w, h, tb, FIT});
@@ -203,12 +235,15 @@ md = np.asarray(Image.open('scratch/disc/%s_render.png' % k).convert('RGB'))
 sil = np.frombuffer(open('scratch/disc/%s_sil.bin' % k, 'rb').read(), np.uint8).reshape(h, w).astype(bool)
 cast = np.frombuffer(open('scratch/disc/%s_cast.bin' % k, 'rb').read(), np.uint8).reshape(h, w).astype(bool)
 pm = Image.new('L', (w, h), 0); ImageDraw.Draw(pm).polygon([(x * f, y * f) for x, y in poly], fill=255); pm = np.asarray(pm) > 127
+ex = Image.new('L', (w, h), 0)
+for q in json.loads(sys.argv[7]): ImageDraw.Draw(ex).polygon([(x * f, y * f) for x, y in q], fill=255)
+ex = np.asarray(ex) > 127
 def erode(m, n):
     for _ in range(n):
         m = m & np.roll(m, 1, 0) & np.roll(m, -1, 0) & np.roll(m, 1, 1) & np.roll(m, -1, 1)
     return m
 hsv = np.asarray(Image.fromarray(ph).convert('HSV')).astype(np.float64) / 255
-A = erode(cast & sil, 2) & erode(pm, 2) & (hsv[..., 1] <= 0.3)
+A = erode(cast & sil, 2) & erode(pm, 2) & (hsv[..., 1] <= 0.3) & ~ex
 def blur(y, s=1.5):
     r = int(3 * s); x = np.arange(-r, r + 1); g = np.exp(-x * x / (2 * s * s)); g /= g.sum()
     y = np.apply_along_axis(lambda c: np.convolve(np.pad(c, r, mode='edge'), g, 'valid'), 0, y)
@@ -219,10 +254,10 @@ d2 = hf(Ym) / max(hf(Yp), 1e-12)
 hp = np.histogram(Yp[A], 32, (0, 1))[0].astype(float); hm = np.histogram(Ym[A], 32, (0, 1))[0].astype(float)
 d3 = np.abs(np.cumsum(hp / hp.sum()) - np.cumsum(hm / hm.sum())).sum() / 32
 # the 3 masks side by side for the record: photo outline red, model outline green, measured casting pixels white
-vis = np.zeros((h, w, 3), np.uint8); vis[pm & ~sil] = (200, 40, 40); vis[sil & ~pm] = (40, 200, 40); vis[pm & sil] = (70, 70, 80); vis[A] = (220, 220, 220)
+vis = np.zeros((h, w, 3), np.uint8); vis[pm & ~sil] = (200, 40, 40); vis[sil & ~pm] = (40, 200, 40); vis[pm & sil] = (70, 70, 80); vis[ex & (pm | sil)] = (30, 50, 120); vis[A] = (220, 220, 220)
 Image.fromarray(vis).save('scratch/disc/%s_masks.png' % k)
 print(json.dumps({'d2': d2, 'd3': d3, 'n': int(A.sum()), 'mp': float(Yp[A].mean()), 'mm': float(Ym[A].mean())}))
-`, k, v.img, String(w), String(h), String(f), JSON.stringify(v.poly)]).toString();
+`, k, v.img, String(w), String(h), String(f), JSON.stringify(v.poly), JSON.stringify(v.excl || [])]).toString();
   const q = JSON.parse(py.trim().split('\n').pop());
   const s1 = Math.max(0, Math.min(1, res.iou)), s2 = Math.max(0, 1 - Math.abs(Math.log(q.d2)) / Math.log(2)), s3 = Math.max(0, Math.min(1, 1 - q.d3 / 0.25));
   lines.push({k, d1: res.iou, d2: q.d2, d3: q.d3, s1, s2, s3, total: (s1 + s2 + s3) / 3, n: q.n, mp: q.mp, mm: q.mm, rot: res.rot});
@@ -230,11 +265,17 @@ print(json.dumps({'d2': d2, 'd3': d3, 'n': int(A.sum()), 'mp': float(Yp[A].mean(
 }
 await browser.close();
 if (FIT) fs.writeFileSync('scratch/masks.json', JSON.stringify(MASKS, null, 1));
-const avg = (key) => lines.reduce((s, l) => s + l[key], 0) / lines.length;
-const out = [`round ${R} · ${new Date().toISOString().slice(0, 16)} · console errors ${errs.length}`,
-  'view     D1 IoU  D2 energy  D3 hist  | s1    s2    s3    total | casting px  photo / model mean luminance  pose (yaw pitch roll)'];
-for (const l of lines) out.push(`${l.k.padEnd(8)} ${l.d1.toFixed(3)}   ${l.d2.toFixed(3).padStart(6)}     ${l.d3.toFixed(3)}    | ${l.s1.toFixed(3)} ${l.s2.toFixed(3)} ${l.s3.toFixed(3)} ${l.total.toFixed(3)} | ${String(l.n).padStart(6)}      ${l.mp.toFixed(3)} / ${l.mm.toFixed(3)}   ${l.rot.join(' ')}`);
-out.push(`mean     ${avg('d1').toFixed(3)}   ${avg('d2').toFixed(3).padStart(6)}     ${avg('d3').toFixed(3)}    | ${avg('s1').toFixed(3)} ${avg('s2').toFixed(3)} ${avg('s3').toFixed(3)} ${avg('total').toFixed(3)}`, '');
+// run 31 (correction 72): D1 and s1 from the owner views, D2, D3, s2 and s3 from the clean views; '-' marks a value that does not count
+const avg = (key, set) => { const ls = lines.filter((l) => set.includes(l.k)); return ls.reduce((s, l) => s + l[key], 0) / ls.length; };
+const S1 = avg('s1', OWN), S2 = avg('s2', CLEAN), S3 = avg('s3', CLEAN), TOTAL = (S1 + S2 + S3) / 3;
+const dash = (on, s) => (on ? s : '-'.padStart(s.length));
+const out = [`round ${R}${LOOK ? ' · look ' + LOOK : ''} · ${new Date().toISOString().slice(0, 16)} · console errors ${errs.length}`,
+  'view           D1 IoU  D2 energy  D3 hist  | s1    s2    s3    | casting px  photo / model mean luminance  pose (yaw pitch roll)'];
+for (const l of lines) {
+  const o = OWN.includes(l.k);
+  out.push(`${l.k.padEnd(14)} ${dash(o, l.d1.toFixed(3))}   ${dash(!o, l.d2.toFixed(3).padStart(6))}     ${dash(!o, l.d3.toFixed(3))}    | ${dash(o, l.s1.toFixed(3))} ${dash(!o, l.s2.toFixed(3))} ${dash(!o, l.s3.toFixed(3))} | ${String(l.n).padStart(6)}      ${l.mp.toFixed(3)} / ${l.mm.toFixed(3)}   ${l.rot.join(' ')}   (IoU ${l.d1.toFixed(3)})`);
+}
+out.push(`mean           ${avg('d1', OWN).toFixed(3)}   ${avg('d2', CLEAN).toFixed(3).padStart(6)}     ${avg('d3', CLEAN).toFixed(3)}    | ${S1.toFixed(3)} ${S2.toFixed(3)} ${S3.toFixed(3)} | total ${TOTAL.toFixed(3)}`, '');
 fs.appendFileSync('scratch/disc.txt', out.join('\n') + '\n');
 // the round's review sheet (D4's evidence): per view the photo, the model and the masks, 3 x 2 views, 1560 px wide
 execFileSync('python', ['-I', '-c', `
@@ -252,9 +293,9 @@ for k in V:
         im = im.crop(box); s = min(260 / im.width, 300 / im.height); im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
         c.paste(im, (x + (260 - im.width) // 2, 18 + (300 - im.height) // 2)); x += 260
     ImageDraw.Draw(c).text((4, 3), L[k], fill=(230, 210, 150)); cells.append(c)
-S = Image.new('RGB', (1560, 3 * 318), (20, 20, 22))
+S = Image.new('RGB', (1560, (len(cells) + 1) // 2 * 318), (20, 20, 22))
 for i, c in enumerate(cells): S.paste(c, (780 * (i % 2), 318 * (i // 2)))
 S.save('scratch/disc/sheet_r%s.png' % sys.argv[3])
-`, JSON.stringify(VIEWS), JSON.stringify(Object.fromEntries(lines.map((l) => [l.k, `${l.k}  D1 ${l.d1.toFixed(3)}  D2 ${l.d2.toFixed(3)}  D3 ${l.d3.toFixed(3)}  total ${l.total.toFixed(3)}  | photo | model | masks (red photo only, green model only, white measured)`]))), R]);
+`, JSON.stringify(VIEWS), JSON.stringify(Object.fromEntries(lines.map((l) => [l.k, OWN.includes(l.k) ? `${l.k}  D1 ${l.d1.toFixed(3)}  | photo | model | masks (red photo only, green model only)` : `${l.k}  D2 ${l.d2.toFixed(3)}  D3 ${l.d3.toFixed(3)}  (IoU ${l.d1.toFixed(3)})  | photo | model | masks (white measured, blue excluded)`]))), R]);
 console.log(out.join('\n'));
 if (errs.length) console.log(errs.slice(0, 5).join('\n'));
