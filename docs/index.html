@@ -598,10 +598,40 @@ html, body { background: var(--iw-bg); }
 .vt-tg b { position: absolute; left: 0; right: 0; bottom: 1px; text-align: center; font-size: 8px; line-height: 8px; font-weight: 600; letter-spacing: 0; font-variant-caps: normal; color: rgba(222, 216, 204, 0.62); }
 .vt-tg.on b { color: #c9a24b; }
 
+/* run 33 (item 5): the PRINT button in the Steps tab, and the print sheet (black on white, no 3D view, no dark background) */
+.vt-prbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px 4px; }
+.vt-prbar .iw-btn { flex: none; font-size: 15px; padding: 5px 16px; }
+.vt-prbar span { font-size: 13px; line-height: 1.25; color: var(--iw-dim); font-variant-caps: normal; letter-spacing: 0.03em; }
+.vt-printdoc { display: none; }
+@media print {
+  @page { margin: 12mm; }
+  html, body { background: #fff !important; color: #000 !important; height: auto !important; overflow: visible !important; }
+  body > *:not(.vt-printdoc) { display: none !important; }
+  .vt-printdoc { display: block; font: 10.5pt/1.3 Arial, Helvetica, sans-serif; font-variant-caps: normal; letter-spacing: 0; color: #000; background: #fff; }
+  .vt-printdoc h1 { margin: 0 0 2mm; font-size: 16pt; }
+  .vt-printdoc h2 { margin: 5mm 0 2mm; padding-bottom: 1mm; font-size: 12pt; border-bottom: 1.5px solid #000; break-after: avoid; }
+  .vt-printdoc .pr-s { margin: 1mm 0; font-size: 9pt; }
+  .vt-printdoc .pr-box { display: inline-block; flex: none; width: 3.2mm; height: 3.2mm; margin-right: 2mm; border: 1.2px solid #000; vertical-align: -0.5mm; }
+  .vt-printdoc .pr-line { display: flex; align-items: flex-end; gap: 3mm; margin: 3mm 0; }
+  .vt-printdoc .pr-line u { flex: 1; height: 5mm; border-bottom: 1px solid #000; text-decoration: none; }
+  .vt-printdoc .pr-o { display: flex; align-items: flex-start; padding: 0.6mm 0; break-inside: avoid; }
+  .vt-printdoc .pr-step { padding: 1.6mm 0; border-bottom: 0.5px solid #000; break-inside: avoid; }
+  .vt-printdoc .pr-h { display: flex; align-items: baseline; font-weight: bold; }
+  .vt-printdoc .pr-h b { min-width: 8mm; }
+  .vt-printdoc .pr-p { margin: 0.6mm 0 0 13.4mm; font-size: 9pt; }
+  .vt-printdoc .pr-f { margin: 0.6mm 0 0 13.4mm; font-size: 9.5pt; }
+  .vt-printdoc .pr-f b { display: inline-block; padding: 0 1.5mm; border: 1.2px solid #000; font-size: 8.5pt; }
+  .vt-printdoc .pr-c { margin: 1mm 0 0 13.4mm; padding-left: 2mm; font-size: 9.5pt; border-left: 2px solid #000; }
+  .vt-printdoc .pr-t { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .vt-printdoc .pr-t td { padding: 0.8mm 1mm; border-bottom: 0.5px solid #000; vertical-align: top; }
+  .vt-printdoc .pr-t td:nth-child(3), .vt-printdoc .pr-t td:nth-child(4) { white-space: nowrap; }
+  .vt-printdoc .pr-t tr { break-inside: avoid; }
+}
+
 </style>
 </head>
 <body>
 <div id="app"></div>
-<script>if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})</script><script defer src="venturi.js?v=478f5398"></script>
+<script>if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})</script><script defer src="venturi.js?v=281742f8"></script>
 </body>
 </html>

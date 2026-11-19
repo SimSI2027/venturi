@@ -1,7 +1,7 @@
 // The two guided modes (TEAR DOWN, REBUILD): their numbered steps from data.js, the saved checkboxes, the step
 // card (Back / Next, the one-line note, the brass callouts, the progress line), the Steps list and the owner's
 // Notes field. Everything saved goes to local storage only.
-import {STEPS_A, STEPS_B, N_B, ADDED_STEP, NOTES_C, PIECES, KPIECES, nameOf} from './carb/data.js';
+import {STEPS_A, STEPS_B, N_B, ADDED_STEP, NOTES_C, PIECES, KPIECES, KIT, KIT_TOTAL, needsLT, fitNew, LT_TEXT, nameOf} from './carb/data.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const nn = (n) => String(n).padStart(2, '0');
@@ -77,6 +77,9 @@ export function createGuide({el, ui, body, go, onPart}) {
   // the Steps list and the Notes field (panel tabs)
   const steps = el('div', 'vt-steps', null, body);
   steps.hidden = true;
+  // run 33 (item 5, correction 76): PRINT, the bench checklist as black text on white paper
+  const prBar = el('div', 'vt-prbar', '<button class="iw-btn">Print</button><span>Off the ATV, the 29 rebuild steps, the kit list and blank lines for your numbers, black on white.</span>', steps);
+  prBar.querySelector('button').onclick = () => printSheet();
   // run 17 (item 8): the "Off the ATV" list (steps.md section A), text only, each line with a checkbox saved in this browser
   const offDone = load(KEY.off, {});
   const OFF = [{t: 'Seat, fuel tank cover and both side covers: off first'}, ...STEPS_A.list.map((s) => ({t: `${s.n}. ${s.text}`}))];
@@ -110,6 +113,35 @@ export function createGuide({el, ui, body, go, onPart}) {
   const count = (m) => last[m] - 1 + (fin[m] ? 1 : 0);
   const isDone = (m, n) => n <= count(m);
   G.progress = (m) => `${count(m)}/${MODES[m].steps.length}`;
+
+  // The print sheet: a plain page appended to the body only for the print (the print CSS hides everything else, the 3D view included).
+  // Boxes are empty (a clean sheet, not this browser's ticks). LT and "fit new" are flagged on the steps that fit those parts.
+  function printSheet() {
+    const box = '<i class="pr-box"></i>';
+    const line = (label) => `<div class="pr-line"><span>${esc(label)}</span><u></u></div>`;
+    const rows = MODES.rebuild.steps.map((s) => {
+      const lt = s.parts.filter(needsLT);
+      const nw = s.parts.filter(fitNew);
+      return `<div class="pr-step"><div class="pr-h">${box}<b>${nn(s.n)}</b><span>${esc(s.title)}</span></div>` +
+        (s.parts.length ? `<div class="pr-p">${esc(partLine(s.parts).join('; '))}</div>` : '') +
+        (lt.length ? `<div class="pr-f"><b>LT</b> ${esc(LT_TEXT)}: ${esc(partLine(lt).join('; '))}</div>` : '') +
+        (nw.length ? `<div class="pr-f"><b>FIT NEW</b> ${esc(partLine(nw).join('; '))}</div>` : '') +
+        (s.note ? `<div class="pr-c">${esc(s.note)}</div>` : '') +
+        s.calls.filter((c) => !c.startsWith(LT_TEXT)).map((c) => `<div class="pr-c">${esc(c)}</div>`).join('') + `</div>`;
+    }).join('');
+    const kit = KIT.map((k) => `<tr><td>${box}</td><td>${esc(k.id[0] === 'K' ? `${k.id} · ${nameOf(k.id)}` : nameOf(k.id))} <small>${k.kind}</small></td><td>${k.qty}${k.known ? '' : '*'}</td><td>${fitNew(k.id) ? 'fit new' : ''}</td></tr>`).join('');
+    const d = document.createElement('div');
+    d.className = 'vt-printdoc';
+    d.innerHTML = `<h1>VENTURI 39 · carburetor rebuild checklist</h1><p class="pr-s">2004 YFZ450, Keihin flat-slide carburetor. Visual guide only. Follow the service manual.</p>` +
+      `<h2>Your numbers</h2>${line('Pilot screw turns out from seated')}${line('Main jet found, stamped #')}${line('Pilot jet found, stamped #')}${line('Starter jet found, stamped #')}${line('Pilot air jet found, stamped #')}` +
+      `<h2>Off the ATV</h2>` + OFF.map((o) => `<div class="pr-o">${box}<span>${esc(o.t)}</span></div>`).join('') + `<p class="pr-s">${esc(STEPS_A.owner)}</p>` +
+      `<h2>Rebuild, 29 steps</h2>${rows}` +
+      `<h2>Kit: ${KIT_TOTAL} pieces in ${KIT.length} lines</h2><table class="pr-t">${kit}</table><p class="pr-s">* the sources give no quantity for this line: counted once.</p>` +
+      `<p class="pr-s">Visual guide only. Follow the service manual.</p>`;
+    document.body.appendChild(d);
+    addEventListener('afterprint', () => d.remove(), {once: true});
+    window.print();
+  }
 
   function renderList() {
     const M = MODES[G.mode];
