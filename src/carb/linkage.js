@@ -31,7 +31,12 @@ export function buildLinkage(index) {
   const ls = rpoly([[5.15, 5.0, 0.2], [3.45, 5.0, 0.2], [3.45, 8.5, 0.4], [3.75, 9.02, 0.3], [4.85, 9.02, 0.3], [5.15, 8.55, 0.35]], 0.3);
   ls.holes.push(circ(4.55, 6.6, 0.42), circ(4.3, 5.6, M5_HOLE)); // run 14 (item 4): + the 5.5 mm hole for screw K11
   const lug = extrudeXY(ls, 0.45, 0.08, 12, {free: true}).rotateY(Math.PI / 2).translate(-3.375, 0, -(CUPZ - 0.33)); // shape x -> -z; run 14: 4.5 mm thick (was 9.5), x -3.6..-3.15
-  A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads, orient(tappedY(0.4, mm(2.4), 0, 0.95, 0.75), [-1, 0, 0], [-2.2, 5.6, -0.02])]), cast), mk(nip, brass)), '65', {ex: [0, 0, -1.8], order: 0.25});
+  // run 30 (item 13, rep_3): an edge lip round the cover's face (0.6 mm proud, 1.7 mm wide) and the lobe round the lower bolt raised 1.2 mm
+  // with a soft edge; their own mesh, last, so the baked recess shading keeps its order
+  const lipS = rpoly(inset(SHIELD, 0.04), 0.26);
+  lipS.holes.push(rpoly(inset(SHIELD, 0.21), 0.2, new THREE.Path()));
+  const relief = merge([extrudeXY(lipS, 0.06, 0.02, 12, {free: true}).translate(0, 0, -0.305), slabZ(inset(clipY(SHIELD, 2.4), 0.45), -0.335, 0.12, [[...BOLTS[1], M5_HOLE]], 0.4)]);
+  A.add(part([0, 0, CUPZ - 0.33], mk(merge([flat, shoulder, boss, pads, orient(tappedY(0.4, mm(2.4), 0, 0.95, 0.75), [-1, 0, 0], [-2.2, 5.6, -0.02])]), cast), mk(nip, brass), mk(relief, cast)), '65', {ex: [0, 0, -1.8], order: 0.25});
   // run 11 (item 3): the bracket is Keihin 10, its own piece of 65, held by Keihin 11 (M5 x 8) from the engine side
   // item 7 round 2: 0.45 (4.8 mm) further out toward the cable side, where mine_3 (3.7) and mine_5 (6.2) both put it
   const KZ = -0.45;

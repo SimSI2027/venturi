@@ -16,7 +16,9 @@ export function buildPilotAir(index) {
   const scr = orient(fastenerY(0.8, 0.22, 0.12, 0.16, 'cross'), [0, 0, 1]); // run 9: heads out, shanks into the body (they pointed out)
   const screws = [0, Math.PI].map((a) => mk(scr.clone(), zinc, Math.cos(a + 0.5) * 1.55, Math.sin(a + 0.5) * 1.55, 0.34));
   const F = SENS + 0.22; // the boss face, level with the sensor housing's
-  A.add(part([0, 2.2, F + 0.12], mk(dome, cast), mk(ears, cast), mk(seats, machined), ...screws), '1-pilot', {ex: [0, 0, 3.0], order: 0});
+  // run 30 (item 13, rep_4 / mine_2 as run 9 read them): a raised rim round the dome's foot, 1.6 mm wide and 1.6 mm tall, a soft top edge
+  const rim = orient(latheY([[0, 1.4], [0, 1.6], [0.06, 1.63], [0.13, 1.6], [0.16, 1.52], [0.16, 1.4]]), Z);
+  A.add(part([0, 2.2, F + 0.12], mk(dome, cast), mk(ears, cast), mk(seats, machined), ...screws, mk(rim, cast)), '1-pilot', {ex: [0, 0, 3.0], order: 0});
   A.add(part([0, 2.2, F + 0.15], mk(orient(springY(0.42, 0.45, 0.04, 3.5), Z), steel)), '79', {ex: [0, 0, 1.9], order: 0.2});
   // diaphragm: a rubber disc on the body's face (z 3.05), its moulded rim wider than the face and the cover so
   // its black edge shows between them; a brass-capped centre pin
