@@ -802,6 +802,24 @@ async function main() {
     lastInput = performance.now();
   }
   secBtn.onclick = () => setSection(!secOn);
+  // run 33 (item 3, correction 76): a screen wake lock is held in TEAR DOWN and REBUILD (where the browser has one), released on leaving the mode,
+  // and taken again when the tab becomes visible (the browser drops it when the tab is hidden)
+  let wake = null;
+  async function wakeTake() {
+    if (!guide.mode || wake || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+    try {
+      const l = await navigator.wakeLock.request('screen');
+      if (!guide.mode || wake) return void l.release().catch(() => {});
+      wake = l;
+      l.addEventListener('release', () => wake === l && (wake = null));
+    } catch (e) {}
+  }
+  function wakeDrop() {
+    const l = wake;
+    wake = null;
+    l?.release().catch(() => {});
+  }
+  document.addEventListener('visibilitychange', wakeTake);
   /** Go to a guided mode (null: explore) at step n (default: the last step seen there). */
   function setMode(m, n) {
     if (secOn) setSection(false, true);
@@ -809,6 +827,7 @@ async function main() {
     if (solo.part) deselect();
     if (m && focus >= 0) focusOn(-1);
     guide.set(m, n ?? (enter ? guide.last[m] : guide.n));
+    m ? wakeTake() : wakeDrop();
     modeBar.querySelectorAll('button[data-m]').forEach((b) => b.classList.toggle('on', (b.dataset.m === 'explore' ? null : b.dataset.m) === m));
     dock.classList.toggle('guided', !!m);
     const now = performance.now();
