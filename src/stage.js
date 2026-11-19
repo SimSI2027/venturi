@@ -409,5 +409,6 @@ export function createStage(canvas) {
   };
   const S = {THREE, renderer, scene, camera, composer, outline, noOutline, size, resize, project, select, setTier, degrade, crossfade, key, rim, cool, fill, under, noAO, noReflect, floor: floorR, cut: {}, tier: 'high'};
   S.render = () => composer.render();
+  S.aoBlend = (v) => (v === undefined ? ao.blendIntensity : (ao.blendIntensity = v)); // run 29 (item 5): main.js lowers it while the camera moves
   return S;
 }
