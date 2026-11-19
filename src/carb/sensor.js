@@ -24,7 +24,10 @@ export function buildSensor(index) {
   const bs = rpoly([[-1.6, -1.5, 0.4], [2.6, -1.5, 0.4], [2.6, 1.0, 0.3], [1.2, 1.55, 0.4], [-1.6, 1.55, 0.4]], 0.3);
   bs.holes.push(circ(-1.15, -1.0, 0.16), circ(2.15, -1.0, 0.16), circ(0, 0, 1.08)); // the O-ring (62) shows in its hole
   const bracket = extrudeXY(bs, 0.22, 0.05, 8, {free: true}).translate(0, 0, 0.12).rotateZ(Math.PI - TA);
-  const conn = (w, h, d) => merge([rbox(w, h, d, 0.15), rbox(w + 0.16, 0.4, d + 0.16, 0.12).translate(0, h / 2 - 0.2, 0), rbox(0.3, 0.5, 0.2, 0.06).translate(0, 0, d / 2 + 0.05)]);
+  // run 30 (item 14): the latch tab gains its catch (a lip across its foot); connPins: the 2 pin cavities in the coupler's mating end (its
+  // foot, -Y), dark, as their own black mesh
+  const conn = (w, h, d) => merge([rbox(w, h, d, 0.15), rbox(w + 0.16, 0.4, d + 0.16, 0.12).translate(0, h / 2 - 0.2, 0), rbox(0.3, 0.5, 0.2, 0.06).translate(0, 0, d / 2 + 0.05), rbox(0.4, 0.08, 0.12, 0.03).translate(0, -0.22, d / 2 + 0.16)]);
+  const connPins = (w, h) => merge([-1, 1].map((s) => rbox(w * 0.26, 0.1, w * 0.26, 0.02).translate(s * w * 0.22, -h / 2 + 0.03, 0)));
   // run 12 (items 4, 5, cmp_2 and cmp_5): both leads (TPS 47 and the switch 46) leave the sensor side's top and run out
   // toward the engine side, each ending in a grey coupler lying along X. Paths are drawn in carb space (world mm / 10.5)
   // and moved into each part's frame: 47 sits at its hub, 46 at (KX, KY, KZ)
@@ -38,7 +41,7 @@ export function buildSensor(index) {
   const C47 = conn(1.0, 2.3, 0.9).translate(...in47([-4.4, 2.65, 7.7])); // hanging, its top at the lead's end
   // 47: the TPS and its lead, with the grey coupler (run 12: see the block above; no mirroring)
   const tseat = orient(tubeY(mm(4.6), 0.2, 0, 0.06, 0.015), [0, 0, 1], [0, 0, 1.15]); // the flat seat under the screw's head
-  A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(C47, grey), mk(tseat, machined)), '47', {ex: [0, 1.8, 3.0], order: 0});
+  A.add(part([SX, SY, FZ + 0.02], mk(head, plastic), mk(bracket, cast), mk(lead, wire), mk(C47, grey), mk(tseat, machined), mk(connPins(1.0, 2.3).translate(...in47([-4.4, 2.65, 7.7])), plastic)), '47', {ex: [0, 1.8, 3.0], order: 0});
   A.add(part([SX, SY, FZ + 1.23], mk(orient(fastenerY(1.5, 0.24, 0.13, 0.18, 'torx'), [0, 0, 1]), zinc)), '36', {ex: [0, 1.8, 5.0], order: 0});
   // run 13 (item 4): Keihin 241 Torx screw, 199 washer and 109 collar on the TPS bracket's second hole (bracket coords 2.15, -1.0,
   // turned by pi - TA); K140, a small body screw above the switch screw
@@ -69,8 +72,9 @@ export function buildSensor(index) {
   // sensor side to the small grey connector beside the fuel inlet
   const KX = HOUSE_X + 0.55, KY = 3.2, KZ = 4.4; // run 10 landmarks (carb_8): the knob 1.0 higher, 0.4 out
   const star = new THREE.Shape();
-  for (let i = 0; i <= 96; i++) {
-    const t = (i / 96) * Math.PI * 2, r = mm(7.4) + mm(2.6) * Math.pow(0.5 + 0.5 * Math.cos(8 * t), 0.7);
+  // run 30 (item 14): a fine knurl on the rim, 192 ridges 0.15 mm high over the 8 lobes (96 -> 384 points)
+  for (let i = 0; i <= 384; i++) {
+    const t = (i / 384) * Math.PI * 2, r = mm(7.4) + mm(2.6) * Math.pow(0.5 + 0.5 * Math.cos(8 * t), 0.7) + (i % 2 ? 0 : mm(0.15));
     i ? star.lineTo(Math.cos(t) * r, Math.sin(t) * r) : star.moveTo(Math.cos(t) * r, Math.sin(t) * r);
   }
   const knob = merge([extrudeXY(star, 0.7, 0.08, 4, {free: true}).rotateY(Math.PI / 2), orient(hexY(0.3, 0, 0.22), [1, 0, 0], [0.33, 0, 0])]);
@@ -82,7 +86,7 @@ export function buildSensor(index) {
   const sConn = conn(1.0, 2.0, 0.9).translate(...in46([5.3, 2.8, 6.7]));
   // run 13 (item 8, line 6): 2 small screw heads on the switch body's air-box face
   const swScr = merge([0.9, 1.7].map((y) => orient(fastenerY(0.3, 0.15, 0.07, 0.16, 'cross'), [1, 0, 0], [0.32, y + 0.1, 0.28])));
-  A.add(part([KX, KY, KZ], mk(sw, plastic), mk(swScr, zinc), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
+  A.add(part([KX, KY, KZ], mk(sw, plastic), mk(swScr, zinc), mk(stop, steel), mk(knob, plastic), mk(sLead, wire), mk(sConn, grey), mk(connPins(1.0, 2.0).translate(...in46([5.3, 2.8, 6.7])), plastic)), '46', {ex: [2.6, -0.6, 0.6], order: 0.6, axis: [1, 0, 0]});
   // run 11 (item 3): pieces of 46 from the Keihin diagram: on the stop screw's shank between the housing and the
   // knob the washer (91) and the spring (92); the switch's screw into plate 63 (177)
   const SOPT = {ex: [2.6, -0.6, 0.6], axis: [1, 0, 0]};

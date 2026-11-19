@@ -146,7 +146,14 @@ export function buildBowl(index) {
   const iboss = rbox(1.4, 1.1, 1.0, 0.3).translate(1.0, IY, z0 + 0.35);
   // run 27 (item 8, bowl_1 / bowl_4 / bowl_6): the brass tube pressed into the floor beside the centre hole, standing up 14 mm, leaning a little
   const btube = orient(merge([tubeY(0.11, 0.06, 0, 1.3, 0.01), tubeY(0.16, 0.06, 0, 0.1, 0.02)]), [0.12, 1, 0.2], [QX + 0.25, FL - 0.02, QZ + 1.0]);
-  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), machined), mk(btube, brass)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
+  // run 30 (item 14, rep_1 / bowl_4): a 0.3 mm bright worn edge round the bowl's top rim (its lip's outer edge under the gasket), on its own
+  // mesh last in the part
+  const worn = machined.clone();
+  worn.color.set(0xe2e2de);
+  worn.roughness = 0.18;
+  const rimCurve = new THREE.CatmullRomCurve3(RIM.map(([x, z]) => new THREE.Vector3(x, BY.lip - 0.03, z)), true, 'centripetal');
+  const wornRim = new THREE.TubeGeometry(rimCurve, 160, mm(0.3), 6, true);
+  A.add(part([0, 0, 0], mk(merge([g, iboss, ...PBOSS]), cast), mk(merge([face, nipple, seats, rim]), machined), mk(btube, brass), mk(wornRim, worn)), '1-bowl', {ex: [0, 0, 0], order: 0.3});
   // run 11 (item 3): Keihin pieces of reference 1 with their own meshes: the fuel joint (83) with its 3 O-rings (85)
   // in the boss, the pump rod (72) with its U-ring (52) on the guide's top
   A.add(part([0, 0, 0], mk(inlet, brass)), 'K83', {ex: [0, 0, 1.6], order: 0.2, axis: [0, 0, 1]});

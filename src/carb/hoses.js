@@ -42,7 +42,7 @@ export function buildHoses(index) {
   const pipe = latheY([[0, 0.11], [0, 0.26], [0.15, 0.26], [0.15, 0.16], [dl - 0.6, 0.16], [dl - 0.55, 0.21], [dl - 0.35, 0.21], [dl - 0.3, 0.16], [dl - 0.25, 0.21], [dl - 0.05, 0.21], [dl, 0.15], [dl, 0.11], [0, 0.11]], 28); // run 15: closed with the bore's wall, a hollow tube
   A.add(part(p0, mk(orient(pipe, dv), steel)), '71', {ex: [-4.0, -9.0, 2.0], order: 0.4});
   A.add(part([0, 0, 0], mk(hose([[-3.14, -8.48, 0.57], [-3.55, -8.86, 0.96], [-3.65, -9.9, 1.05], [-3.45, -11.3, 1.15]], 0.25), vinyl)), '72', {ex: [-4.0, -12.0, 2.0], order: 0.1});
-  A.add(part([-3.64, -9.65, 1.04], mk(merge([new THREE.TorusGeometry(0.33, 0.07, 6, 24).rotateX(Math.PI / 2), rbox(0.6, 0.3, 0.2, 0.06).translate(0.55, 0, 0)]), plastic)), '75', {ex: [7.6, -11.0, 4.0], order: 0});
+  A.add(part([-3.64, -9.65, 1.04], mk(clip(0.27, [0, 1, 0], [0, 0, 0]), zinc)), '75', {ex: [7.6, -11.0, 4.0], order: 0}); // run 30 (item 14): formed wire, as clips 39 and 69 (was a plastic band)
   // fuel hose on the inlet elbow (on the bowl's sensor side), up and out toward the tank
   // (run 8: the inlet's top at y -1.53, z 5.6, bowl.js)
   // (overlay round 2: a short stub, the photos show the inlet bare)

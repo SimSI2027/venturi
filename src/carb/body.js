@@ -443,7 +443,13 @@ export function buildBody(index) {
   const pboss = mk(orient(cylY(0.42, 0, 0.32, 0.06), [0, 0, -1], [LX, LY, -2.9]), cast);
   // run 11: its washer (Keihin 69), E-clip (70) and the 2 torsion springs (66, 67) are linkage.js pieces now
   const link = mk(orient(cylY(mm(2.5), 0, 1.4, 0.02), [0, 0, -1], [LX, LY, -3.15]), steel);
-  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks, rpost, gasketFace);
+  // run 30 (item 14, rep_1 / rep_2): a 0.3 mm bright worn edge round both spigot lips, outside and in, on its own mesh last in the part
+  const worn = machined.clone();
+  worn.color.set(0xe2e2de);
+  worn.roughness = 0.18;
+  const lip = (x, R) => new THREE.TorusGeometry(R, mm(0.3), 6, 120).rotateY(Math.PI / 2).translate(x, 0, 0);
+  const wornLips = mk(merge([lip(-SP + 0.015, RE - 0.015), lip(-SP + 0.012, BORE_R + 0.06), lip(AD - 0.04, RA - 0.012), lip(AD - 0.04, BORE_R + 0.06)]), worn);
+  const body = part([0, 0, 0], casting, bowlFace, spigots, boreM, boreD, nozzle, nips, pboss, link, adapterMarks, rpost, gasketFace, wornLips);
   A.add(body, '1');
   return A;
 }
