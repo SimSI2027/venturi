@@ -25,6 +25,10 @@ Years: rebuild-kit sellers list this carburetor for the 2004 to 2009 YFZ450 ([Kr
   part, a one-line note, brass callouts on the rebuild and a checkbox per step, saved in this browser. 29 steps each:
   the manual's 27 plus 2 marked "added step, not in the manual's list" (throttle cable cover and fuel hose first,
   the pilot screw set last), so every reference but the body comes off in exactly 1 step.
+- **Throttle** slider (EXPLORE, beside EXPLODE), 0-100%: the slide lifts with the jet needle and the pump levers turn; visual only, and the footer says so while it is open.
+- **Circuits**: 5 buttons (Fuel in, Pilot, Main, Pump, Starter) outline a circuit's parts, dim the rest and list them in the card; visual only, and each throttle range is a rule of thumb, not from the manual.
+- **Bench steps**: at TEAR DOWN 19 (REBUILD 11) the float chamber sits on the bench beside the body while accelerator jet 77 comes out of it, and at TEAR DOWN 11-13 (REBUILD 17-19) the slide 9 does, for plate 11, needle holder 14 and jet needle 48.
+- **Kit** tab: the parts a rebuild usually replaces, with their quantities and a "manual: fit new" column for the ones the manual marks New.
 - **?** (button or key) shows these controls on the page.
 - **High / Med / Low** sets the render quality; `?perf=1` shows a performance overlay.
 
