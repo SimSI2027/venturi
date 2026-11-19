@@ -24,6 +24,7 @@ import {buildMixture} from './carb/mixture.js';
 import {buildBody, BORE_R, SHAFT, SLIDE_LUG} from './carb/body.js';
 import {toMM} from './carb/kit.js';
 import {applyAO} from './lib/ao.js';
+import {setLOD, cluster} from './lib/lod.js';
 import {createGuide, MODES, REMOVED_AT, FITTED_AT} from './guide.js';
 
 const MARKS = {parsed: performance.now()};
@@ -140,7 +141,14 @@ async function main() {
   const discrete = /\b(rtx|gtx)\b|radeon\s*rx\b|\barc\b|apple\s*m\d/i.test(gpu);
   const phone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 600;
   S.discrete = discrete; // correction 56: HIGH here may only lower the pixel ratio
-  S.setTier(forced || stored || (phone ? 'low' : discrete ? 'high' : 'med'));
+  // run 30 (item 10, correction 67): HIGH draws every mesh in full; MED draws the 4 castings (body, float chamber, top cover, cable
+  // cover 65) at their clustered level; LOW draws every part at that level (lib/lod.js; made once, the first time a tier needs it)
+  const CASTINGS = new Set(['1', '1-bowl', '1-top', '65']), LOD_CELL = 1.2;
+  const lodOf = (m, t) => t === 'low' || (t === 'med' && CASTINGS.has(m.userData.partRoot.userData.part));
+  const applyLOD = (t) => (S.lodTris = setLOD(meshes.filter((m) => lodOf(m, t)), true, LOD_CELL) + setLOD(meshes.filter((m) => !lodOf(m, t)), false));
+  const tier0 = forced || stored || (phone ? 'low' : discrete ? 'high' : 'med');
+  applyLOD(tier0);
+  S.setTier(tier0);
   window.__PROBE = {gpu, discrete, tier: S.tier};
   const showQ = () => [...qSeg.children].forEach((b) => b.classList.toggle('on', b.dataset.t === S.tier));
   let epoch = 0;
@@ -149,6 +157,7 @@ async function main() {
     if (!t) return;
     S.render();
     S.crossfade();
+    applyLOD(t);
     S.setTier(t);
     epoch++;
     try {
@@ -1712,7 +1721,7 @@ async function main() {
   if (MODES[q.get('mode')]) setMode(q.get('mode'), Number(q.get('step')) || 1);
   if (q.has('sel')) select(q.get('sel'));
   requestAnimationFrame(tick);
-  window.VENTURI = {THREE, trayLay, trayGroups, STEP_DIR, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), hide: (p) => hdNow[p.k], trayFade: () => tfT.v, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
+  window.VENTURI = {THREE, cluster, applyLOD, trayLay, trayGroups, STEP_DIR, trayT: (p) => trT[p.k].v, trayTo: (p) => trT[p.k].to, benched: (p) => benched(p), hide: (p) => hdNow[p.k], trayFade: () => tfT.v, MODES, settled, asms, parts, st, focusOn, select, deselect, setMode, guide, camera, S, controls, frame, usable, solo, fit: fitNow, get hovered() { return hovered; }};
 }
 
 main().catch((e) => {
