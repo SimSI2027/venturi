@@ -12,7 +12,7 @@ import {FullScreenQuad} from 'three/addons/postprocessing/Pass.js';
 import {CopyShader} from 'three/addons/shaders/CopyShader.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {Reflector} from 'three/addons/objects/Reflector.js';
-import {setEnvironment, grainAniso} from './lib/materials.js';
+import {setEnvironment, grainAniso, LOOK} from './lib/materials.js';
 
 // The background is a CSS gradient (#15171c -> #07080a) behind a transparent canvas, so its
 // colours are exact on both tiers; the floor fades to transparent into it.
@@ -105,7 +105,27 @@ export function createStage(canvas) {
   // top-left key reads as a highlight on steel and walnut
   const room = new RoomEnvironment();
   room.traverse((o) => o.isMesh && o.material.emissiveIntensity > 0 && o.position.y < 19 && (o.material.emissiveIntensity *= 0.6));
-  scene.environment = pmrem.fromScene(room, 0.04).texture;
+  // run 31 (correction 73): ?light=studio swaps in run 30's item 15 studio of soft boxes (scratch/item15_studio.patch, C15b): a charcoal
+  // room, a large overhead box, the key's box upper left in front, a tall strip at the right, a rim box behind and a floor bounce; HDR
+  const studio = () => {
+    const s = new THREE.Scene();
+    const roomBox = new THREE.Mesh(new THREE.BoxGeometry(44, 26, 44), new THREE.MeshBasicMaterial({color: 0x5a5c61, side: THREE.BackSide}));
+    roomBox.position.y = 7;
+    s.add(roomBox);
+    const softbox = (w, h, k, pos, tint = 0xffffff) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({color: new THREE.Color(tint).multiplyScalar(k), side: THREE.DoubleSide}));
+      m.position.set(...pos);
+      m.lookAt(0, 0, 0);
+      s.add(m);
+    };
+    softbox(16, 11, 6, [0, 18, 1]); // overhead
+    softbox(9, 13, 8, [-13, 10, 11], 0xfff4e8); // key box, upper left front
+    softbox(4, 17, 4.5, [17, 5, 5], 0xf2f4f8); // strip, right
+    softbox(12, 6, 3.5, [3, 9, -17]); // rim box, behind
+    softbox(30, 30, 1.1, [0, -6, 0]); // floor bounce
+    return s;
+  };
+  scene.environment = pmrem.fromScene(LOOK.studio ? studio() : room, 0.04).texture;
   setEnvironment(scene.environment);
   scene.environmentIntensity = 0.95;
 

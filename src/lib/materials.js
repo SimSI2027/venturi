@@ -17,6 +17,13 @@ float wFbm(vec3 p){ float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++){ s += a 
 let ENV = null;
 export function setEnvironment(tex) { ENV = tex; }
 
+// Run 31 (correction 73): the owner's look flags, read once. ?light=studio: the soft-box studio PMREM of run 30's item 15
+// (stage.js) with the as-cast envMapIntensity 0.3 -> 0.45; ?grain=N: the casting grain strength, clamped to 0.3-1.0. They change
+// only the look, never parts, steps or cards; with no flags the page is v3.5's look (grain 0.9, RoomEnvironment).
+const LQ = new URLSearchParams(globalThis.location?.search || '');
+const GRAIN = Number(LQ.get('grain'));
+export const LOOK = {studio: LQ.get('light') === 'studio', grain: LQ.has('grain') && Number.isFinite(GRAIN) ? Math.min(1, Math.max(0.3, GRAIN)) : 0.9};
+
 /** GLSL: soft-caps the lit colour's luminance under the bloom threshold (0.9), so the surface never blooms. */
 export const NO_BLOOM = /* glsl */ `{ float lum = dot(outgoingLight, vec3(0.299, 0.587, 0.114));
   if (lum > 0.6) outgoingLight *= (0.6 + 0.28 * (1.0 - exp(-(lum - 0.6) / 0.28))) / lum; }`;
@@ -327,8 +334,8 @@ function brassVar(m) {
 export function makeMaterials() {
   const grain = castNormal(256, 0.6); // run 26 (round 1, D3 line 3): slope 1.6 -> 0.6: at 0.25 mm a texel (item 4) 1.6 read as hammered paint
   const std = (o) => new THREE.MeshPhysicalMaterial({envMap: ENV, envMapIntensity: 0.7, ...o});
-  const cast = std({color: 0x919397, metalness: 0.3, roughness: 0.55, envMapIntensity: 0.3, // run 27 (item 2): #7a7d83 -> #919397, light neutral satin silver (rep_1..5, mine_1..6) // run 26 (item 16): 0.52 -> 0.55 as-cast, against 0.3 machined // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
-    normalMap: grain, normalScale: new THREE.Vector2(0.9, 0.9)}); // run 30 (round 1, D2 0.52 -> target 0.8-1.2): grain 0.55 -> 0.9 // run 27 (item 2): grain 1 -> 0.55, fine satin, not hammered
+  const cast = std({color: 0x919397, metalness: 0.3, roughness: 0.55, envMapIntensity: LOOK.studio ? 0.45 : 0.3, // run 31: 0.45 with ?light=studio // run 27 (item 2): #7a7d83 -> #919397, light neutral satin silver (rep_1..5, mine_1..6) // run 26 (item 16): 0.52 -> 0.55 as-cast, against 0.3 machined // run 10: measured on the page as it loads (HIGH, scratch/castlive.mjs): darker, and a cool tint against the warm key so red and blue match
+    normalMap: grain, normalScale: new THREE.Vector2(LOOK.grain, LOOK.grain)}); // run 31: ?grain=N, 0.9 without it // run 30 (round 1, D2 0.52 -> target 0.8-1.2): grain 0.55 -> 0.9 // run 27 (item 2): grain 1 -> 0.55, fine satin, not hammered
   // run 26 (item 4): the grain is triplanar in the mesh's own (part) space, 256 texels to 64 mm (0.25 mm a texel), at strength 1 on every
   // as-cast face: no uv, so a round cap or boss shows the same grain as a flat face (its radial uv gave radial speckle). Whiteout blend
   // of the 3 projections, weighted by the 4th power of the object-space normal; back faces flip it (both sides are drawn).
